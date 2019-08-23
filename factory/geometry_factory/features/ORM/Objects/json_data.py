@@ -1,10 +1,11 @@
 import json
 from abc import abstractclassmethod, ABCMeta
 
-from ORM.utils.ORMException import ORMException
+from factory.geometry_factory.features.ORM import orm_exception
 
 from json import encoder
 encoder.FLOAT_REPR = lambda o: format(o, '.10f')
+
 
 class JsonData(metaclass=ABCMeta):
 
@@ -34,7 +35,7 @@ class JsonData(metaclass=ABCMeta):
             try:
                 self._get_key(required)
             except KeyError:
-                raise ORMException("Class {0} requires field {1}".format(self._type(), required))
+                raise orm_exception("Class {0} requires field {1}".format(self._type(), required))
 
     def serialize(self, encoder=json.JSONEncoder, indent=4):
         self._validate_required()

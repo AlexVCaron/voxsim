@@ -1,8 +1,8 @@
-from ORM.Objects.JsonData import JsonData
-from ORM.utils.ORMException import ORMException
+from factory.geometry_factory.features.ORM.Objects import json_data
+from factory.geometry_factory.features.ORM import orm_exception
 
 
-class World(JsonData):
+class World(json_data):
 
     def __init__(self):
         super().__init__()
@@ -27,6 +27,6 @@ class World(JsonData):
 
     def _validate_all_keys(self):
         if not len(self._get_key("resolution")) == self._get_key("dimension"):
-            raise ORMException("Resolution list is not as long as there is dimensions")
+            raise orm_exception("Resolution list is not as long as there is dimensions")
         if self._get_key("dimension") <= 0:
-            raise ORMException("Dimension must be greater than 0")
+            raise orm_exception("Dimension must be greater than 0")

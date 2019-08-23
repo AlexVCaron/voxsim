@@ -1,12 +1,12 @@
 import json
 
-from ORM.Objects.JsonData import JsonData
-from .BundleMeta import BundleMeta
-from .Fiber import Fiber
-from ORM.utils.ORMException import ORMException
+from .ORM.Objects import json_data
+from .bundle_meta import BundleMeta
+from .fiber import Fiber
+from .ORM.orm_exception import ORMException
 
 
-class Bundle(JsonData):
+class Bundle(json_data):
 
     def __init__(self):
         super().__init__()

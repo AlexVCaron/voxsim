@@ -1,5 +1,5 @@
-from .Structure import Structure
-from ORM.utils.ORMException import ORMException
+from .structure import Structure
+from factory.geometry_factory.features.ORM import orm_exception
 
 
 class Bundle(Structure):
@@ -47,6 +47,6 @@ class Bundle(Structure):
 
     def _validate_all_keys(self):
         if self._get_key("names") == 0:
-            raise ORMException("Fiber with no names")
+            raise orm_exception("Fiber with no names")
         if not len(self._get_key("names")) == len(self._get_key("scalings")):
-            raise ORMException("Inconsistent size between 'names' and 'scalings' lists")
+            raise orm_exception("Inconsistent size between 'names' and 'scalings' lists")

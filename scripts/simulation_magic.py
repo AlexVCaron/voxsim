@@ -3,9 +3,9 @@ from math import pi
 from os import path, mkdir
 from numpy import array
 
-from ORM.ConfigBuilder import ConfigBuilder
-from ORM.StructureBuilder import StructureBuilder
-from ORM.utils.Plane import Plane
+from factory.geometry_factory.features.ORM.config_builder import ConfigBuilder
+from factory.geometry_factory.features.ORM.StructureBuilder import StructureBuilder
+from factory.geometry_factory.features.utils.plane import Plane
 from utils.Rotation import rotate_fiber, Rotation
 
 from config import *

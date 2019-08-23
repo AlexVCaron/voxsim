@@ -1,12 +1,17 @@
 from scipy.ndimage import rotate
+from .features.bundle import Bundle
+from .features.bundle_meta import BundleMeta
+from .features.fiber import Fiber
+from .features.sphere import Sphere
+from .features.configuration_handler import ConfigurationHandler
+from .features.utils.plane import Plane
 
-from ORM.Objects.structure.Bundle import Bundle
-from ORM.Objects.structure.BundleMeta import BundleMeta
-from ORM.Objects.structure.Fiber import Fiber
-from ORM.utils.Plane import Plane
 
+class GeometryFactory:
 
-class StructureBuilder:
+    @staticmethod
+    def get_configuration_handler(resolution, spacing):
+        return ConfigurationHandler(resolution, spacing)
 
     @staticmethod
     def create_bundle_meta(dimensions, density, sampling, center, limits):
@@ -20,14 +25,14 @@ class StructureBuilder:
         return bundle_meta
 
     @staticmethod
-    def create_bundle(meta, fibers=list()):
+    def create_bundle(meta, fibers=list):
         bundle = Bundle()
         bundle.set_bundle_meta(meta).set_fibers(fibers)
 
         return bundle
 
     @staticmethod
-    def create_fiber(radius, symmetry, sampling, anchors=list()):
+    def create_fiber(radius, symmetry, sampling, anchors=list):
         fiber = Fiber()
         fiber.set_radius(radius).set_symmetry(symmetry).set_sampling(sampling).set_anchors(anchors)
 
@@ -39,3 +44,12 @@ class StructureBuilder:
         fiber.set_anchors(anchors)
 
         return fiber
+
+    @staticmethod
+    def create_sphere(radius, center, scaling=1):
+        sphere = Sphere()
+        sphere.set_radius(radius).set_center(center)
+        if scaling > 0:
+            sphere.set_scaling(scaling)
+
+        return sphere

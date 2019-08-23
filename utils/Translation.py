@@ -1,6 +1,6 @@
 from numpy import array
 
-from ORM.StructureBuilder import StructureBuilder
+from factory.geometry_factory.features.ORM.StructureBuilder import StructureBuilder
 
 
 def translate_fiber(fiber, bbox, translation):

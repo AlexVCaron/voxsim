@@ -7,9 +7,9 @@ from shutil import copyfile
 from numpy import linspace, mgrid, s_, prod, identity
 from numpy.core.multiarray import array
 
-from ORM.ConfigBuilder import ConfigBuilder
-from ORM.StructureBuilder import StructureBuilder
-from ORM.utils.Plane import Plane
+from factory.geometry_factory.features.ORM.config_builder import ConfigBuilder
+from factory.geometry_factory.features.ORM.StructureBuilder import StructureBuilder
+from factory.geometry_factory.features.utils.plane import Plane
 from config import *
 from utils.Rotation import Rotation, rotate_fiber
 

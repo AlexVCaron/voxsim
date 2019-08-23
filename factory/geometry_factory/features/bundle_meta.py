@@ -1,10 +1,8 @@
-import json
-
-from ORM.Objects.JsonData import JsonData
-from ORM.utils.ORMException import ORMException
+from .ORM.Objects import json_data
+from .ORM.orm_exception import ORMException
 
 
-class BundleMeta(JsonData):
+class BundleMeta(json_data):
 
     def __init__(self):
         super().__init__()

@@ -2,8 +2,8 @@ from enum import Enum
 
 from math import cos, sin
 
-from ORM.StructureBuilder import StructureBuilder
-from ORM.utils.Plane import Plane
+from factory.geometry_factory.features.ORM.StructureBuilder import StructureBuilder
+from factory.geometry_factory.features.utils.plane import Plane
 
 Rx = lambda theta: [
     [1, 0, 0],

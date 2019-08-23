@@ -1,5 +1,5 @@
-from ORM.utils.ORMException import ORMException
-from .Structure import Structure
+from .ORM.orm_exception import ORMException
+from .ORM.Objects.structure import Structure
 
 
 class Sphere(Structure):
