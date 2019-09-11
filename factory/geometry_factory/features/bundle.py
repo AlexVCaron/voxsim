@@ -1,12 +1,12 @@
 import json
 
-from .ORM.Objects import json_data
+from .ORM.Objects.json_data import JsonData
 from .bundle_meta import BundleMeta
 from .fiber import Fiber
 from .ORM.orm_exception import ORMException
 
 
-class Bundle(json_data):
+class Bundle(JsonData):
 
     def __init__(self):
         super().__init__()
@@ -29,6 +29,12 @@ class Bundle(json_data):
     def add_fiber(self, fiber):
         self._append_value("data", fiber)
         return self
+
+    def get_bundle_center(self):
+        return self._values["meta"].get_center()
+
+    def get_number_of_fibers(self):
+        return len(self._values["data"])
 
     def _validate_all_keys(self):
         if len(self._get_key("data")) == 0:

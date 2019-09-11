@@ -1,8 +1,8 @@
-from .ORM.Objects import json_data
+from .ORM.Objects.json_data import JsonData
 from .ORM.orm_exception import ORMException
 
 
-class Fiber(json_data):
+class Fiber(JsonData):
 
     def __init__(self):
         super().__init__()

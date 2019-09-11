@@ -1,8 +1,8 @@
-from .ORM.Objects import json_data
+from .ORM.Objects.json_data import JsonData
 from .ORM.orm_exception import ORMException
 
 
-class BundleMeta(json_data):
+class BundleMeta(JsonData):
 
     def __init__(self):
         super().__init__()
@@ -21,12 +21,15 @@ class BundleMeta(json_data):
         return self
 
     def set_limits(self, limits):
-        self._set_value("limits", limits)
+        self._set_value("limits", ".".join([str(lim) for lim in limits]).replace(" ", ""))
         return self
 
     def set_center(self, center):
         self._set_value("center", center)
         return self
+
+    def get_center(self):
+        return self._values["center"]
 
     def set_density(self, density):
         self._set_value("density", density)

@@ -3,15 +3,15 @@ from .features.bundle import Bundle
 from .features.bundle_meta import BundleMeta
 from .features.fiber import Fiber
 from .features.sphere import Sphere
-from .features.configuration_handler import ConfigurationHandler
+from .features.geometry_handler import GeometryHandler
 from .features.utils.plane import Plane
 
 
 class GeometryFactory:
 
     @staticmethod
-    def get_configuration_handler(resolution, spacing):
-        return ConfigurationHandler(resolution, spacing)
+    def get_geometry_handler(resolution, spacing):
+        return GeometryHandler(resolution, spacing)
 
     @staticmethod
     def create_bundle_meta(dimensions, density, sampling, center, limits):

@@ -1,9 +1,9 @@
 from abc import ABCMeta
 
-from factory.geometry_factory.features.ORM.Objects import json_data
+from factory.geometry_factory.features.ORM.Objects.json_data import JsonData
 
 
-class Structure(json_data, metaclass=ABCMeta):
+class Structure(JsonData, metaclass=ABCMeta):
 
     def __init__(self):
         super().__init__()
