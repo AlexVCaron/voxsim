@@ -20,6 +20,10 @@ class SimulationFactory:
         TENSOR_VALUED_BY_EIGS = TensorValuedByEigsType
         TENSOR_VALUED_BY_PARAMS = TensorValuedByParamsType
 
+    class NoiseType(Enum):
+        COMPLEX_GAUSSIAN = "gaussian"
+        RICIAN = "rician"
+
     @staticmethod
     def get_simulation_handler(geometry_handler, compartments=None):
         return SimulationHandler(
