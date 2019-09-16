@@ -1,11 +1,10 @@
 from asyncio import sleep, create_subprocess_shell, get_event_loop
 from os import path, makedirs
 from shutil import copyfile
-from subprocess import Popen, PIPE
+from subprocess import PIPE
 from config import *
 import nrrd
 from numpy import sum, ones_like
-from shlex import split
 
 
 class SimulationRunner:

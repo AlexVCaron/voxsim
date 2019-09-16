@@ -1,6 +1,6 @@
 from numpy import array
 
-from factory.geometry_factory.features.ORM.StructureBuilder import StructureBuilder
+from factory.geometry_factory.geometry_factory import GeometryFactory
 
 
 def translate_fiber(fiber, bbox, translation):
@@ -13,7 +13,7 @@ def translate_fiber(fiber, bbox, translation):
         for pt in bbox:
             t_bbox.append((array(pt) + array(translation)).tolist())
 
-    return t_bbox, StructureBuilder.create_fiber(
+    return t_bbox, GeometryFactory.create_fiber(
         fiber.get_radius(),
         fiber.get_symmetry(),
         fiber.get_sampling(),
