@@ -36,8 +36,8 @@ base_anchors = [
     [0.5, 1.4, 0.5]
 ]
 
-if __name__ == "__main__":
 
+def run_geometry_factory_test(output_folder, output_naming):
     geometry_handler = GeometryFactory.get_geometry_handler(resolution, spacing)
 
     fiber1 = GeometryFactory.create_fiber(4, 1, sampling, base_anchors)
@@ -53,7 +53,14 @@ if __name__ == "__main__":
 
     geometry_handler.add_bundle(bundle)
 
-    geometry_handler.generate_json_configuration_files(
-        "test_factory",
-        "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/simu_factory_test"
+    return geometry_handler.generate_json_configuration_files(
+        output_naming,
+        output_folder
+    )
+
+
+if __name__ == "__main__":
+    run_geometry_factory_test(
+        "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/simu_factory_test",
+        "test_factory"
     )

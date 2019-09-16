@@ -3,7 +3,7 @@ from enum import Enum
 from factory.simulation_factory.parameters.acquisition_profile import AcquisitionProfile
 from factory.simulation_factory.parameters.artifact_model import ArtifactModel
 from factory.simulation_factory.parameters.gradient_profile import *
-from factory.simulation_factory.parameters.simulation_handler import SimulationHandler
+from factory.simulation_factory.handlers.simulation_handler import SimulationHandler
 
 
 class SimulationFactory:
@@ -51,8 +51,8 @@ class SimulationFactory:
                                              .set_axon_radius(axon_radius)
 
     @staticmethod
-    def generate_gradient_profile(bvals, bvecs, g_type=StejskalTannerType):
-        return GradientProfile(bvals, bvecs, g_type())
+    def generate_gradient_profile(bvals, bvecs, g_type=AcquisitionType.STEJSKAL_TANNER):
+        return GradientProfile(bvals, bvecs, g_type.value())
 
     @staticmethod
     def generate_artifact_model(*artifact_models):

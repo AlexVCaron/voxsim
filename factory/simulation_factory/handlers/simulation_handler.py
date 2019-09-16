@@ -8,6 +8,8 @@ from factory.simulation_factory.parameters.artifact_model import ArtifactModel
 
 from factory.simulation_factory.helpers.number_tag_to_placeholder import NumberTagToPlaceholder
 
+from .simulation_infos import SimulationInfos
+
 
 class SimulationHandler:
     def __init__(self, resolution, spacing, compartments=None):
@@ -58,3 +60,5 @@ class SimulationHandler:
 
         with open(path.join(simulation_path, output_naming + ".ffp"), "w+") as f:
             f.write(xml_string)
+
+        return SimulationInfos(simulation_path, output_naming + ".ffp", [cmp["ID"] for cmp in self._compartments])

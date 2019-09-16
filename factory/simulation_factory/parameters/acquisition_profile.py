@@ -104,7 +104,6 @@ class AcquisitionProfile(XmlTreeElement):
         self._create_text_element(direction_element, NumberTagToPlaceholder.generate_placeholder(8), "0")
         self._create_text_element(direction_element, NumberTagToPlaceholder.generate_placeholder(9), "1")
 
-        self._create_text_element(parent_element, "acquisitiontype", "2")
         self._create_text_element(parent_element, "coilsensitivityprofile", "2")
         self._create_text_element(parent_element, "numberofcoils", str(self._n_coils))
         self._create_text_element(parent_element, "reversephase", str(self._reverse).lower())

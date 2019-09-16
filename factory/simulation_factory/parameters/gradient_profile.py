@@ -10,6 +10,7 @@ from factory.simulation_factory.helpers.number_tag_to_placeholder import NumberT
 
 class StejskalTannerType(XmlTreeElement):
     def dump_to_xml(self, parent_element):
+        self._create_text_element(parent_element, "acquisitiontype", "1")
         return parent_element
 
 
@@ -21,6 +22,8 @@ class TensorValuedByTensorType(XmlTreeElement):
         return self._tensor[0, 0] + self._tensor[1, 1] + self._tensor[2, 2]
 
     def dump_to_xml(self, parent_element):
+        self._create_text_element(parent_element, "acquisitiontype", "2")
+
         md_element = SubElement(parent_element, "multidimensional")
         self._create_text_element(md_element, "definition", "2")
         self._create_text_element(md_element, "bdelta", "0")
@@ -44,6 +47,8 @@ class TensorValuedByEigsType(XmlTreeElement):
         return sum(self._eigenvals)
 
     def dump_to_xml(self, parent_element):
+        self._create_text_element(parent_element, "acquisitiontype", "2")
+
         md_element = SubElement(parent_element, "multidimensional")
         self._create_text_element(md_element, "definition", "1")
         self._create_text_element(md_element, "bdelta", "0")
@@ -65,6 +70,8 @@ class TensorValuedByParamsType(XmlTreeElement):
         return self._b_iso
 
     def dump_to_xml(self, parent_element):
+        self._create_text_element(parent_element, "acquisitiontype", "2")
+
         md_element = SubElement(parent_element, "multidimensional")
         self._create_text_element(md_element, "definition", "1")
         self._create_text_element(md_element, "bdelta", str(self._b_delta))

@@ -3,7 +3,7 @@ from .features.bundle import Bundle
 from .features.bundle_meta import BundleMeta
 from .features.fiber import Fiber
 from .features.sphere import Sphere
-from .features.geometry_handler import GeometryHandler
+from factory.geometry_factory.handlers.geometry_handler import GeometryHandler
 from .features.utils.plane import Plane
 
 
