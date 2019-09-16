@@ -47,11 +47,15 @@ def run_geometry_factory_test(output_folder, output_naming):
     _, fiber2 = rotate_fiber(fiber1, [], rot_30X, [0.5, 0.5, 0.5], [])
 
     bundle = GeometryFactory.create_bundle(
-        GeometryFactory.create_bundle_meta(3, 1000, 1, fibers_center, fibers_limits),
+        GeometryFactory.create_bundle_meta(3, 100000, 1, fibers_center, fibers_limits),
         [fiber1, fiber2]
     )
 
     geometry_handler.add_bundle(bundle)
+
+    sphere_1 = GeometryFactory.create_sphere(sphere_radius, spheres_center)
+
+    geometry_handler.add_sphere(sphere_1)
 
     return geometry_handler.generate_json_configuration_files(
         output_naming,

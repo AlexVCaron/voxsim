@@ -33,6 +33,11 @@ def run_simulation_factory_test(output_folder, output_naming):
         )
     )
 
+    noise_artifact = SimulationFactory.generate_noise_model("gaussian", 30)
+    motion_artifact = SimulationFactory.generate_motion_model(True, "random", [3.1415 / 6, 0, 0], [4, 0, 0])
+
+    simulation_handler.set_artifact_model([noise_artifact, motion_artifact])
+
     normalize = lambda a: (array(a) / norm(a)).tolist()
 
     simulation_handler.set_gradient_profile(

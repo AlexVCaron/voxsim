@@ -51,8 +51,8 @@ class SimulationFactory:
                                              .set_axon_radius(axon_radius)
 
     @staticmethod
-    def generate_gradient_profile(bvals, bvecs, g_type=AcquisitionType.STEJSKAL_TANNER):
-        return GradientProfile(bvals, bvecs, g_type.value())
+    def generate_gradient_profile(bvals, bvecs, g_type=AcquisitionType.STEJSKAL_TANNER, *g_type_args, **g_type_kwargs):
+        return GradientProfile(bvals, bvecs, g_type.value(*g_type_args, **g_type_kwargs))
 
     @staticmethod
     def generate_artifact_model(*artifact_models):
@@ -104,7 +104,7 @@ class SimulationFactory:
     @staticmethod
     def generate_fiber_stick_compartment(diffusivity, t1, t2, compartment_type):
         assert compartment_type in [
-            SimulationFactory.CompartmentType.INTRA_AXONAL, SimulationFactory.CompartmentType.INTRA_AXONAL
+            SimulationFactory.CompartmentType.INTRA_AXONAL, SimulationFactory.CompartmentType.INTER_AXONAL
         ]
         return {
             "type": "fiber",
@@ -118,7 +118,7 @@ class SimulationFactory:
     @staticmethod
     def generate_fiber_tensor_compartment(d1, d2, d3, t1, t2, compartment_type):
         assert compartment_type in [
-            SimulationFactory.CompartmentType.INTRA_AXONAL, SimulationFactory.CompartmentType.INTRA_AXONAL
+            SimulationFactory.CompartmentType.INTRA_AXONAL, SimulationFactory.CompartmentType.INTER_AXONAL
         ]
         return {
             "type": "fiber",

@@ -14,13 +14,13 @@ class GeometryFactory:
         return GeometryHandler(resolution, spacing)
 
     @staticmethod
-    def create_bundle_meta(dimensions, density, sampling, center, limits):
+    def create_bundle_meta(dimensions, density, sampling_distance, center, limits):
         bundle_meta = BundleMeta()
         bundle_meta.set_dimensions(dimensions)\
                    .set_center(center)\
                    .set_limits(limits)\
                    .set_density(density)\
-                   .set_sampling(sampling)
+                   .set_sampling(sampling_distance)
 
         return bundle_meta
 
