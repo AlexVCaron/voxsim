@@ -87,7 +87,6 @@ class GradientProfile(XmlTreeElement):
         self._gtype = g_type
 
     def _scale_gradients(self, bvecs, bvals, nominal_bval):
-        print(bvecs)
         return [(sqrt(bval / nominal_bval) * array(bvec)).tolist() for bvec, bval, in zip(bvecs, bvals)]
 
     def _get_number_of_gradients(self, directions):
