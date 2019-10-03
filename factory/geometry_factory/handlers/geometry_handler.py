@@ -32,7 +32,10 @@ class GeometryHandler:
             "",
             ["{}_f_{}.vspl".format(naming, i)],
             [1],
-            self._parameters_dict["bundles"][i].get_bundle_center()
+            [c * s for c, s in zip(
+                self._parameters_dict["bundles"][i].get_bundle_center(),
+                self._parameters_dict["bundles"][i].get_bundle_scaling(self.get_resolution())
+            )]
         )
 
     def _get_number_of_bundles(self):

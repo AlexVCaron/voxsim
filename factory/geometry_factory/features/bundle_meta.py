@@ -1,5 +1,6 @@
 from .ORM.Objects.json_data import JsonData
 from .ORM.orm_exception import ORMException
+from ast import literal_eval
 
 
 class BundleMeta(JsonData):
@@ -23,6 +24,9 @@ class BundleMeta(JsonData):
     def set_limits(self, limits):
         self._set_value("limits", ".".join([str(lim) for lim in limits]).replace(" ", ""))
         return self
+
+    def get_limits(self):
+        return [literal_eval(lim) for lim in self._values["limits"].split(".")]
 
     def set_center(self, center):
         self._set_value("center", center)

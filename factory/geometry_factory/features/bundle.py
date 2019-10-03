@@ -33,6 +33,12 @@ class Bundle(JsonData):
     def get_bundle_center(self):
         return self._values["meta"].get_center()
 
+    def get_bundle_scaling(self, resolution):
+        bundle_limits = self._values["meta"].get_limits()
+        assert len(resolution) == len(bundle_limits)
+
+        return [r / (l[1] - l[0]) for r, l in zip(resolution, bundle_limits)]
+
     def get_number_of_fibers(self):
         return len(self._values["data"])
 
