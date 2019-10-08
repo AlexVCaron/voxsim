@@ -9,7 +9,7 @@ class GeometryHandler:
         self._parameters_dict = {
             "resolution": resolution,
             "spacing": spacing,
-            "bundles": [],
+            "clusters": [],
             "spheres": []
         }
 
@@ -17,8 +17,8 @@ class GeometryHandler:
         self._parameters_dict["spheres"].append(sphere)
         return self
 
-    def add_bundle(self, bundle):
-        self._parameters_dict["bundles"].append(bundle)
+    def add_cluster(self, cluster):
+        self._parameters_dict["clusters"].append(cluster)
         return self
 
     def get_resolution(self):
@@ -27,19 +27,19 @@ class GeometryHandler:
     def get_spacing(self):
         return self._parameters_dict["spacing"]
 
-    def _generate_bundle_base(self, naming, i):
-        return ConfigBuilder.create_bundle_object(
+    def _generate_cluster_base(self, naming, i):
+        return ConfigBuilder.create_cluster_object(
             "",
             ["{}_f_{}.vspl".format(naming, i)],
             [1],
             [c * s for c, s in zip(
-                self._parameters_dict["bundles"][i].get_bundle_center(),
-                self._parameters_dict["bundles"][i].get_bundle_scaling(self.get_resolution())
+                self._parameters_dict["clusters"][i].get_cluster_center(),
+                self._parameters_dict["clusters"][i].get_cluster_scaling(self.get_resolution())
             )]
         )
 
-    def _get_number_of_bundles(self):
-        return len(self._parameters_dict["bundles"])
+    def _get_number_of_clusters(self):
+        return len(self._parameters_dict["clusters"])
 
     def generate_json_configuration_files(self, output_naming, simulation_path=""):
 
@@ -49,7 +49,7 @@ class GeometryHandler:
         with open(path.join(simulation_path, output_naming + "_base.json"), "w+") as base_file:
 
             world = ConfigBuilder.create_world(len(self.get_resolution()), self.get_resolution())
-            structures = [self._generate_bundle_base(output_naming, i) for i in range(self._get_number_of_bundles())]
+            structures = [self._generate_cluster_base(output_naming, i) for i in range(self._get_number_of_clusters())]
             structures += self._parameters_dict["spheres"]
 
             base_file.write(
@@ -61,14 +61,14 @@ class GeometryHandler:
                 "}"
             )
 
-        for bundle_idx in range(len(self._parameters_dict["bundles"])):
-            with open(path.join(simulation_path, output_naming + "_f_{}.vspl".format(bundle_idx)), "w+") as f:
-                f.write(self._parameters_dict["bundles"][bundle_idx].serialize())
+        for cluster_idx in range(len(self._parameters_dict["clusters"])):
+            with open(path.join(simulation_path, output_naming + "_f_{}.vspl".format(cluster_idx)), "w+") as f:
+                f.write(self._parameters_dict["clusters"][cluster_idx].serialize())
 
         return GeometryInfos(
             simulation_path,
             output_naming + "_base.json",
             self.get_resolution(),
             self.get_spacing(),
-            len(structures) - self._get_number_of_bundles() + 1
+            len(structures) - self._get_number_of_clusters() + 1
         )

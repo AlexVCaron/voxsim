@@ -1,6 +1,6 @@
 from abc import ABCMeta
 
-from factory.geometry_factory.features.ORM.Objects.json_data import JsonData
+from .json_data import JsonData
 
 
 class Structure(JsonData, metaclass=ABCMeta):

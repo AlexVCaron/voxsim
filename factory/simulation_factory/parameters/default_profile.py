@@ -1,6 +1,6 @@
 from lxml.etree import SubElement
 
-from factory.simulation_factory.parameters.xml_tree_element import XmlTreeElement
+from .xml_tree_element import XmlTreeElement
 
 
 class DefaultProfile(XmlTreeElement):

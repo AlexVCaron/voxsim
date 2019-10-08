@@ -1,9 +1,14 @@
 from enum import Enum
 
-from factory.simulation_factory.parameters.acquisition_profile import AcquisitionProfile
-from factory.simulation_factory.parameters.artifact_model import ArtifactModel
-from factory.simulation_factory.parameters.gradient_profile import *
-from factory.simulation_factory.handlers.simulation_handler import SimulationHandler
+from .parameters import AcquisitionProfile,\
+                        ArtifactModel,\
+                        GradientProfile,\
+                        StejskalTannerType,\
+                        TensorValuedByTensorType, \
+                        TensorValuedByParamsType,\
+                        TensorValuedByEigsType
+from .handlers import SimulationHandler
+from .qspace_sampler.sampling import multishell
 
 
 class SimulationFactory:
@@ -55,8 +60,29 @@ class SimulationFactory:
                                              .set_axon_radius(axon_radius)
 
     @staticmethod
-    def generate_gradient_profile(bvals, bvecs, g_type=AcquisitionType.STEJSKAL_TANNER, *g_type_args, **g_type_kwargs):
-        return GradientProfile(bvals, bvecs, g_type.value(*g_type_args, **g_type_kwargs))
+    def generate_gradient_vectors(points_per_shell, max_iter=1000):
+        weights = multishell.compute_weights(
+            len(points_per_shell),
+            points_per_shell,
+            [[i for i in range(len(points_per_shell))]],
+            [1]
+        )
+        return multishell.optimize(len(points_per_shell), points_per_shell, weights, max_iter).tolist()
+
+    @staticmethod
+    def generate_gradient_profile(
+            bvals,
+            bvecs,
+            n_b0=0,
+            g_type=AcquisitionType.STEJSKAL_TANNER,
+            *g_type_args,
+            **g_type_kwargs
+    ):
+        return GradientProfile(
+            [0 for i in range(n_b0)] + bvals,
+            [[0, 0, 0] for i in range(n_b0)] + bvecs,
+            g_type.value(*g_type_args, **g_type_kwargs)
+        )
 
     @staticmethod
     def generate_artifact_model(*artifact_models):

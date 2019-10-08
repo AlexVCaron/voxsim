@@ -16,7 +16,7 @@ class SimulationInfos(AttributeAsDictClass):
         self._file_path = file_path
 
     def get_simulation_file_name(self):
-        return self._simulation_file
+        return self._param_file
 
     def set_simulation_file_name(self, name):
-        self._simulation_file = name
+        self._param_file = name

@@ -2,8 +2,7 @@ from enum import Enum
 from math import cos, sin
 from numpy import array
 
-from factory.geometry_factory.geometry_factory import GeometryFactory
-from factory.geometry_factory.features.utils.plane import Plane
+from factory.geometry_factory.features import Plane
 
 Rx = lambda theta: [
     [1, 0, 0],
@@ -42,19 +41,15 @@ class Rotation:
         return self._rotation(angle)
 
 
-def rotate_fiber(fiber, bbox, rotation, center, bbox_center):
+def rotate_bundle(fiber, rotation, center, bbox=None, bbox_center=None):
     anchors = array(fiber.get_anchors())
     r_anchors = []
     r_bbox = []
     for anchor in anchors:
         r_anchors.append(((rotation @ (anchor - center)) + center).tolist())
 
-    for pt in bbox:
-        r_bbox.append((rotation @ (pt - bbox_center)) + bbox_center)
+    if bbox and bbox_center:
+        for pt in bbox:
+            r_bbox.append((rotation @ (pt - bbox_center)) + bbox_center)
 
-    return r_bbox, GeometryFactory.create_fiber(
-        fiber.get_radius(),
-        fiber.get_symmetry(),
-        fiber.get_sampling(),
-        r_anchors
-    )
+    return r_bbox, r_anchors

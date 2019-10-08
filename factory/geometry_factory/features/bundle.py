@@ -1,59 +1,59 @@
-import json
-
-from .ORM.Objects.json_data import JsonData
-from .bundle_meta import BundleMeta
-from .fiber import Fiber
-from .ORM.orm_exception import ORMException
+from .ORM import ORMException
+from .ORM.Objects import JsonData
 
 
 class Bundle(JsonData):
 
     def __init__(self):
         super().__init__()
-        self._values["meta"] = BundleMeta()
-        self._values["data"] = []
+        self._values["anchors"] = []
 
-        self._required += ["meta", "data"]
+        self._required += ["sampling", "radius", "symmetry"]
 
-    def get_meta(self):
-        return self._get_key("meta")
-
-    def set_bundle_meta(self, bundle_meta):
-        self._set_value("meta", bundle_meta)
+    def set_n_point_per_centroid(self, pp_centroid):
+        self._set_value("sampling", pp_centroid)
         return self
 
-    def set_fibers(self, fibers):
-        self._set_value("data", fibers)
+    def set_radius(self, radius):
+        self._set_value("radius", radius)
         return self
 
-    def add_fiber(self, fiber):
-        self._append_value("data", fiber)
+    def set_symmetry(self, symmetry):
+        self._set_value("symmetry", symmetry)
         return self
 
-    def get_bundle_center(self):
-        return self._values["meta"].get_center()
+    def add_anchor(self, anchor):
+        self._append_value("anchors", anchor)
+        return self
 
-    def get_bundle_scaling(self, resolution):
-        bundle_limits = self._values["meta"].get_limits()
-        assert len(resolution) == len(bundle_limits)
+    def _set_anchor_at(self, anchor, idx):
+        self._get_key("anchors")[idx] = anchor
 
-        return [r / (l[1] - l[0]) for r, l in zip(resolution, bundle_limits)]
+    def set_anchors(self, anchors):
+        self._set_value("anchors", anchors)
+        return self
 
-    def get_number_of_fibers(self):
-        return len(self._values["data"])
+    def get_anchors(self):
+        return self._get_key("anchors")
+
+    def get_radius(self):
+        return self._get_key("radius")
+
+    def get_symmetry(self):
+        return self._get_key("symmetry")
+
+    def get_n_point_per_centroid(self):
+        return self._get_key("sampling")
+
+    def get_values(self):
+        return self._values
 
     def _validate_all_keys(self):
-        if len(self._get_key("data")) == 0:
-            raise ORMException("No fiber present in the data")
-
-    def serialize(self, encoder=json.JSONEncoder, indent=4):
-        class MyEncoder(json.JSONEncoder):
-            def default(self, o):
-                if isinstance(o, BundleMeta):
-                    return o.get_values()
-                if isinstance(o, Fiber):
-                    return o.get_values()
-                else:
-                    return super().default(o)
-
-        return super().serialize(MyEncoder, indent)
+        if len(self._get_key("anchors")) == 0:
+            raise ORMException("Anchors list empty")
+        if self._get_key("sampling") <= 0:
+            raise ORMException("Sampling must be greater than 0")
+        if self._get_key("radius") <= 0:
+            raise ORMException("Radius must be grater than 0")
+        if abs(self._get_key("symmetry")) > 1:
+            raise ORMException("Symmetry must be between -1 and 1")

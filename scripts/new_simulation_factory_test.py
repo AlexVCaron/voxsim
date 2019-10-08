@@ -1,4 +1,4 @@
-from factory.simulation_factory.simulation_factory import SimulationFactory
+from factory.simulation_factory import SimulationFactory
 from test.helpers.geometry_helper import GeometryHelper
 from random import uniform
 from numpy.linalg import norm

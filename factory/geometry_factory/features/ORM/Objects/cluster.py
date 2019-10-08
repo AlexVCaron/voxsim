@@ -1,8 +1,8 @@
 from .structure import Structure
-from factory.geometry_factory.features.ORM.orm_exception import ORMException
+from factory.geometry_factory.features.ORM import ORMException
 
 
-class Bundle(Structure):
+class Cluster(Structure):
 
     def __init__(self):
         super().__init__()
@@ -28,20 +28,20 @@ class Bundle(Structure):
         self._set_value("scalings", scalings)
         return self
 
-    def add_fiber_name(self, name):
+    def add_bundle_name(self, name):
         self._append_value("names", name)
         return self
 
-    def set_fiber_name(self, idx, name):
+    def set_bundle_name(self, idx, name):
         self._get_key("names")[idx] = name
         return self
 
-    def set_fibers_names(self, names):
+    def set_bundles_names(self, names):
         self._set_value("names", names)
         return self
 
-    def add_fiber(self, name, scaling=1):
-        self.add_fiber_name(name)
+    def add_bundle(self, name, scaling=1):
+        self.add_bundle_name(name)
         self.add_scaling(scaling)
         return self
 

@@ -1,10 +1,9 @@
 from lxml.etree import SubElement
-
 from math import sqrt
 from numpy.linalg import norm
 from numpy import isclose, array
 
-from factory.simulation_factory.parameters.xml_tree_element import XmlTreeElement
+from .xml_tree_element import XmlTreeElement
 from factory.simulation_factory.helpers.number_tag_to_placeholder import NumberTagToPlaceholder
 
 

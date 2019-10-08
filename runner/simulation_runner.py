@@ -1,10 +1,11 @@
-from asyncio import sleep, create_subprocess_shell, get_event_loop
+from asyncio import sleep, create_subprocess_shell, get_event_loop, new_event_loop, set_event_loop
 from os import path, makedirs
 from shutil import copyfile
 from subprocess import PIPE
-from config import *
-import nrrd
 from numpy import sum, ones_like
+import nrrd
+
+from config import *
 
 
 class SimulationRunner:
@@ -19,6 +20,7 @@ class SimulationRunner:
         self._simulation_path = simulation_infos["file_path"]
         self._simulation_parameters = simulation_infos["param_file"]
         self._compartment_ids = simulation_infos["compartment_ids"]
+        self._event_loop = new_event_loop()
 
     def run(self, output_folder, test_mode=False):
         geometry_output_folder = path.join(output_folder, "geometry_outputs")
@@ -54,11 +56,14 @@ class SimulationRunner:
             path.join(simulation_output_folder, self._simulation_parameters)
         )
 
+        set_event_loop(self._event_loop)
         async_loop = get_event_loop()
 
         with open(path.join(output_folder, "{}.log".format(self._base_naming)), "w+") as log_file:
+            print("Generating simulation geometry")
             async_loop.run_until_complete(self._launch_command(geometry_command, log_file, "[RUNNING VOXSIM]"))
             self._rename_and_copy_compartments(geometry_output_folder, simulation_output_folder)
+            print("Simulating DWI signal")
             async_loop.run_until_complete(self._launch_command(simulation_command, log_file, "[RUNNING FIBERFOX]"))
             async_loop.close()
 

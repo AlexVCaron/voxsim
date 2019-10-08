@@ -1,13 +1,8 @@
 from lxml.etree import Element, SubElement, tostring
 from os import path, makedirs
 
-from factory.simulation_factory.parameters.acquisition_profile import AcquisitionProfile
-from factory.simulation_factory.parameters.compartments_model import CompartmentModels
-from factory.simulation_factory.parameters.default_profile import DefaultProfile
-from factory.simulation_factory.parameters.artifact_model import ArtifactModel
-
 from factory.simulation_factory.helpers.number_tag_to_placeholder import NumberTagToPlaceholder
-
+from factory.simulation_factory.parameters import AcquisitionProfile, CompartmentModels, DefaultProfile, ArtifactModel
 from .simulation_infos import SimulationInfos
 
 

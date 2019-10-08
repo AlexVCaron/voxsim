@@ -1,6 +1,6 @@
 from scripts.new_geometry_factory_test import run_geometry_factory_test
 from scripts.new_simulation_factory_test import run_simulation_factory_test
-from runner.simulation_runner import SimulationRunner
+from runner import SimulationRunner
 
 output_folder = "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/simu_factory_test"
 

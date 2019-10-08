@@ -1,6 +1,6 @@
 from lxml.etree import SubElement
 
-from factory.simulation_factory.parameters.xml_tree_element import XmlTreeElement
+from .xml_tree_element import XmlTreeElement
 from factory.simulation_factory.helpers.number_tag_to_placeholder import NumberTagToPlaceholder
 
 

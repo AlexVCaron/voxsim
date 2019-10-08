@@ -1,5 +1,5 @@
 import numpy as np
-from utils import qspace_sampler as sphere
+from factory.simulation_factory import qspace_sampler as sphere
 
 
 def to_cartesian(r, theta, phi):

@@ -1,50 +1,42 @@
-from math import pi
+from math import pi, sqrt
 
-from factory.geometry_factory.geometry_factory import GeometryFactory
-from factory.simulation_factory.simulation_factory import SimulationFactory
-from runner.simulation_runner import SimulationRunner
-from utils.Rotation import rotate_fiber, Rotation, Plane
+from factory.geometry_factory import GeometryFactory
+from factory.simulation_factory import SimulationFactory
+from runner import SimulationRunner
+from factory.geometry_factory.features import Plane
 
-from utils.qspace_sampler.sampling import multishell
+resolution = [40, 40, 40]
+spacing = [1, 1, 1]
+point_per_centroid = 30
 
-resolution = [10, 10, 10]
-spacing = [2, 2, 2]
-sampling = 30
-
-anchors = [
-    [0.15, 0, 0.5],
-    [0.25, 0.4, 0.5],
-    [0.5, 0.45, 0.5],
-    [0.75, 0.4, 0.5],
-    [0.85, 0, 0.5]
+x_anchors = [
+    0.15,
+    0.25,
+    0.5,
+    0.75,
+    0.85
 ]
 
-fiber_radius = 1.5
+anchors = [[x, sqrt(0.475 ** 2. - (x - 0.5) ** 2.), 0.5] for x in x_anchors]
 
-fibers_limits = [[0, 1], [0, 1], [0, 1]]
+bundle_radius = 8
+fibers_per_bundle = 1000
+cluster_limits = [[0, 1], [0, 1], [0, 1]]
+cluster_center = [0.5, 0.5, 0.5]
 
 
-def create_geometry_francois(output_folder, output_naming):
+def create_geometry(output_folder, output_naming):
     geometry_handler = GeometryFactory.get_geometry_handler(resolution, spacing)
 
-    fiber1 = GeometryFactory.create_fiber(4, 1, sampling, anchors)
+    bundle1 = GeometryFactory.create_bundle(bundle_radius, 1, point_per_centroid, anchors)
+    _, bundle2 = GeometryFactory.rotate_bundle(bundle1, [0.5, 0.5, 0.5], pi, Plane.XY)
 
-    rot_180Z = Rotation(Plane.XY).generate(pi)
-
-    _, fiber2 = rotate_fiber(fiber1, [], rot_180Z, [0.5, 0.5, 0.5], [])
-
-    # _, fiber1 = translate_fiber(fiber1, [], [0, 0.05, 0])
-    # _, fiber2 = translate_fiber(fiber2, [], [0, 0.15, 0])
-
-    # fibers_center = mean(array(fiber1.get_anchors() + fiber2.get_anchors()), axis=0).tolist()
-    fibers_center = [0.5, 0.5, 0.5]
-
-    bundle = GeometryFactory.create_bundle(
-        GeometryFactory.create_bundle_meta(3, 1000, 1, fibers_center, fibers_limits),
-        [fiber1, fiber2]
+    cluster = GeometryFactory.create_cluster(
+        GeometryFactory.create_cluster_meta(3, fibers_per_bundle, 1, cluster_center, cluster_limits),
+        [bundle1, bundle2]
     )
 
-    geometry_handler.add_bundle(bundle)
+    geometry_handler.add_cluster(cluster)
 
     return geometry_handler.generate_json_configuration_files(
         output_naming,
@@ -52,7 +44,7 @@ def create_geometry_francois(output_folder, output_naming):
     ), geometry_handler
 
 
-def create_simulation_b1000_francois(geometry_handler, output_folder, output_naming):
+def get_base_simulation_handler(geometry_handler, add_noise=False):
     fiber_compartment = SimulationFactory.generate_fiber_tensor_compartment(
         1.7E-3, 0.4E-3, 0.4E-3, 100, 70, SimulationFactory.CompartmentType.INTRA_AXONAL
     )
@@ -61,46 +53,89 @@ def create_simulation_b1000_francois(geometry_handler, output_folder, output_nam
         3E-3, 4000, 2000, SimulationFactory.CompartmentType.EXTRA_AXONAL_1
     )
 
-    base_b1000_simulation_handler = SimulationFactory.get_simulation_handler(
+    base_simulation_handler = SimulationFactory.get_simulation_handler(
         geometry_handler, [fiber_compartment, csf_compartment]
     )
 
-    base_b1000_simulation_handler.set_acquisition_profile(
+    base_simulation_handler.set_acquisition_profile(
         SimulationFactory.generate_acquisition_profile(
             100, 1000, 10
         )
     )
 
-    b1000_weights = multishell.compute_weights(1, [64], [[0]], [1])
-    b1000_dirs = multishell.optimize(1, [64], b1000_weights, max_iter=1000)
+    if add_noise:
+        base_simulation_handler.set_artifact_model(
+            SimulationFactory.generate_artifact_model(
+                SimulationFactory.generate_noise_model(SimulationFactory.NoiseType.RICIAN, 30)
+            )
+        )
+
+    return base_simulation_handler
+
+
+def create_simulation_b1000_francois(geometry_handler, output_folder, output_naming):
+    base_b1000_simulation_handler = get_base_simulation_handler(geometry_handler)
+
+    b1000_dirs = SimulationFactory.generate_gradient_vectors([64])
 
     base_b1000_simulation_handler.set_gradient_profile(
         SimulationFactory.generate_gradient_profile(
-            [0] + [1000 for i in range(64)],
-            [[0, 0, 0]] + b1000_dirs,
+            [1000 for i in range(64)],
+            b1000_dirs,
+            1,
             SimulationFactory.AcquisitionType.STEJSKAL_TANNER
         )
     )
 
     return base_b1000_simulation_handler.generate_xml_configuration_file(
-        output_naming,
-        output_folder
+        output_naming, output_folder
+    )
+
+
+def create_simulation_multishell_francois(geometry_handler, output_folder, output_naming):
+    base_multishell_simulation_handler = get_base_simulation_handler(geometry_handler)
+
+    multishell_dirs = SimulationFactory.generate_gradient_vectors([30, 30, 30])
+
+    b_values = [500, 1000, 1500]
+
+    base_multishell_simulation_handler.set_gradient_profile(
+        SimulationFactory.generate_gradient_profile(
+            [b_val for i in range(30) for b_val in b_values],
+            multishell_dirs,
+            1
+        )
+    )
+
+    return base_multishell_simulation_handler.generate_xml_configuration_file(
+        output_naming, output_folder
     )
 
 
 if __name__ == "__main__":
-    geometry_infos, geometry_handler = create_geometry_francois(
+    geometry_infos, geometry_handler = create_geometry(
         "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois",
         "geometry"
     )
 
-    simulation_infos = create_simulation_b1000_francois(
+    simulation_b1000_infos = create_simulation_b1000_francois(
         geometry_handler,
         "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois",
-        "simulation"
+        "simulation_b1000"
     )
 
-    SimulationRunner("runner", geometry_infos, simulation_infos).run(
+    SimulationRunner("simulation_b1000", geometry_infos, simulation_b1000_infos).run(
         "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois/output"
     )
+
+    simulation_multishell_infos = create_simulation_multishell_francois(
+        geometry_handler,
+        "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois",
+        "simulation_multishell"
+    )
+
+    SimulationRunner("simulation_multishell", geometry_infos, simulation_b1000_infos).run(
+        "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois/output"
+    )
+
 

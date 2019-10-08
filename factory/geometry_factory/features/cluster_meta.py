@@ -1,9 +1,10 @@
-from .ORM.Objects.json_data import JsonData
-from .ORM.orm_exception import ORMException
 from ast import literal_eval
 
+from .ORM import ORMException
+from .ORM.Objects import JsonData
 
-class BundleMeta(JsonData):
+
+class ClusterMeta(JsonData):
 
     def __init__(self):
         super().__init__()

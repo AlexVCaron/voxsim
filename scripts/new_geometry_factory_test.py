@@ -1,11 +1,10 @@
 from math import pi
 
-from factory.geometry_factory.geometry_factory import GeometryFactory
-from utils.Rotation import rotate_fiber, Rotation, Plane
+from factory.geometry_factory import GeometryFactory
+from factory.geometry_factory.features import Plane
 
 resolution = [10, 10, 10]
 spacing = [2, 2, 2]
-sampling = 30
 
 spheres_center = [
     [-2, 7, 10],
@@ -13,8 +12,12 @@ spheres_center = [
 ]
 sphere_radius = 5
 
-fibers_limits = [[0, 1], [0, 1], [0, 1]]
-fibers_center = [0, 0, 0]
+n_point_per_centroid = 30
+bundle_radius = 4
+bundle_symmetry = 1
+bundle_n_fibers = 1E4
+bundle_limits = [[0, 1], [0, 1], [0, 1]]
+bundle_center = [0, 0, 0]
 
 base_anchors = [
     [0.5, -0.3, 0.5],
@@ -40,18 +43,15 @@ base_anchors = [
 def run_geometry_factory_test(output_folder, output_naming):
     geometry_handler = GeometryFactory.get_geometry_handler(resolution, spacing)
 
-    fiber1 = GeometryFactory.create_fiber(4, 1, sampling, base_anchors)
+    bundle1 = GeometryFactory.create_bundle(bundle_radius, bundle_symmetry, n_point_per_centroid, base_anchors)
+    _, bundle2 = GeometryFactory.rotate_bundle(bundle1, [0.5, 0.5, 0.5], pi / 6., Plane.YZ)
 
-    rot_30X = Rotation(Plane.YZ).generate(pi / 6.)
-
-    _, fiber2 = rotate_fiber(fiber1, [], rot_30X, [0.5, 0.5, 0.5], [])
-
-    bundle = GeometryFactory.create_bundle(
-        GeometryFactory.create_bundle_meta(3, 100000, 1, fibers_center, fibers_limits),
-        [fiber1, fiber2]
+    cluster = GeometryFactory.create_cluster(
+        GeometryFactory.create_cluster_meta(3, bundle_n_fibers, 1, bundle_center, bundle_limits),
+        [bundle1, bundle2]
     )
 
-    geometry_handler.add_bundle(bundle)
+    geometry_handler.add_cluster(cluster)
 
     sphere_1 = GeometryFactory.create_sphere(sphere_radius, spheres_center)
 

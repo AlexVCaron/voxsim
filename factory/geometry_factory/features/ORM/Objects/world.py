@@ -1,4 +1,4 @@
-from factory.geometry_factory.features.ORM.Objects.json_data import JsonData
+from .json_data import JsonData
 from factory.geometry_factory.features.ORM.orm_exception import ORMException
 
 

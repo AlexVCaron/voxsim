@@ -1,10 +1,6 @@
-from scipy.ndimage import rotate
-from .features.bundle import Bundle
-from .features.bundle_meta import BundleMeta
-from .features.fiber import Fiber
-from .features.sphere import Sphere
-from factory.geometry_factory.handlers.geometry_handler import GeometryHandler
-from .features.utils.plane import Plane
+from .features import Cluster, ClusterMeta, Bundle, Sphere, Plane
+from .handlers import GeometryHandler
+from .utils import rotate_bundle, Rotation, translate_bundle
 
 
 class GeometryFactory:
@@ -14,36 +10,52 @@ class GeometryFactory:
         return GeometryHandler(resolution, spacing)
 
     @staticmethod
-    def create_bundle_meta(dimensions, density, sampling_distance, center, limits):
-        bundle_meta = BundleMeta()
-        bundle_meta.set_dimensions(dimensions)\
-                   .set_center(center)\
-                   .set_limits(limits)\
-                   .set_density(density)\
-                   .set_sampling(sampling_distance)
+    def create_cluster_meta(dimensions, fibers_per_bundle, sampling_distance, center, limits):
+        cluster_meta = ClusterMeta()
+        cluster_meta.set_dimensions(dimensions)\
+                    .set_center(center)\
+                    .set_limits(limits)\
+                    .set_density(fibers_per_bundle)\
+                    .set_sampling(sampling_distance)
 
-        return bundle_meta
+        return cluster_meta
 
     @staticmethod
-    def create_bundle(meta, fibers=list):
+    def create_cluster(meta, bundles=list):
+        cluster = Cluster()
+        cluster.set_cluster_meta(meta).set_bundles(bundles)
+
+        return cluster
+
+    @staticmethod
+    def create_bundle(radius, symmetry, n_point_per_centroid, anchors=list):
         bundle = Bundle()
-        bundle.set_bundle_meta(meta).set_fibers(fibers)
+        bundle.set_radius(radius)\
+              .set_symmetry(symmetry)\
+              .set_n_point_per_centroid(n_point_per_centroid)\
+              .set_anchors(anchors)
 
         return bundle
 
     @staticmethod
-    def create_fiber(radius, symmetry, sampling, anchors=list):
-        fiber = Fiber()
-        fiber.set_radius(radius).set_symmetry(symmetry).set_sampling(sampling).set_anchors(anchors)
-
-        return fiber
+    def rotate_bundle(bundle, center, angle, plane=Plane.XY, bbox=None, bbox_center=None):
+        bbox, anchors = rotate_bundle(bundle, Rotation(plane).generate(angle), center, bbox, bbox_center)
+        return bbox, GeometryFactory.create_bundle(
+            bundle.get_radius(),
+            bundle.get_symmetry(),
+            bundle.get_n_point_per_centroid(),
+            anchors
+        )
 
     @staticmethod
-    def rotate_fiber(fiber, angle, plane=Plane.XY):
-        anchors = rotate(fiber.get_anchors(), angle, plane)
-        fiber.set_anchors(anchors)
-
-        return fiber
+    def translate_bundle(bundle, translation, bbox=None):
+        bbox, anchors = translate_bundle(bundle, translation, bbox)
+        return bbox, GeometryFactory.create_bundle(
+            bundle.get_radius(),
+            bundle.get_symmetry(),
+            bundle.get_n_point_per_centroid(),
+            anchors
+        )
 
     @staticmethod
     def create_sphere(radius, center, scaling=1):

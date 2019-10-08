@@ -1,4 +1,4 @@
-from factory.common.common import AttributeAsDictClass
+from factory.common import AttributeAsDictClass
 
 
 class GeometryInfos(AttributeAsDictClass):
