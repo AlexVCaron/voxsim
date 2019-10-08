@@ -1,7 +1,7 @@
 import json
 from abc import abstractclassmethod, ABCMeta
 
-from factory.geometry_factory.features.ORM import ORMException
+from .orm_exception import ORMException
 
 from json import encoder
 encoder.FLOAT_REPR = lambda o: format(o, '.10f')

@@ -1,5 +1,4 @@
-from .ORM import ORMException
-from .ORM.Objects import JsonData
+from .ORM.Objects import JsonData, ORMException
 
 
 class Bundle(JsonData):

@@ -1,7 +1,6 @@
 from ast import literal_eval
 
-from .ORM import ORMException
-from .ORM.Objects import JsonData
+from .ORM.Objects import JsonData, ORMException
 
 
 class ClusterMeta(JsonData):

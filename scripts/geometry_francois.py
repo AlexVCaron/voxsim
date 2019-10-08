@@ -1,4 +1,5 @@
 from math import pi, sqrt
+from numpy import mean
 
 from factory.geometry_factory import GeometryFactory
 from factory.simulation_factory import SimulationFactory
@@ -34,6 +35,29 @@ def create_geometry(output_folder, output_naming):
     cluster = GeometryFactory.create_cluster(
         GeometryFactory.create_cluster_meta(3, fibers_per_bundle, 1, cluster_center, cluster_limits),
         [bundle1, bundle2]
+    )
+
+    geometry_handler.add_cluster(cluster)
+
+    return geometry_handler.generate_json_configuration_files(
+        output_naming,
+        output_folder
+    ), geometry_handler
+
+
+def create_split_geometry(output_folder, output_naming, rotation=None):
+    geometry_handler = GeometryFactory.get_geometry_handler(resolution, spacing)
+
+    bundle = GeometryFactory.create_bundle(bundle_radius, 1, point_per_centroid, anchors)
+
+    if rotation:
+        _, bundle = GeometryFactory.rotate_bundle(bundle, [0.5, 0.5, 0.5], rotation, Plane.XY)
+
+    specific_center = mean(bundle.get_anchors(), axis=0).tolist()
+
+    cluster = GeometryFactory.create_cluster(
+        GeometryFactory.create_cluster_meta(3, fibers_per_bundle, 1, specific_center, cluster_limits),
+        [bundle]
     )
 
     geometry_handler.add_cluster(cluster)
@@ -113,29 +137,50 @@ def create_simulation_multishell_francois(geometry_handler, output_folder, outpu
 
 
 if __name__ == "__main__":
-    geometry_infos, geometry_handler = create_geometry(
+    # geometry_infos, geometry_handler = create_geometry(
+    #     "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois",
+    #     "geometry"
+    # )
+
+    geometry_infos, geometry_handler = create_split_geometry(
         "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois",
-        "geometry"
+        "geometry_split_b1"
     )
 
     simulation_b1000_infos = create_simulation_b1000_francois(
         geometry_handler,
         "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois",
-        "simulation_b1000"
+        "simulation_split_b1_b1000"
     )
 
-    SimulationRunner("simulation_b1000", geometry_infos, simulation_b1000_infos).run(
+    SimulationRunner("simulation_split_b1_b1000", geometry_infos, simulation_b1000_infos).run(
         "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois/output"
     )
 
-    simulation_multishell_infos = create_simulation_multishell_francois(
+    geometry_infos, geometry_handler = create_split_geometry(
+        "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois",
+        "geometry_split_b2",
+        pi
+    )
+
+    simulation_b1000_infos = create_simulation_b1000_francois(
         geometry_handler,
         "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois",
-        "simulation_multishell"
+        "simulation_split_b2_b1000"
     )
 
-    SimulationRunner("simulation_multishell", geometry_infos, simulation_b1000_infos).run(
+    SimulationRunner("simulation_split_b2_b1000", geometry_infos, simulation_b1000_infos).run(
         "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois/output"
     )
+
+    # simulation_multishell_infos = create_simulation_multishell_francois(
+    #     geometry_handler,
+    #     "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois",
+    #     "simulation_multishell"
+    # )
+    #
+    # SimulationRunner("simulation_multishell", geometry_infos, simulation_b1000_infos).run(
+    #     "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois/output"
+    # )
 
 

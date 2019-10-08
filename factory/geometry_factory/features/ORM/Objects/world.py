@@ -1,5 +1,5 @@
 from .json_data import JsonData
-from factory.geometry_factory.features.ORM.orm_exception import ORMException
+from .orm_exception import ORMException
 
 
 class World(JsonData):

@@ -1,7 +1,6 @@
 import json
 
-from .ORM import ORMException
-from .ORM.Objects import JsonData
+from .ORM.Objects import JsonData, ORMException
 from .cluster_meta import ClusterMeta
 from .bundle import Bundle
 

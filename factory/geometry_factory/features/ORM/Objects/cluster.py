@@ -1,5 +1,5 @@
 from .structure import Structure
-from factory.geometry_factory.features.ORM import ORMException
+from .orm_exception import ORMException
 
 
 class Cluster(Structure):
