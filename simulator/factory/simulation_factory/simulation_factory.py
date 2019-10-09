@@ -296,6 +296,22 @@ class SimulationFactory:
 
     @staticmethod
     def generate_fiber_tensor_compartment(d1, d2, d3, t1, t2, compartment_type):
+        """
+        Generates a tensor model for a fiber compartment. Can only be used for the intra or inter axonal compartment.
+        :param d1: axial diffusivity of the compartment (mm^2/s)
+        :type d1: float
+        :param d2: first radial diffusivity of the compartment (mm^2/s)
+        :type d2: float
+        :param d3: second radial diffusivity of the compartment (mm^2/s)
+        :type d3: float
+        :type t1: int
+        :param t2: T2 relaxation time of the compartment (ms)
+        :type t2: int
+        :param compartment_type: simulation compartment to which links the model (see CompartmentType enum)
+        :type compartment_type: CompartmentType
+        :return: A dictionary describing the tensor model
+        :rtype: dict
+        """
         assert compartment_type in [
             SimulationFactory.CompartmentType.INTRA_AXONAL, SimulationFactory.CompartmentType.INTER_AXONAL
         ]
@@ -312,6 +328,19 @@ class SimulationFactory:
 
     @staticmethod
     def generate_extra_ball_compartment(diffusivity, t1, t2, compartment_type):
+        """
+        Generates a ball model for a non-fiber compartment. Can only be used for the extra axonal compartments.
+        :param diffusivity: diffusivity of the compartment (mm^2/s)
+        :type diffusivity: float
+        :param t1: T1 relaxation time of the compartment (ms)
+        :type t1: int
+        :param t2: T2 relaxation time of the compartment (ms)
+        :type t2: int
+        :param compartment_type: simulation compartment to which links the model (see CompartmentType enum)
+        :type compartment_type: CompartmentType
+        :return: A dictionary describing the ball model
+        :rtype: dict
+        """
         assert compartment_type in [
             SimulationFactory.CompartmentType.EXTRA_AXONAL_1, SimulationFactory.CompartmentType.EXTRA_AXONAL_2
         ]
