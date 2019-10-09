@@ -22,9 +22,11 @@ class GeometryFactory:
         return cluster_meta
 
     @staticmethod
-    def create_cluster(meta, bundles=list):
+    def create_cluster(meta, bundles=list, world_center=None):
         cluster = Cluster()
-        cluster.set_cluster_meta(meta).set_bundles(bundles)
+        cluster.set_cluster_meta(meta)\
+               .set_bundles(bundles)\
+               .set_world_center(world_center if world_center else meta.get_center())
 
         return cluster
 

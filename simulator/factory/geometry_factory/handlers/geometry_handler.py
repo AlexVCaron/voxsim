@@ -32,10 +32,7 @@ class GeometryHandler:
             "",
             ["{}_f_{}.vspl".format(naming, i)],
             [1],
-            [c * s for c, s in zip(
-                self._parameters_dict["clusters"][i].get_cluster_center(),
-                self._parameters_dict["clusters"][i].get_cluster_scaling(self.get_resolution())
-            )]
+            self._parameters_dict["clusters"][i].get_world_center()
         )
 
     def _get_number_of_clusters(self):

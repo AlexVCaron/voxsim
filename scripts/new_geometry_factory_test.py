@@ -18,6 +18,7 @@ bundle_symmetry = 1
 bundle_n_fibers = 1E4
 bundle_limits = [[0, 1], [0, 1], [0, 1]]
 bundle_center = [0, 0, 0]
+world_center = [5, 5, 5]
 
 base_anchors = [
     [0.5, -0.3, 0.5],
@@ -48,7 +49,8 @@ def run_geometry_factory_test(output_folder, output_naming):
 
     cluster = GeometryFactory.create_cluster(
         GeometryFactory.create_cluster_meta(3, bundle_n_fibers, 1, bundle_center, bundle_limits),
-        [bundle1, bundle2]
+        [bundle1, bundle2],
+        world_center
     )
 
     geometry_handler.add_cluster(cluster)

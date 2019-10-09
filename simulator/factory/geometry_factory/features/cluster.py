@@ -11,6 +11,7 @@ class Cluster(JsonData):
         super().__init__()
         self._values["meta"] = ClusterMeta()
         self._values["data"] = []
+        self._world_center = None
 
         self._required += ["meta", "data"]
 
@@ -27,6 +28,13 @@ class Cluster(JsonData):
 
     def add_bundle(self, bundle):
         self._append_value("data", bundle)
+        return self
+
+    def get_world_center(self):
+        return self._world_center
+
+    def set_world_center(self, center):
+        self._world_center = center
         return self
 
     def get_cluster_center(self):
