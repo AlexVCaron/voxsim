@@ -22,7 +22,7 @@ class SimulationRunner:
         self._compartment_ids = simulation_infos["compartment_ids"]
         self._event_loop = new_event_loop()
 
-    def run(self, output_folder, test_mode=False):
+    def run(self, output_folder, test_mode=False, relative_fiber_compartment=True):
         geometry_output_folder = path.join(output_folder, "geometry_outputs")
         simulation_output_folder = path.join(output_folder, "simulation_outputs")
 
@@ -33,13 +33,14 @@ class SimulationRunner:
             makedirs(simulation_output_folder)
 
         singularity = path.join(singularity_path, singularity_name)
-        geometry_command = "singularity run -B {} --app launch_voxsim {} -f {} -r {} -s {} -o {} --comp-map {} --quiet".format(
+        geometry_command = "singularity run -B {} --app launch_voxsim {} -f {} -r {} -s {} -o {} --comp-map {} {} --quiet".format(
             ",".join([self._geometry_path, geometry_output_folder]),
             singularity,
             path.join(self._geometry_path, self._geometry_base_file),
             ",".join([str(r) for r in self._geometry_resolution]),
             ",".join([str(s) for s in self._geometry_spacing]),
             path.join(geometry_output_folder, self._base_naming),
+            "rel" if relative_fiber_compartment else "abs",
             "--no-process" if test_mode else "--quiet"
         )
         simulation_command = "singularity run -B {} --app launch_mitk {} -p {} -i {} -o {} {}".format(

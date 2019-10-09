@@ -21,12 +21,11 @@ x_anchors = [
 anchors = [[x, sqrt(0.475 ** 2. - (x - 0.5) ** 2.), 0.5] for x in x_anchors]
 
 bundle_radius = 8
-fibers_per_bundle = 1000
 cluster_limits = [[0, 1], [0, 1], [0, 1]]
 cluster_center = [0.5, 0.5, 0.5]
 
 
-def create_geometry(output_folder, output_naming):
+def create_geometry(output_folder, output_naming, fibers_per_bundle):
     geometry_handler = GeometryFactory.get_geometry_handler(resolution, spacing)
 
     bundle1 = GeometryFactory.create_bundle(bundle_radius, 1, point_per_centroid, anchors)
@@ -45,7 +44,7 @@ def create_geometry(output_folder, output_naming):
     ), geometry_handler
 
 
-def create_split_geometry(output_folder, output_naming, rotation=None):
+def create_split_geometry(output_folder, output_naming, fibers_per_bundle, rotation=None):
     geometry_handler = GeometryFactory.get_geometry_handler(resolution, spacing)
 
     bundle = GeometryFactory.create_bundle(bundle_radius, 1, point_per_centroid, anchors)
@@ -70,11 +69,11 @@ def create_split_geometry(output_folder, output_naming, rotation=None):
 
 def get_base_simulation_handler(geometry_handler, add_noise=False):
     fiber_compartment = SimulationFactory.generate_fiber_tensor_compartment(
-        1.7E-3, 0.4E-3, 0.4E-3, 100, 70, SimulationFactory.CompartmentType.INTRA_AXONAL
+        1.7E-3, 0.4E-3, 0.4E-3, 780, 110, SimulationFactory.CompartmentType.INTRA_AXONAL
     )
 
     csf_compartment = SimulationFactory.generate_extra_ball_compartment(
-        3E-3, 4000, 2000, SimulationFactory.CompartmentType.EXTRA_AXONAL_1
+        3E-3, 920, 80, SimulationFactory.CompartmentType.EXTRA_AXONAL_1
     )
 
     base_simulation_handler = SimulationFactory.get_simulation_handler(
@@ -137,41 +136,70 @@ def create_simulation_multishell_francois(geometry_handler, output_folder, outpu
 
 
 if __name__ == "__main__":
-    # geometry_infos, geometry_handler = create_geometry(
+    geometry_infos, geometry_handler = create_geometry(
+        "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois",
+        "geometry_1k",
+        1000
+    )
+
+    simulation_b1000_infos = create_simulation_b1000_francois(
+        geometry_handler,
+        "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois",
+        "simulation_b1000_1k"
+    )
+
+    SimulationRunner("simulation_b1000_1k", geometry_infos, simulation_b1000_infos).run(
+        "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois/output",
+        relative_fiber_compartment=False
+    )
+
+    geometry_infos, geometry_handler = create_geometry(
+        "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois",
+        "geometry_10k",
+        10000
+    )
+
+    simulation_b1000_infos = create_simulation_b1000_francois(
+        geometry_handler,
+        "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois",
+        "simulation_b1000_10k"
+    )
+
+    SimulationRunner("simulation_b1000_10k", geometry_infos, simulation_b1000_infos).run(
+        "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois/output",
+        relative_fiber_compartment=True
+    )
+
+    # geometry_infos, geometry_handler = create_split_geometry(
     #     "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois",
-    #     "geometry"
+    #     "geometry_split_b1"
     # )
-
-    geometry_infos, geometry_handler = create_split_geometry(
-        "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois",
-        "geometry_split_b1"
-    )
-
-    simulation_b1000_infos = create_simulation_b1000_francois(
-        geometry_handler,
-        "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois",
-        "simulation_split_b1_b1000"
-    )
-
-    SimulationRunner("simulation_split_b1_b1000", geometry_infos, simulation_b1000_infos).run(
-        "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois/output"
-    )
-
-    geometry_infos, geometry_handler = create_split_geometry(
-        "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois",
-        "geometry_split_b2",
-        pi
-    )
-
-    simulation_b1000_infos = create_simulation_b1000_francois(
-        geometry_handler,
-        "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois",
-        "simulation_split_b2_b1000"
-    )
-
-    SimulationRunner("simulation_split_b2_b1000", geometry_infos, simulation_b1000_infos).run(
-        "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois/output"
-    )
+    #
+    # simulation_b1000_infos = create_simulation_b1000_francois(
+    #     geometry_handler,
+    #     "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois",
+    #     "simulation_split_b1_b1000"
+    # )
+    #
+    # SimulationRunner("simulation_split_b1_b1000", geometry_infos, simulation_b1000_infos).run(
+    #     "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois/output"
+    # )
+    #
+    # geometry_infos, geometry_handler = create_split_geometry(
+    #     "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois",
+    #     "geometry_split_b2",
+    #     pi
+    # )
+    #
+    # simulation_b1000_infos = create_simulation_b1000_francois(
+    #     geometry_handler,
+    #     "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois",
+    #     "simulation_split_b2_b1000"
+    # )
+    #
+    # SimulationRunner("simulation_split_b2_b1000", geometry_infos, simulation_b1000_infos).run(
+    #     "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois/output"
+    # )
 
     # simulation_multishell_infos = create_simulation_multishell_francois(
     #     geometry_handler,
