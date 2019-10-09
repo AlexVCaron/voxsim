@@ -1,4 +1,4 @@
-from factory.geometry_factory.geometry_factory import GeometryFactory
+from simulator.factory import GeometryFactory
 
 
 class GeometryHelper:

@@ -1,7 +1,7 @@
 from math import pi
 
-from factory.geometry_factory import GeometryFactory
-from factory.geometry_factory.features import Plane
+from simulator.factory import GeometryFactory
+from simulator.factory import Plane
 
 resolution = [10, 10, 10]
 spacing = [2, 2, 2]

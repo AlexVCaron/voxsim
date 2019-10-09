@@ -1,10 +1,10 @@
 from math import pi, sqrt
 from numpy import mean
 
-from factory.geometry_factory import GeometryFactory
-from factory.simulation_factory import SimulationFactory
-from runner import SimulationRunner
-from factory.geometry_factory.features import Plane
+from simulator.factory import GeometryFactory
+from simulator.factory import SimulationFactory
+from simulator.runner import SimulationRunner
+from simulator.factory import Plane
 
 resolution = [40, 40, 40]
 spacing = [1, 1, 1]
