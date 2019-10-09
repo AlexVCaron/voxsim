@@ -36,14 +36,17 @@ def run_simulation_factory_test(output_folder, output_naming):
     noise_artifact = SimulationFactory.generate_noise_model("gaussian", 30)
     motion_artifact = SimulationFactory.generate_motion_model(True, "random", [3.1415 / 6, 0, 0], [4, 0, 0])
 
-    simulation_handler.set_artifact_model([noise_artifact, motion_artifact])
+    simulation_handler.set_artifact_model(
+        SimulationFactory.generate_artifact_model(noise_artifact, motion_artifact)
+    )
 
     normalize = lambda a: (array(a) / norm(a)).tolist()
 
     simulation_handler.set_gradient_profile(
         SimulationFactory.generate_gradient_profile(
-            [0] + [500 for i in range(9)] + [1000 for i in range(10)] + [2000 for i in range(10)],
-            [[0, 0, 0]] + [normalize([uniform(-1, 1), uniform(-1, 1), uniform(-1, 1)]) for i in range(30)],
+            [500 for i in range(9)] + [1000 for i in range(10)] + [2000 for i in range(10)],
+            [normalize([uniform(-1, 1), uniform(-1, 1), uniform(-1, 1)]) for i in range(30)],
+            1,
             SimulationFactory.AcquisitionType.STEJSKAL_TANNER
         )
     )

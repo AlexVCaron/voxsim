@@ -15,7 +15,7 @@ class SimulationRunner:
         self._geometry_base_file = geometry_infos["base_file"]
         self._geometry_resolution = geometry_infos["resolution"]
         self._geometry_spacing = geometry_infos["spacing"]
-        self._number_of_maps = geometry_infos["number_of_maps"]
+        self._number_of_maps = len(simulation_infos["compartment_ids"])
         self._base_naming = base_naming
         self._simulation_path = simulation_infos["file_path"]
         self._simulation_parameters = simulation_infos["param_file"]

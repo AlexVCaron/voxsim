@@ -36,7 +36,7 @@ class ClusterMeta(JsonData):
         return self._values["center"]
 
     def set_density(self, density):
-        self._set_value("density", density)
+        self._set_value("density", int(density))
         return self
 
     def set_sampling(self, sampling):

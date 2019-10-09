@@ -12,7 +12,7 @@ spheres_center = [
 ]
 sphere_radius = 5
 
-n_point_per_centroid = 30
+n_point_per_centroid = 5
 bundle_radius = 4
 bundle_symmetry = 1
 bundle_n_fibers = 1E4
@@ -53,9 +53,11 @@ def run_geometry_factory_test(output_folder, output_naming):
 
     geometry_handler.add_cluster(cluster)
 
-    sphere_1 = GeometryFactory.create_sphere(sphere_radius, spheres_center)
+    sphere_1 = GeometryFactory.create_sphere(sphere_radius, spheres_center[0])
+    sphere_2 = GeometryFactory.create_sphere(sphere_radius, spheres_center[1])
 
     geometry_handler.add_sphere(sphere_1)
+    geometry_handler.add_sphere(sphere_2)
 
     return geometry_handler.generate_json_configuration_files(
         output_naming,
