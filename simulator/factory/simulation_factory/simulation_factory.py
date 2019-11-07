@@ -1,4 +1,5 @@
 from enum import Enum
+from numpy import concatenate as cat
 
 from .parameters import AcquisitionProfile,\
                         ArtifactModel,\
@@ -121,7 +122,7 @@ class SimulationFactory:
     def generate_gradient_profile(
             bvals,
             bvecs,
-            n_b0=0,
+            n_b0=1,
             g_type=AcquisitionType.STEJSKAL_TANNER,
             *g_type_args,
             **g_type_kwargs
@@ -143,8 +144,8 @@ class SimulationFactory:
         :rtype: GradientProfile
         """
         return GradientProfile(
-            [0 for i in range(n_b0)] + bvals,
-            [[0, 0, 0] for i in range(n_b0)] + bvecs,
+            cat(([0 for i in range(n_b0)], bvals)),
+            cat(([[0, 0, 0] for i in range(n_b0)], bvecs)),
             g_type.value(*g_type_args, **g_type_kwargs)
         )
 

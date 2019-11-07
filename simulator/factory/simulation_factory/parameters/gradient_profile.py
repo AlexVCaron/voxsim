@@ -24,7 +24,7 @@ class TensorValuedByTensorType(XmlTreeElement):
         self._create_text_element(parent_element, "acquisitiontype", "2")
 
         md_element = SubElement(parent_element, "multidimensional")
-        self._create_text_element(md_element, "definition", "2")
+        self._create_text_element(md_element, "definition", "3")
         self._create_text_element(md_element, "bdelta", "0")
 
         tensor_element = SubElement(parent_element, "btensor")
@@ -49,7 +49,7 @@ class TensorValuedByEigsType(XmlTreeElement):
         self._create_text_element(parent_element, "acquisitiontype", "2")
 
         md_element = SubElement(parent_element, "multidimensional")
-        self._create_text_element(md_element, "definition", "1")
+        self._create_text_element(md_element, "definition", "2")
         self._create_text_element(md_element, "bdelta", "0")
 
         tensor_element = SubElement(parent_element, "btensor")
@@ -86,7 +86,11 @@ class GradientProfile(XmlTreeElement):
         self._gtype = g_type
 
     def _scale_gradients(self, bvecs, bvals, nominal_bval):
-        return [(sqrt(bval / nominal_bval) * array(bvec)).tolist() for bvec, bval, in zip(bvecs, bvals)]
+        return [
+            (sqrt(bval / nominal_bval) * array(bvec) 
+             if not (isclose(norm(bvec), 0) or isclose(bval, 0)) else array(bvec)
+            ).tolist() for bvec, bval, in zip(bvecs, bvals)
+        ]
 
     def _get_number_of_gradients(self, directions):
         return len(list(filter(lambda d: not isclose(norm(d), 0.), directions)))
