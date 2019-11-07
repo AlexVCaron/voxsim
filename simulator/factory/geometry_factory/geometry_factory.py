@@ -3,6 +3,8 @@ from .utils import Plane
 from .handlers import GeometryHandler
 from .utils import rotate_bundle, Rotation, translate_bundle
 
+from numpy import array
+
 
 class GeometryFactory:
 
@@ -68,3 +70,16 @@ class GeometryFactory:
             sphere.set_scaling(scaling)
 
         return sphere
+
+    @staticmethod
+    def rotate_sphere(sphere, center, plane, angle):
+        new_sphere = Sphere()
+        rotation = Rotation(plane).generate(angle)
+        new_center = (rotation @ (array(sphere.get_center()) - center)) + center
+
+        new_sphere.set_radius(sphere.get_radius())\
+                  .set_center(new_center.tolist())\
+                  .set_scaling(sphere.get_scaling())
+
+        return new_sphere
+

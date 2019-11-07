@@ -46,7 +46,7 @@ class SimulationRunner:
         simulation_command = "singularity run -B {} --app launch_mitk {} -p {} -i {} -o {} {}".format(
             ",".join([self._simulation_path, simulation_output_folder]),
             singularity,
-            path.join(simulation_output_folder, self._simulation_parameters),
+            path.join(simulation_output_folder, "{}_simulation.ffp".format(self._base_naming)),
             path.join(geometry_output_folder, self._base_naming) + "_merged_bundles.fib",
             path.join(simulation_output_folder, self._base_naming),
             "-v" if test_mode else ""
@@ -54,7 +54,7 @@ class SimulationRunner:
 
         copyfile(
             path.join(self._simulation_path, self._simulation_parameters),
-            path.join(simulation_output_folder, self._simulation_parameters)
+            path.join(simulation_output_folder, "{}_simulation.ffp".format(self._base_naming))
         )
 
         set_event_loop(self._event_loop)
@@ -69,16 +69,24 @@ class SimulationRunner:
             async_loop.close()
 
     def _rename_and_copy_compartments(self, geometry_output_folder, simulation_output_folder):
-        for i in range(self._number_of_maps):
+        copyfile(
+            path.join(geometry_output_folder, self._base_naming + "0.nrrd"),
+            path.join(
+                simulation_output_folder,
+                "{}_simulation.ffp_VOLUME{}.nrrd".format(self._base_naming, self._compartment_ids[0])
+            )
+        )
+
+        if self._number_of_maps > 1:
             copyfile(
-                path.join(geometry_output_folder, self._base_naming + "{}.nrrd".format(i)),
+                path.join(geometry_output_folder, self._base_naming + "_mergedMaps.nrrd"),
                 path.join(
                     simulation_output_folder,
-                    "{}_simulation.ffp_VOLUME{}.nrrd".format(self._base_naming, self._compartment_ids[i])
+                    "{}_simulation.ffp_VOLUME{}.nrrd".format(self._base_naming, self._compartment_ids[1])
                 )
             )
 
-        if len(self._compartment_ids) > self._number_of_maps:
+        if len(self._compartment_ids) > 2:
             self._generate_background_map(geometry_output_folder, simulation_output_folder)
 
     def _generate_background_map(self, geometry_output_folder, simulation_output_folder):
