@@ -25,9 +25,9 @@ class SimulationRunner:
         self._run_simulation = True if simulation_infos else False
         self._event_loop = new_event_loop()
 
-    def run_simulation_standalone(self, output_folder, simulation_infos, test_mode=False):
+    def run_simulation_standalone(self, output_folder, geometry_folder, simulation_infos, test_mode=False):
         simulation_output_folder = path.join(output_folder, "simulation_outputs")
-        geometry_output_folder = path.join(output_folder, "geometry_outputs")
+        geometry_output_folder = path.join(geometry_folder, "geometry_outputs")
         singularity = path.join(singularity_path, singularity_name)
 
         if not path.exists(simulation_output_folder):
