@@ -52,7 +52,7 @@ class SimulationRunner:
 
         with open(path.join(output_folder, "{}.log".format(self._base_naming)), "w+") as log_file:
             print("Generating simulation geometry")
-            self._rename_and_copy_compartments(geometry_output_folder, simulation_output_folder)
+            self._rename_and_copy_compartments_standalone(simulation_infos, geometry_output_folder, simulation_output_folder)
             print("Simulating DWI signal")
             async_loop.run_until_complete(self._launch_command(simulation_command, log_file, "[RUNNING FIBERFOX]"))
             async_loop.close()
