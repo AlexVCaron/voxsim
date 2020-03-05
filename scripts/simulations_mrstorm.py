@@ -106,7 +106,8 @@ def generate_simulation(
             simulations["paths"][i].append(join(output_data, "noiseless_{}_sim_{}.nii.gz".format(output_name, i)))
 
             runner = SimulationRunner("noiseless_{}_sim_{}".format(output_name, i), geometry_infos)
-            runner.run_simulation_standalone(output_data, geometry_infos["data_path"], simulation_infos)
+            runner.set_geometry_base_naming(output_name)
+            runner.run_simulation_standalone(output_data, geometry_infos["file_path"], simulation_infos)
 
         if artifacts_model:
             simulation_handler.set_artifact_model(artifacts_model)
@@ -118,6 +119,7 @@ def generate_simulation(
             simulations["paths"][i].append(join(output_data, "{}_sim_{}.nii.gz".format(output_name, i)))
 
             runner = SimulationRunner("{}_sim_{}".format(output_name, i), geometry_infos)
-            runner.run_simulation_standalone(output_data, geometry_infos["data_path"], simulation_infos)
+            runner.set_geometry_base_naming(output_name)
+            runner.run_simulation_standalone(output_data, geometry_infos["file_path"], simulation_infos)
 
     json.dump(simulations, open(join(output_data, "{}_description.json".format(output_name)), "w+"), indent=4)

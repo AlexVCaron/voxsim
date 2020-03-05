@@ -1,3 +1,4 @@
+import tempfile
 from argparse import ArgumentParser
 from enum import Enum
 import json
@@ -5,8 +6,8 @@ import json
 import logging
 
 import numpy as np
-from os import makedirs, environ, remove, rmdir
-from os.path import exists, join, basename
+from os import makedirs, environ, remove, rmdir, listdir
+from os.path import exists, join, basename, isdir
 from shutil import rmtree, copyfile
 import tarfile
 
@@ -274,15 +275,18 @@ def convert_arange(in_dict, conversions):
     return in_dict
 
 
-def gather_hash_dicts(hash_dict, comm, rank):
+def gather_hash_dicts(hash_dict, comm, rank, data_root):
     hash_dicts = comm.gather(hash_dict, root=0)
 
     if rank == 0:
+        hash_dict = hash_dicts[0]
+
         for hd in hash_dicts[1:]:
             for k, infos in hd.items():
                 if k in hash_dict:
-                    rmtree(infos["data_path"])
+                    rmtree(join(data_root, infos["data_package"]))
                 else:
+                    infos["data_path"] = join(data_root, infos["data_package"])
                     hash_dict[k] = infos
 
         hash_dict = list(hash_dict.values())
@@ -401,57 +405,98 @@ def generate_datasets(args):
     hash_dict = {}
     descriptions = json.load(join(node_geo_output, "description.json"))
     d_out = []
-    for infos, description in zip(geometries_infos, descriptions):
-        geo_hash = infos.pop("hash")
-        if geo_hash in hash_dict:
-            rmdir(infos["data_package"])
-        else:
-            hash_dict[geo_hash] = infos
-            d_out.append(description)
+    with tarfile.open(join(node_root, "geo_package_node_{}.tar.gz".format(rank)), "w:gz") as geo_archive:
+        for infos, description in zip(geometries_infos, descriptions):
+            data_package = infos["data_package"]
 
-    json.dump(d_out, open(join(node_geo_output, "description.json"), "w+"))
+            if geo_hash not in hash_dict:
+                data_name = basename(data_package).split(".")[0]
+                infos["data_package"] = data_name
+                description["data_package"] = data_name
+                geo_hash = infos.pop("hash")
+                hash_dict[geo_hash] = infos
 
-    hash_dict = gather_hash_dicts(hash_dict, comm, rank)
+                with tarfile.open(data_package) as sub_archive:
+                    with tempfile.mkdtemp() as tmp:
+                        sub_archive.extractall(tmp)
+                        for item in listdir(tmp):
+                            base = join(data_name, item)
+                            if isdir(join(tmp, item)):
+                                geo_archive.add(join(tmp, item), arcname=base)
+                            else:
+                                geo_archive.addfile(tarfile.TarInfo(base), open(join(tmp, item)))
+
+                d_out.append(description)
+
+            rmdir(data_package)
+
+        json.dump(d_out, open(join(node_geo_output, "description.json"), "w+"))
+        geo_archive.addfile(
+            tarfile.TarInfo("description_node_{}.json".format(rank)), open(join(node_geo_output, "description.json"))
+        )
+
+    copyfile(
+        join(node_root, "geo_package_node_{}.tar.gz".format(rank)),
+        join(global_geo_output, "geo_package_node_{}.tar.gz".format(rank))
+    )
+
+    remove(join(node_root, "geo_package_node_{}.tar.gz".format(rank)))
+
+    if rank == 0:
+        for item in listdir(global_geo_output):
+            if tarfile.is_tarfile(join(global_geo_output, item)):
+                with tarfile.open(join(global_geo_output, item), "r:gz") as archive:
+                    archive.extractall(global_geo_output)
+                remove(join(global_geo_output, item))
+
+    hash_dict = gather_hash_dicts(hash_dict, comm, rank, global_geo_output)
+
+    if rank == 0:
+        json.dump(hash_dict, open(join(global_geo_output, "description.json"), "w+"))
+        with tarfile.open(join(base_output, "geo_package.tar.gz"), "w:gz") as archive:
+            archive.add(global_geo_output, arcname=basename(global_geo_output))
+
+    copyfile(
+        join(base_output, "geo_package.tar.gz"),
+        join(node_root, "geo_package.tar.gz")
+    )
+
+    with tarfile.open(join(node_root, "geo_package.tar.gz"), "r:gz") as archive:
+        archive.extract(basename(global_geo_output), node_geo_output)
+
+    remove(join(node_root, "geo_package.tar.gz"))
 
     logger.info("Generating simulations on datasets")
     # Generate simulations on remaining geometries
     step = int(len(hash_dict) / world_size)
     remainder = len(hash_dict) % world_size if rank == (world_size - 1) else 0
+    sim_archive = join(node_root, "data_node{}.tar.gz".format(rank))
     for infos in list(hash_dict.values())[rank * step:(rank + 1) * step + remainder]:
         sim_pre = infos.get_base_file_name().split(".")[0].rstrip("_base")
-        # Copy data locally
-        data_package = infos["data_package"]
-        data_name = basename(data_package)
-        copyfile(data_package, join(node_root, data_name))
-        with tarfile.open(join(node_root, data_name), "r") as archive:
-            archive.extractall("data", join(node_root, "tmp_data"))
-        remove(join(node_root, data_name))
-        infos["data_path"] = join(node_root, "tmp_data")
+        data_package = join(node_geo_output, infos["data_package"])
+
+        infos["file_path"] = data_package
         infos.generate_new_key("processing_node", rank)
 
         handler = infos.pop("handler")
         generate_simulation(handler, infos, sim_pre, sim_params, node_sim_output, **simulation_json)
 
-    logger.info("Packing and copying data to storage")
+        description_filename = join(node_sim_output, "{}_description.json".format(sim_pre))
+        description = json.load(open(description_filename))
+        for i in range(len(description["paths"])):
+            description["paths"][i] = join(global_sim_output, "simulation_outputs", basename(description["paths"][i]))
+        json.dump(description, open(description_filename, "w+"))
 
-    if rank == 0:
-        geo_archive = join(node_root, "data.tar.gz")
-        with tarfile.open(geo_archive, "w") as archive:
-            for infos in hash_dict.values():
-                data_package = infos.pop("data_package")
-                node_rank = infos.pop("processing_node")
-                data_name = basename(data_package)
-                archive.add(data_package, arcname="{}_node{}".format(data_name, node_rank))
+        with tarfile.open(sim_archive, "a:gz") as archive:
+            archive.addfile(tarfile.TarInfo("{}_description.json".format(sim_pre)), open(description))
 
-        copyfile(geo_archive, join(global_geo_output, "data.tar.gz"))
-        remove(geo_archive)
-
-    sim_archive = join(node_root, "data_node{}.tar.gz".format(rank))
-    with tarfile.open(sim_archive, "w") as archive:
-        archive.add(sim_params, arcname="params")
-        archive.add(node_sim_output, arcname="simulation")
+    with tarfile.open(sim_archive, "a:gz") as archive:
+        archive.add(join(node_sim_output, "simulations_outputs"), arcname="simulations_outputs")
 
     copyfile(sim_archive, join(global_sim_output, "data_node{}.tar.gz".format(rank)))
+
+    with tarfile.open(join(global_sim_output, "data_node{}.tar.gz".format(rank)), "r:gz") as archive:
+        archive.extractall(join(global_sim_output))
 
 
 def generate_simulation_json(args):
