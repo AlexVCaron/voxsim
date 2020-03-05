@@ -2,8 +2,8 @@ from simulator.factory.common import AttributeAsDictClass
 
 
 class GeometryInfos(AttributeAsDictClass):
-    def __init__(self, file_path, base_file, resolution, spacing, n_maps):
-        super().__init__()
+    def __init__(self, file_path, base_file, resolution, spacing, n_maps, **kwargs):
+        super().__init__(**kwargs)
 
         self._file_path = file_path
         self._base_file = base_file
@@ -34,3 +34,4 @@ class GeometryInfos(AttributeAsDictClass):
 
     def set_spacing(self, spacing):
         self._spacing = spacing
+

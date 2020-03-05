@@ -55,7 +55,7 @@ class SimulationHandler:
 
     def generate_xml_configuration_file(self, output_naming, simulation_path=""):
         if not path.exists(simulation_path):
-            makedirs(simulation_path)
+            makedirs(simulation_path, exist_ok=True)
 
         data = Element("fiberfox")
         image_element = SubElement(data, "image")

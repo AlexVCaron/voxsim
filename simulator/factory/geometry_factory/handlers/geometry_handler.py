@@ -39,9 +39,8 @@ class GeometryHandler:
         return len(self._parameters_dict["clusters"])
 
     def generate_json_configuration_files(self, output_naming, simulation_path=""):
-
         if not path.exists(simulation_path):
-            makedirs(simulation_path)
+            makedirs(simulation_path, exist_ok=True)
 
         with open(path.join(simulation_path, output_naming + "_base.json"), "w+") as base_file:
 

@@ -1,2 +1,12 @@
-singularity_path = "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/singularity/geo_simu"
-singularity_name = "geo_simu_singularity.simg"
+from os.path import join, dirname, realpath
+import json
+
+
+def get_config():
+    with open(join(dirname(realpath(__file__)), "config.json")) as f:
+        return json.load(f)
+
+
+def override_config(config):
+    with open(join(dirname(realpath(__file__)), "config.json"), "w+") as f:
+        json.dump(config, f)

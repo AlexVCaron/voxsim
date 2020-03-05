@@ -5,11 +5,10 @@ from subprocess import PIPE
 from numpy import sum, ones_like
 import nrrd
 
-from config import *
+from config import get_config
 
 
 class SimulationRunner:
-
     def __init__(self, base_naming, geometry_infos, simulation_infos=None):
         self._geometry_path = geometry_infos["file_path"]
         self._geometry_base_file = geometry_infos["base_file"]
@@ -26,12 +25,13 @@ class SimulationRunner:
         self._event_loop = new_event_loop()
 
     def run_simulation_standalone(self, output_folder, geometry_folder, simulation_infos, test_mode=False):
+        config = get_config()
         simulation_output_folder = path.join(output_folder, "simulation_outputs")
         geometry_output_folder = path.join(geometry_folder, "geometry_outputs")
-        singularity = path.join(singularity_path, singularity_name)
+        singularity = path.join(config["singularity_path"], config["singularity_name"])
 
         if not path.exists(simulation_output_folder):
-            makedirs(simulation_output_folder)
+            makedirs(simulation_output_folder, exist_ok=True)
 
         simulation_command = "singularity run -B {} --app launch_mitk {} -p {} -i {} -o {} {}".format(
             ",".join([simulation_infos["file_path"], simulation_output_folder]),
@@ -58,18 +58,19 @@ class SimulationRunner:
             async_loop.close()
 
     def run(self, output_folder, test_mode=False, relative_fiber_compartment=True):
+        config = get_config()
         geometry_output_folder = path.join(output_folder, "geometry_outputs")
 
         if not path.exists(geometry_output_folder):
-            makedirs(geometry_output_folder)
+            makedirs(geometry_output_folder, exist_ok=True)
 
         if self._run_simulation:
             simulation_output_folder = path.join(output_folder, "simulation_outputs")
 
             if not path.exists(simulation_output_folder):
-                makedirs(simulation_output_folder)
+                makedirs(simulation_output_folder, exist_ok=True)
 
-        singularity = path.join(singularity_path, singularity_name)
+        singularity = path.join(config["singularity_path"], config["singularity_name"])
         geometry_command = "singularity run -B {} --app launch_voxsim {} -f {} -r {} -s {} -o {} --comp-map {} {} --quiet".format(
             ",".join([self._geometry_path, geometry_output_folder]),
             singularity,
