@@ -575,5 +575,5 @@ if __name__ == "__main__":
     logger.debug("Arguments parsed")
     step = args.pop("step")
     logger.debug("Loading parser for {}".format(step))
-    Parsers[step](args)
+    Parsers[step.replace("-", "")](args)
     logger.info("{} ended with success".format(step.capitalize()))
