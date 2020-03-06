@@ -184,7 +184,7 @@ def get_parser():
         help="Enables perturbation of the center of a bundle after random transformation"
     )
     cg.add_argument(
-        '-pv', "-pert-var", type=float,
+        '-pv', "--pert-var", type=float,
         help="Variance on the pertubation of the center of bundles after transformation (Default : 0.4)"
     )
 
@@ -197,9 +197,6 @@ def get_parser():
     simu_parser.add_argument(
         "-nf", "--noiseless", action="store_true",
         help="Enables the generation of a noiseless dataset before the one with the artifacts"
-    )
-    simu_parser.add_argument(
-        "-n", "--n-sim", type=int, help="Number of simulations to run (Default : 100)"
     )
     simu_parser.add_argument("-o", "--output", required=True, help="Output json file name and path")
 
@@ -214,7 +211,7 @@ def get_parser():
         help="Enables randomization of gradient shells between simulations"
     )
     gg.add_argument("-b0m", "--b0-mean", type=int, help="Mean number of b0 to generate (Default : 1)")
-    gg.add_argument("-b0v", "--b0-var", type=int, help="Variance for the number of b0 distribution (Default : 0)")
+    gg.add_argument("-b0v", "--b0-var", type=float, help="Variance for the number of b0 distribution (Default : 0)")
     gg.add_argument(
         "-er", "--echo-range", nargs=2, type=int, metavar=("TE_min", "TE_max"),
         help="Possible range of echo time (Default : [70, 190])"
@@ -270,7 +267,10 @@ def rename_parameters(in_dict, replacements):
 def convert_arange(in_dict, conversions):
     for key, n_samples in conversions.items():
         if key in in_dict:
-            in_dict[key] = np.arange(*in_dict[key], n_samples)
+            in_dict[key] = np.arange(
+                *in_dict[key],
+                (in_dict[key][1] - in_dict[key][0]) / float(n_samples)
+            ).astype(type(n_samples)).tolist()
 
     return in_dict
 
@@ -508,7 +508,7 @@ def generate_simulation_json(args):
         "b0_var": "n_b0_var",
         "echo_range": "echo_time_range",
         "rep_range": "rep_time_range",
-        "n_sim": "n_simulations"
+        "noiseless": "generate_noiseless"
     })
 
     artifacts = parameters.pop("artifacts", None)
@@ -521,11 +521,11 @@ def generate_simulation_json(args):
 
     logging.debug("Performing conversion to numpy.arange where required")
     parameters = convert_arange(parameters, {
-        "fib_adiff_range": 100,
-        "fib_rdiff_range": 100,
+        "fib_adiff_range": 100.,
+        "fib_rdiff_range": 100.,
         "fib_t1_range": 100,
         "fib_t2_range": 100,
-        "iso_diff_range": 100,
+        "iso_diff_range": 100.,
         "iso_t1_range": 100,
         "iso_t2_range": 100,
         "echo_time_range": 200,
@@ -534,7 +534,7 @@ def generate_simulation_json(args):
 
     output = parameters.pop("output")
     logging.info("Saving function parameters to {}".format(output))
-    json.dump(parameters, open(output, "w+"))
+    json.dump(parameters, open(output, "w+"), indent=4)
 
 
 def generate_geometry_json(args):
@@ -556,11 +556,20 @@ def generate_geometry_json(args):
 
     logging.debug("Performing conversion to numpy.arange where required")
     if "rad_range" in parameters:
-        parameters["rad_range"] = np.arange(*parameters["rad_range"], 20)
+        parameters["rad_range"] = np.arange(
+            *parameters["rad_range"],
+            (parameters["rad_range"][1] - parameters["rad_range"][0]) / 20.
+        ).tolist()
+
+    parameters["base_anchors"] = np.apply_along_axis(
+        lambda s: [float(ss) for ss in s[0].split(",")],
+        axis=0,
+        arr=np.array(parameters["base_anchors"])[None, :]
+    ).T.tolist()
 
     output = parameters.pop("output")
     logging.info("Saving function parameters to {}".format(output))
-    json.dump(parameters, open(output, "w+"))
+    json.dump(parameters, open(output, "w+"), indent=4)
 
 
 if __name__ == "__main__":
