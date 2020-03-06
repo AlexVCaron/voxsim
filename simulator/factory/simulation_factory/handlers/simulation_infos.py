@@ -5,9 +5,9 @@ class SimulationInfos(AttributeAsDictClass):
 
     def __init__(self, file_path, simulation_file_name, ids):
         super().__init__()
-        self._file_path = file_path
-        self._param_file = simulation_file_name
-        self._compartment_ids = ids
+        self.generate_new_key("file_path", file_path)
+        self.generate_new_key("param_file", simulation_file_name)
+        self.generate_new_key("compartment_ids", ids)
 
     def get_file_path(self):
         return self._file_path

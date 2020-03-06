@@ -3,13 +3,13 @@ from simulator.factory.common import AttributeAsDictClass
 
 class GeometryInfos(AttributeAsDictClass):
     def __init__(self, file_path, base_file, resolution, spacing, n_maps, **kwargs):
+        print(kwargs)
         super().__init__(**kwargs)
-
-        self._file_path = file_path
-        self._base_file = base_file
-        self._resolution = resolution
-        self._spacing = spacing
-        self._number_of_maps = n_maps
+        self.generate_new_key("file_path", file_path)
+        self.generate_new_key("base_file", base_file)
+        self.generate_new_key("resolution", resolution)
+        self.generate_new_key("spacing", spacing)
+        self.generate_new_key("number_of_maps", n_maps)
 
     def get_file_path(self):
         return self._file_path
