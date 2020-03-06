@@ -38,3 +38,6 @@ class AttributeAsDictClass(MutableMapping):
 
     def __str__(self):
         return str({k: self.__dict__[k] for k in self._valid_keys})
+
+    def as_dict(self):
+        return {k: self.__dict__[k] for k in self._valid_keys}

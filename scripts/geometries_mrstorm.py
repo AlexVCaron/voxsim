@@ -110,13 +110,13 @@ def generate_geometries(
         geo_ready_callback(geometries_infos)
 
     if dump_infos:
-        handlerless_infos = []
+        serializable_infos = []
         for info in geometries_infos:
             cp = copy.deepcopy(info)
             cp.pop("handler")
-            handlerless_infos.append(cp)
+            serializable_infos.append(cp.as_dict())
 
-        json.dump(handlerless_infos, open(join(output_data, "description.json"), "w+"))
+        json.dump(serializable_infos, open(join(output_data, "description.json"), "w+"))
 
     return geometries_infos
 
