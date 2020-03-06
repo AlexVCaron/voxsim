@@ -272,7 +272,7 @@ def gather_hash_dicts(hash_dict, comm, rank, data_root):
                 if k in hash_dict:
                     rmtree(join(data_root, infos["data_package"]))
                 else:
-                    infos["data_path"] = join(data_root, infos["data_package"])
+                    infos.generate_new_key("data_path", join(data_root, infos["data_package"]))
                     hash_dict[k] = infos
 
         hash_dict = list(hash_dict.values())
