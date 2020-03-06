@@ -385,7 +385,7 @@ def generate_datasets(args):
     logger.info("Generating geometries")
     geometries_infos = generate_geometries(
         clusters, resolution, spacing, geo_fmt, geo_params, node_geo_output,
-        rank * geometry_json["n_output"] + (rank > 0) * remainder, singularity_conf=conf
+        rank * geometry_json["n_output"] + (rank > 0) * remainder, singularity_conf=conf, dump_infos=True
     )
     logger.debug("Number of geometries generated {}".format(len(geometries_infos)))
 
