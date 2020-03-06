@@ -431,10 +431,11 @@ def generate_datasets(args):
 
     if rank == 0:
         for item in listdir(global_geo_output):
-            if tarfile.is_tarfile(join(global_geo_output, item)):
-                with tarfile.open(join(global_geo_output, item), "r:gz") as archive:
-                    archive.extractall(global_geo_output)
-                remove(join(global_geo_output, item))
+            if not isdir(join(global_geo_output, item)):
+                if tarfile.is_tarfile(join(global_geo_output, item)):
+                    with tarfile.open(join(global_geo_output, item), "r:gz") as archive:
+                        archive.extractall(global_geo_output)
+                    remove(join(global_geo_output, item))
 
     hash_dict = gather_hash_dicts(hash_dict, comm, rank, global_geo_output)
 
