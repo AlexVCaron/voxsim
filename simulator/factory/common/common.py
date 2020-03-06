@@ -3,11 +3,11 @@ from collections.abc import MutableMapping
 
 class AttributeAsDictClass(MutableMapping):
     def __init__(self, **kwargs):
-        self._valid_keys = [self._generate_attr_key(k) for k in kwargs.keys()]
+        self._valid_keys = list(kwargs.keys())
         self.__dict__.update({self._generate_attr_key(k): v for k, v in kwargs.items()})
 
     def generate_new_key(self, key, value):
-        self._valid_keys.append(self._generate_attr_key(key))
+        self._valid_keys.append(key)
         self.__dict__[self._generate_attr_key(key)] = value
 
     def __setitem__(self, key, value):
@@ -40,4 +40,4 @@ class AttributeAsDictClass(MutableMapping):
         return str({k: self.__dict__[k] for k in self._valid_keys})
 
     def as_dict(self):
-        return {k: self.__dict__[k] for k in self._valid_keys}
+        return {k: self.__dict__[self._generate_attr_key(k)] for k in self._valid_keys}
