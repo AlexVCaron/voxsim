@@ -390,7 +390,7 @@ def generate_datasets(args):
 
     # Taking only unique realisations of geometries
     hash_dict = {}
-    descriptions = json.load(join(node_geo_output, "description.json"))
+    descriptions = json.load(open(join(node_geo_output, "description.json")))
     d_out = []
     with tarfile.open(join(node_root, "geo_package_node_{}.tar.gz".format(rank)), "w:gz") as geo_archive:
         for infos, description in zip(geometries_infos, descriptions):
