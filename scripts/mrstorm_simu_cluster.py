@@ -441,6 +441,8 @@ def generate_datasets(args):
 
     if rank == 0:
         serializable_dicts = [d.as_dict() for d in hash_dict]
+        for d in serializable_dicts:
+            d.pop("handler")
         json.dump(serializable_dicts, open(join(global_geo_output, "description.json"), "w+"))
         with tarfile.open(join(base_output, "geo_package.tar.gz"), "w:gz") as archive:
             archive.add(global_geo_output, arcname=basename(global_geo_output))
