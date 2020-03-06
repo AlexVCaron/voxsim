@@ -5,8 +5,7 @@ from os.path import join
 from scipy.stats import norm, vonmises
 import numpy as np
 import json
-from hashlib import blake2b
-from itertools import product
+import copy
 
 from simulator.factory.geometry_factory.geometry_factory import GeometryFactory, Plane
 from simulator.runner.simulation_runner import SimulationRunner
@@ -111,7 +110,13 @@ def generate_geometries(
         geo_ready_callback(geometries_infos)
 
     if dump_infos:
-        json.dump(geometries_infos, open(join(output_data, "description.json"), "w+"))
+        handlerless_infos = []
+        for info in geometries_infos:
+            cp = copy.deepcopy(info)
+            cp.pop("handler")
+            handlerless_infos.append(cp)
+
+        json.dump(handlerless_infos, open(join(output_data, "description.json"), "w+"))
 
     return geometries_infos
 
