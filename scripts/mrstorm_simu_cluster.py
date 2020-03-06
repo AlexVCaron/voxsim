@@ -415,7 +415,7 @@ def generate_datasets(args):
 
                 d_out.append(description)
 
-            rmdir(data_package)
+            remove(data_package)
 
         json.dump(d_out, open(join(node_geo_output, "description.json"), "w+"))
         geo_archive.addfile(
