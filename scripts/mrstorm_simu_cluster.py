@@ -62,35 +62,25 @@ def get_parser():
     subparser = parser.add_subparsers(help="Usable parsers", dest="step")
 
     main_parser = subparser.add_parser(
-        "generate", description=DESCRIPTION
+        "generate", description=GEN_DESCRIPTION
     )
 
     main_parser.add_argument(
-        "resolution", type=int, nargs=3, metavar=("Nx", "Ny", "Nz"),
+        "-r", "--resolution", required=True, nargs=3, type=int, metavar=("Nx", "Ny", "Nz"),
         help="Wanted resolution for the output images"
     )
     main_parser.add_argument(
-        "spacing", type=int, nargs=3, metavar=("Sx", "Sy", "Sz"),
+        "-s", "--spacing", required=True, nargs=3, type=int, metavar=("Sx", "Sy", "Sz"),
         help="Size of voxels of the output images"
     )
 
     main_parser.add_argument(
-        '-g', "--geojson", required=True, metavar="<geo.json>",
+        '-gj', "--geojson", required=True, metavar="<geo.json>",
         help="Json file for geometry (see geo_json parser to generate)"
     )
     main_parser.add_argument(
-        '-s', "--simjson", required=True, metavar="<sim.json>",
+        '-sj', "--simjson", required=True, metavar="<sim.json>",
         help="Json file for simulation (see sim_json parser to generate)"
-    )
-
-    pg = main_parser.add_argument_group("Parallelism")
-    pg.add_argument(
-        '-wg', "--n-workers-geo", type=int, default=-1, metavar="W_geo",
-        help="Number of workers processing the geometries (Default : %(default)s)"
-    )
-    pg.add_argument(
-        '-ws', "--n-workers-sim", type=int, default=-1, metavar="W_sim",
-        help="Number of workers processing the simulations (Default : %(default)s)"
     )
 
     og = main_parser.add_argument_group("Outputs")
