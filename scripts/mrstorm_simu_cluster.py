@@ -295,13 +295,14 @@ def generate_datasets(args):
 
     # Get base directories on node
     logger.debug("Setting up paths")
-    node_root = environ["SLURM_TMPDIR"]
+    node_root = join(environ["SLURM_TMPDIR"], "node{}_root".format(rank))
     geometry_cfg = join(node_root, "geo_cnf.json")
     simulation_cfg = join(node_root, "sim_cnf.json")
     params_root = join(node_root, "params")
     geo_params = join(params_root, "geo")
     sim_params = join(params_root, "sim")
 
+    makedirs(node_root, exist_ok=True)
     makedirs(params_root, exist_ok=True)
     makedirs(geo_params, exist_ok=True)
     makedirs(sim_params, exist_ok=True)
