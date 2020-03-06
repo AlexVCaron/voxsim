@@ -286,6 +286,7 @@ def gather_hash_dicts(hash_dict, comm, rank, data_root):
 
 
 def generate_datasets(args):
+    print(args)
     # Get basic MPI variables
     comm = MPI.COMM_WORLD
     world_size = comm.Get_size()
