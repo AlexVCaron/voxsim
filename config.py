@@ -8,5 +8,6 @@ def get_config():
 
 
 def override_config(config):
+    print(config)
     with open(join(dirname(realpath(__file__)), "config.json"), "w+") as f:
         json.dump(config, f)
