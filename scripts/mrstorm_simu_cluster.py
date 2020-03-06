@@ -404,14 +404,14 @@ def generate_datasets(args):
                 hash_dict[geo_hash] = infos
 
                 with tarfile.open(data_package) as sub_archive:
-                    with tempfile.mkdtemp() as tmp:
-                        sub_archive.extractall(tmp)
-                        for item in listdir(tmp):
-                            base = join(data_name, item)
-                            if isdir(join(tmp, item)):
-                                geo_archive.add(join(tmp, item), arcname=base)
-                            else:
-                                geo_archive.addfile(tarfile.TarInfo(base), open(join(tmp, item)))
+                    tmp = tempfile.mkdtemp()
+                    sub_archive.extractall(tmp)
+                    for item in listdir(tmp):
+                        base = join(data_name, item)
+                        if isdir(join(tmp, item)):
+                            geo_archive.add(join(tmp, item), arcname=base)
+                        else:
+                            geo_archive.addfile(tarfile.TarInfo(base), open(join(tmp, item)))
 
                 d_out.append(description)
 
