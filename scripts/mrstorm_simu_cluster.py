@@ -100,10 +100,6 @@ def get_parser():
         '-gf', "--geo-fmt", default="geo_{}", metavar="<fmt>",
         help="Format for the file names in the geometry output"
     )
-    og.add_argument(
-        '-sf', "--sim-pre", default="file", metavar="<prefix>",
-        help="Prefix for the file names in the simulation output"
-    )
 
     geo_parser = subparser.add_parser(
         "geo-json", description=GEO_DESCRIPTION
@@ -342,7 +338,7 @@ def generate_datasets(args):
     # Fetch parameters and outputs from parser
     geometry_json = json.load(open(geometry_cfg))
     simulation_json = json.load(open(simulation_cfg))
-    geo_fmt = args["geo-fmt"]
+    geo_fmt = args["geo_fmt"]
     base_output = args["out"]
     global_geo_output = join(base_output, args["geoout"])
     global_sim_output = join(base_output, args["simout"])
