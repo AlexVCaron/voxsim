@@ -396,12 +396,11 @@ def generate_datasets(args):
     with tarfile.open(join(node_root, "geo_package_node_{}.tar.gz".format(rank)), "w:gz") as geo_archive:
         for infos, description in zip(geometries_infos, descriptions):
             data_package = infos["data_package"]
-
+            geo_hash = infos.pop("hash")
             if geo_hash not in hash_dict:
                 data_name = basename(data_package).split(".")[0]
                 infos["data_package"] = data_name
                 description["data_package"] = data_name
-                geo_hash = infos.pop("hash")
                 hash_dict[geo_hash] = infos
 
                 with tarfile.open(data_package) as sub_archive:
