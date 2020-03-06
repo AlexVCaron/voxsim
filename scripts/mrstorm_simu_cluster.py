@@ -119,7 +119,7 @@ def get_parser():
         "geo-json", description=GEO_DESCRIPTION
     )
     geo_parser.add_argument(
-        "anchors", nargs="+", metavar="<x,y,z>", dest="anchors",
+        "anchors", nargs="+", metavar="<x,y,z>",
         help="Base anchors for the fibers generated. Format : x.x,y.y,z.z"
     )
     geo_parser.add_argument(
