@@ -563,17 +563,19 @@ def generate_geometry_json(args):
     json.dump(parameters, open(output, "w+"))
 
 
-class Parsers(Enum):
-    generate = generate_datasets
-    simjson = generate_simulation_json
-    geojson = generate_geometry_json
-
-
 if __name__ == "__main__":
+    class Parsers(Enum):
+        generate = generate_datasets
+        simjson = generate_simulation_json
+        geojson = generate_geometry_json
+
     parser = get_parser()
     args = vars(parser.parse_args())
     logger.debug("Arguments parsed")
     step = args.pop("step")
-    logger.debug("Loading parser for {}".format(step))
-    Parsers[step.replace("-", "")](args)
-    logger.info("{} ended with success".format(step.capitalize()))
+    if step is None:
+        parser.print_help()
+    else:
+        logger.debug("Loading parser for {}".format(step))
+        Parsers.__dict__[step.replace("-", "")](args)
+        logger.info("{} ended with success".format(step.capitalize()))
