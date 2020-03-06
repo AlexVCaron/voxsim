@@ -7,6 +7,7 @@ class AttributeAsDictClass(MutableMapping):
         self.__dict__.update({self._generate_attr_key(k): v for k, v in kwargs.items()})
 
     def generate_new_key(self, key, value):
+        print("GEOMETRY INFOS : adding {} -> {}".format(key, value))
         self._valid_keys.append(key)
         self.__dict__[self._generate_attr_key(key)] = value
 
@@ -18,7 +19,8 @@ class AttributeAsDictClass(MutableMapping):
 
     def __delitem__(self, key):
         if self._generate_attr_key(key) in self.__dict__:
-            self.__dict__[self._generate_attr_key(key)] = ""
+            self._valid_keys = list(filter(lambda k: not k == key, self._valid_keys))
+            self.__dict__.pop(self._generate_attr_key(key))
 
     def __getitem__(self, key):
         return self.__dict__[self._generate_attr_key(key)]
@@ -33,7 +35,6 @@ class AttributeAsDictClass(MutableMapping):
         return "_{}".format(key)
 
     def pop(self, k):
-        self._valid_keys = list(filter(lambda key: not k == key, k))
         return super().pop(k)
 
     def __str__(self):
