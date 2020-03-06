@@ -76,7 +76,7 @@ def generate_clusters(
 
 def generate_geometries(
         clusters_groups, resolution, spacing, output_name_fmt, output_params, output_data, init_i=0,
-        geo_ready_callback=lambda a: None, dump_infos=False
+        geo_ready_callback=lambda a: None, dump_infos=False, singularity_conf=None
 ):
     geometries_infos = []
 
@@ -89,7 +89,7 @@ def generate_geometries(
         hash_table.extend(str(resolution + spacing))
 
         infos = handler.generate_json_configuration_files(output_name_fmt.format(i + init_i), output_params)
-        runner = SimulationRunner(output_name_fmt.format(i + init_i), infos)
+        runner = SimulationRunner(output_name_fmt.format(i + init_i), infos, singularity_conf=singularity_conf)
 
         infos.generate_new_key("hash", hash(str(hash_table)))
         infos.generate_new_key("handler", handler)

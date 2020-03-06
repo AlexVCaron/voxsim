@@ -9,7 +9,7 @@ from config import get_config
 
 
 class SimulationRunner:
-    def __init__(self, base_naming, geometry_infos, simulation_infos=None):
+    def __init__(self, base_naming, geometry_infos, simulation_infos=None, singularity_conf=get_config()):
         self._geometry_path = geometry_infos["file_path"]
         self._geometry_base_file = geometry_infos["base_file"]
         self._geometry_resolution = geometry_infos["resolution"]
@@ -22,6 +22,9 @@ class SimulationRunner:
             self._simulation_parameters = simulation_infos["param_file"]
             self._compartment_ids = simulation_infos["compartment_ids"]
 
+        singularity_conf = singularity_conf if singularity_conf else get_config()
+        self._singularity = path.join(singularity_conf["singularity_path"], singularity_conf["singularity_name"])
+
         self._run_simulation = True if simulation_infos else False
         self._event_loop = new_event_loop()
 
@@ -29,17 +32,15 @@ class SimulationRunner:
         self._geometry_base_naming = name
 
     def run_simulation_standalone(self, output_folder, geometry_folder, simulation_infos, test_mode=False):
-        config = get_config()
         simulation_output_folder = path.join(output_folder, "simulation_outputs")
         geometry_output_folder = path.join(geometry_folder, "geometry_outputs")
-        singularity = path.join(config["singularity_path"], config["singularity_name"])
 
         if not path.exists(simulation_output_folder):
             makedirs(simulation_output_folder, exist_ok=True)
 
         simulation_command = "singularity run -B {} --app launch_mitk {} -p {} -i {} -o {} {}".format(
             ",".join([simulation_infos["file_path"], simulation_output_folder]),
-            singularity,
+            self._singularity,
             path.join(simulation_output_folder, "{}_simulation.ffp".format(self._base_naming)),
             path.join(geometry_output_folder, self._base_naming) + "_merged_bundles.fib",
             path.join(simulation_output_folder, self._base_naming),
@@ -62,7 +63,6 @@ class SimulationRunner:
             async_loop.close()
 
     def run(self, output_folder, test_mode=False, relative_fiber_compartment=True):
-        config = get_config()
         geometry_output_folder = path.join(output_folder, "geometry_outputs")
 
         if not path.exists(geometry_output_folder):
@@ -74,10 +74,9 @@ class SimulationRunner:
             if not path.exists(simulation_output_folder):
                 makedirs(simulation_output_folder, exist_ok=True)
 
-        singularity = path.join(config["singularity_path"], config["singularity_name"])
         geometry_command = "singularity run -B {} --app launch_voxsim {} -f {} -r {} -s {} -o {} --comp-map {} {} --quiet".format(
             ",".join([self._geometry_path, geometry_output_folder]),
-            singularity,
+            self._singularity,
             path.join(self._geometry_path, self._geometry_base_file),
             ",".join([str(r) for r in self._geometry_resolution]),
             ",".join([str(s) for s in self._geometry_spacing]),
@@ -89,7 +88,7 @@ class SimulationRunner:
         if self._run_simulation:
             simulation_command = "singularity run -B {} --app launch_mitk {} -p {} -i {} -o {} {}".format(
                 ",".join([self._simulation_path, simulation_output_folder]),
-                singularity,
+                self._singularity,
                 path.join(simulation_output_folder, "{}_simulation.ffp".format(self._base_naming)),
                 path.join(geometry_output_folder, self._base_naming) + "_merged_bundles.fib",
                 path.join(simulation_output_folder, self._base_naming),

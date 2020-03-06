@@ -326,7 +326,6 @@ def generate_datasets(args):
             singularity_path
         )
     conf["singularity_path"] = node_root
-    config.override_config(conf)
 
     # Fetch image parameters from parser
     resolution = args["resolution"]
@@ -385,7 +384,8 @@ def generate_datasets(args):
     logger.debug("Number of clusters generated {}".format(len(clusters)))
     logger.info("Generating geometries")
     geometries_infos = generate_geometries(
-        clusters, resolution, spacing, geo_fmt, geo_params, node_geo_output, rank * geometry_json["n_output"] + (rank > 0) * remainder
+        clusters, resolution, spacing, geo_fmt, geo_params, node_geo_output,
+        rank * geometry_json["n_output"] + (rank > 0) * remainder, singularity_conf=conf
     )
     logger.debug("Number of geometries generated {}".format(len(geometries_infos)))
 
@@ -467,7 +467,10 @@ def generate_datasets(args):
         infos.generate_new_key("processing_node", rank)
 
         handler = infos.pop("handler")
-        generate_simulation(handler, infos, sim_pre, sim_params, node_sim_output, **simulation_json)
+        generate_simulation(
+            handler, infos, sim_pre, sim_params, node_sim_output,
+            singularity_conf=conf, **simulation_json
+        )
 
         description_filename = join(node_sim_output, "{}_description.json".format(sim_pre))
         description = json.load(open(description_filename))

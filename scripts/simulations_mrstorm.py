@@ -21,7 +21,8 @@ def generate_simulation(
         iso_t2_range=np.arange(1000., 3000., 20.),
         echo_time_range=np.arange(70., 190., 3. / 5.),
         rep_time_range=np.arange(600., 1600., 5.),
-        n_coils=30
+        n_coils=30,
+        singularity_conf=None
 ):
     if shells is None:
         shells = [10 for i in range(len(bvalues))]
@@ -105,7 +106,9 @@ def generate_simulation(
 
             simulations["paths"][i].append(join(output_data, "noiseless_{}_sim_{}.nii.gz".format(output_name, i)))
 
-            runner = SimulationRunner("noiseless_{}_sim_{}".format(output_name, i), geometry_infos)
+            runner = SimulationRunner(
+                "noiseless_{}_sim_{}".format(output_name, i), geometry_infos, singularity_conf=singularity_conf
+            )
             runner.set_geometry_base_naming(output_name)
             runner.run_simulation_standalone(output_data, geometry_infos["file_path"], simulation_infos)
 
@@ -118,7 +121,9 @@ def generate_simulation(
 
             simulations["paths"][i].append(join(output_data, "{}_sim_{}.nii.gz".format(output_name, i)))
 
-            runner = SimulationRunner("{}_sim_{}".format(output_name, i), geometry_infos)
+            runner = SimulationRunner(
+                "{}_sim_{}".format(output_name, i), geometry_infos, singularity_conf=singularity_conf
+            )
             runner.set_geometry_base_naming(output_name)
             runner.run_simulation_standalone(output_data, geometry_infos["file_path"], simulation_infos)
 
