@@ -264,7 +264,7 @@ def rename_parameters(in_dict, replacements):
     for in_k, out_k in replacements.items():
         in_dict[out_k] = in_dict.pop(in_k, None)
 
-    return dict(filter(lambda kv: kv[1], in_dict))
+    return dict(filter(lambda kv: kv[1], in_dict.items()))
 
 
 def convert_arange(in_dict, conversions):
@@ -501,7 +501,7 @@ def generate_datasets(args):
 
 def generate_simulation_json(args):
     logging.info("Generating simulation parameters json file")
-    parameters = {k.replace("-", "_"): v for k, v in vars(args).items()}
+    parameters = {k.replace("-", "_"): v for k, v in args.items()}
     parameters = rename_parameters(parameters, {
         "randomize": "randomize_bvecs",
         "b0_mean": "n_b0_mean",
@@ -539,7 +539,7 @@ def generate_simulation_json(args):
 
 def generate_geometry_json(args):
     logging.info("Generating geometry parameters json file")
-    parameters = {k.replace("-", "_"): v for k, v in vars(args).items()}
+    parameters = {k.replace("-", "_"): v for k, v in args.items()}
     parameters = rename_parameters(parameters, {
         "anchors": "base_anchors",
         "bun_max": "max_bundles",
@@ -549,7 +549,7 @@ def generate_geometry_json(args):
         "pert_center": "perturbate_center",
         "pert_var": "perturbation_var"
     })
-    parameters["limits"] = np.array(parameters["limits"]).reshape((3, 2))
+    parameters["limits"] = np.array(parameters["limits"]).reshape((3, 2)).tolist()
 
     logging.debug("Parameters as parsed and ready for function call")
     logging.debug(json.dumps(parameters, indent=4))
