@@ -328,7 +328,7 @@ def generate_datasets(args):
             singularity_path
         )
     conf["singularity_path"] = node_root
-    config.override_config(config)
+    config.override_config(conf)
 
     # Fetch image parameters from parser
     resolution = args["resolution"]
