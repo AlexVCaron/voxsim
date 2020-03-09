@@ -462,7 +462,7 @@ def generate_datasets(args):
     step = int(len(hash_dict) / world_size)
     remainder = len(hash_dict) % world_size if rank == (world_size - 1) else 0
     sim_archive = join(node_root, "data_node{}.tar.gz".format(rank))
-    for infos in list(hash_dict.values())[rank * step:(rank + 1) * step + remainder]:
+    for infos in hash_dict[rank * step:(rank + 1) * step + remainder]:
         sim_pre = infos.get_base_file_name().split(".")[0].rstrip("_base")
         data_package = join(node_geo_output, infos["data_package"])
 
