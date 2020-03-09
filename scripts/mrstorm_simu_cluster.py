@@ -412,14 +412,14 @@ def generate_datasets(args):
                     tmp = tempfile.mkdtemp()
                     sub_archive.extractall(tmp)
 
-                    print("[NODE {}] Archive content {}".format(rank, listdir(tmp)))
+                    print("[NODE {}] Archive content {}".format(rank, listdir(join(tmp, "data"))))
 
                     for item in listdir(join(tmp, "data")):
                         base = join(data_name, item)
                         if isdir(join(tmp, item)):
-                            geo_archive.add(join(tmp, item), arcname=base)
+                            geo_archive.add(join(tmp, "data", item), arcname=base)
                         else:
-                            geo_archive.addfile(tarfile.TarInfo(base), open(join(tmp, item)))
+                            geo_archive.addfile(tarfile.TarInfo(base), open(join(tmp, "data", item)))
 
                 d_out.append(description)
 
