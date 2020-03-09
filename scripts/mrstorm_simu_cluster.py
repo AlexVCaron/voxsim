@@ -414,7 +414,7 @@ def generate_datasets(args):
 
                     print("[NODE {}] Archive content {}".format(rank, listdir(tmp)))
 
-                    for item in listdir(tmp):
+                    for item in listdir(join(tmp, "data")):
                         base = join(data_name, item)
                         if isdir(join(tmp, item)):
                             geo_archive.add(join(tmp, item), arcname=base)
@@ -455,12 +455,12 @@ def generate_datasets(args):
                         join(global_geo_output, item),
                         join(tmp, item)
                     )
+                remove(join(global_geo_output, item))
             else:
                 move(
                     join(global_geo_output, item),
                     join(tmp, item)
                 )
-            remove(join(global_geo_output, item))
 
         rmtree(global_geo_output)
 
