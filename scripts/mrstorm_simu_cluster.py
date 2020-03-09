@@ -8,7 +8,7 @@ import logging
 import numpy as np
 from os import makedirs, environ, remove, rmdir, listdir
 from os.path import exists, join, basename, isdir
-from shutil import rmtree, copyfile
+from shutil import rmtree, copyfile, move, copy2
 import tarfile
 
 from mpi4py import MPI
@@ -393,6 +393,9 @@ def generate_datasets(args):
     hash_dict = {}
     descriptions = json.load(open(join(node_geo_output, "description.json")))
     d_out = []
+
+    print("[NODE {}] Opening {} to save all geos".format(rank, join(node_root, "geo_package_node_{}.tar.gz".format(rank))))
+
     with tarfile.open(join(node_root, "geo_package_node_{}.tar.gz".format(rank)), "w:gz") as geo_archive:
         for infos, description in zip(geometries_infos, descriptions):
             data_package = infos["data_package"]
@@ -403,9 +406,14 @@ def generate_datasets(args):
                 description["data_package"] = data_name
                 hash_dict[geo_hash] = infos
 
+                print("[NODE {}] Unpacking {}".format(rank, data_package))
+
                 with tarfile.open(data_package) as sub_archive:
                     tmp = tempfile.mkdtemp()
                     sub_archive.extractall(tmp)
+
+                    print("[NODE {}] Archive content {}".format(rank, listdir(tmp)))
+
                     for item in listdir(tmp):
                         base = join(data_name, item)
                         if isdir(join(tmp, item)):
@@ -422,6 +430,9 @@ def generate_datasets(args):
             tarfile.TarInfo("description_node_{}.json".format(rank)), open(join(node_geo_output, "description.json"))
         )
 
+    print("[NODE {}] Copying data from {} to {}".format(rank, join(node_root, "geo_package_node_{}.tar.gz".format(rank)),
+          join(global_geo_output, "geo_package_node_{}.tar.gz".format(rank))))
+
     copyfile(
         join(node_root, "geo_package_node_{}.tar.gz".format(rank)),
         join(global_geo_output, "geo_package_node_{}.tar.gz".format(rank))
@@ -429,13 +440,35 @@ def generate_datasets(args):
 
     remove(join(node_root, "geo_package_node_{}.tar.gz".format(rank)))
 
+    comm.Barrier()
+
     if rank == 0:
+        tmp = tempfile.mkdtemp()
         for item in listdir(global_geo_output):
             if not isdir(join(global_geo_output, item)):
                 if tarfile.is_tarfile(join(global_geo_output, item)):
+                    print("[NODE {}] Unpacking {} to {}".format(rank, join(global_geo_output, item), tmp))
                     with tarfile.open(join(global_geo_output, item), "r:gz") as archive:
-                        archive.extractall(global_geo_output)
-                    remove(join(global_geo_output, item))
+                        archive.extractall(tmp)
+                else:
+                    copyfile(
+                        join(global_geo_output, item),
+                        join(tmp, item)
+                    )
+            else:
+                move(
+                    join(global_geo_output, item),
+                    join(tmp, item)
+                )
+            remove(join(global_geo_output, item))
+
+        rmtree(global_geo_output)
+
+        move(
+            tmp,
+            global_geo_output,
+            copy_function=copy2
+        )
 
     hash_dict = gather_hash_dicts(hash_dict, comm, rank, global_geo_output)
 
@@ -446,6 +479,8 @@ def generate_datasets(args):
         json.dump(serializable_dicts, open(join(global_geo_output, "description.json"), "w+"))
         with tarfile.open(join(base_output, "geo_package.tar.gz"), "w:gz") as archive:
             archive.add(global_geo_output, arcname=basename(global_geo_output))
+
+    comm.Barrier()
 
     copyfile(
         join(base_output, "geo_package.tar.gz"),
