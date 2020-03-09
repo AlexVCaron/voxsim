@@ -416,7 +416,7 @@ def generate_datasets(args):
 
                     for item in listdir(join(tmp, "data")):
                         base = join(data_name, item)
-                        if isdir(join(tmp, item)):
+                        if isdir(join(tmp, "data", item)):
                             geo_archive.add(join(tmp, "data", item), arcname=base)
                         else:
                             geo_archive.addfile(tarfile.TarInfo(base), open(join(tmp, "data", item)))
