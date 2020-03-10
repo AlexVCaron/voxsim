@@ -413,7 +413,7 @@ def generate_datasets(args):
     d_out = []
 
     print("[NODE {}] Opening {} to save all geos".format(rank, join(node_root, "geo_package_node_{}.tar.gz".format(rank))))
-
+    tmp_merge = tempfile.mkdtemp()
     for infos, description in zip(geometries_infos, descriptions):
         data_package = infos["data_package"]
         geo_hash = infos.pop("hash")
@@ -424,7 +424,6 @@ def generate_datasets(args):
             hash_dict[geo_hash] = infos
 
             print("[NODE {}] Unpacking {}".format(rank, data_package))
-            tmp_merge = tempfile.mkdtemp()
 
             with tarfile.open(data_package) as sub_archive:
                 tmp = tempfile.mkdtemp()
