@@ -416,7 +416,7 @@ def generate_datasets(args):
                     print("[NODE {}] Archive content {}".format(rank, listdir(data_root)))
 
                     for item in listdir(data_root):
-                        base = item # join(data_name, item)
+                        base = join(data_name, item)
                         if isdir(join(data_root, item)):
                             geo_archive.add(join(data_root, item), arcname=base)
                         else:
@@ -439,7 +439,15 @@ def generate_datasets(args):
         join(global_geo_output, "geo_package_node_{}.tar.gz".format(rank))
     )
 
-    remove(join(node_root, "geo_package_node_{}.tar.gz".format(rank)))
+    tmpsave = "temp_node{}".format(rank)
+    makedirs(join(node_root, "..", tmpsave), exist_ok=True)
+
+    move(
+        join(node_root, "geo_package_node_{}.tar.gz".format(rank)),
+        join(node_root, "..", tmpsave, "geo_package_node_{}.tar.gz".format(rank))
+    )
+
+    # remove(join(node_root, "geo_package_node_{}.tar.gz".format(rank)))
 
     comm.Barrier()
 
