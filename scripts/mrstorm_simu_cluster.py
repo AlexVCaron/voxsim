@@ -434,20 +434,20 @@ def generate_datasets(args):
                 print("[NODE {}] Archive content {}".format(rank, listdir(data_root)))
                 fuse_directories_and_overwrite_files(data_root, tmp_merge)
 
-            with tarfile.open(join(node_root, "geo_package_node_{}.tar.gz".format(rank)), "w:gz") as geo_archive:
-                for item in listdir(tmp_merge):
-                    if isdir(join(tmp_merge, item)):
-                        geo_archive.add(join(tmp_merge, item), arcname=item)
-                    else:
-                        geo_archive.addfile(tarfile.TarInfo(item), open(join(tmp_merge, item)))
-
-                d_out.append(description)
-
             # remove(data_package)
             move(
                 data_package,
                 join(node_root, "..", tmpsave, basename(data_package))
             )
+
+            d_out.append(description)
+
+    with tarfile.open(join(node_root, "geo_package_node_{}.tar.gz".format(rank)), "w:gz") as geo_archive:
+        for item in listdir(tmp_merge):
+            if isdir(join(tmp_merge, item)):
+                geo_archive.add(join(tmp_merge, item), arcname=item)
+            else:
+                geo_archive.addfile(tarfile.TarInfo(item), open(join(tmp_merge, item)))
 
         json.dump(d_out, open(join(node_geo_output, "description.json"), "w+"))
         geo_archive.addfile(
