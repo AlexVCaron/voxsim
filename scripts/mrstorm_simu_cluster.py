@@ -364,6 +364,10 @@ def generate_datasets(args):
     logger.debug("  -> Simulation : {}".format(simulation_json))
     logger.debug("Output for datasets : {}".format(base_output))
 
+    # Debug
+    tmpsave = "temp_node{}".format(rank)
+    makedirs(join(node_root, "..", tmpsave), exist_ok=True)
+
     # Format geometry_json file depending on which node
     # is on to have the right number of samples at the end
     remainder = 0
@@ -431,16 +435,20 @@ def generate_datasets(args):
                     print("[NODE {}] Archive content {}".format(rank, listdir(data_root)))
                     fuse_directories_and_overwrite_files(data_root, tmp_merge)
 
-                    for item in listdir(tmp_merge):
-                        base = join(data_name, item)
-                        if isdir(join(tmp_merge, item)):
-                            geo_archive.add(join(tmp_merge, item), arcname=base)
-                        else:
-                            geo_archive.addfile(tarfile.TarInfo(base), open(join(tmp_merge, item)))
+                for item in listdir(tmp_merge):
+                    base = join(data_name, item)
+                    if isdir(join(tmp_merge, item)):
+                        geo_archive.add(join(tmp_merge, item), arcname=base)
+                    else:
+                        geo_archive.addfile(tarfile.TarInfo(base), open(join(tmp_merge, item)))
 
                 d_out.append(description)
 
-            remove(data_package)
+            # remove(data_package)
+            move(
+                data_package,
+                join(node_root, "..", tmpsave, basename(data_package))
+            )
 
         json.dump(d_out, open(join(node_geo_output, "description.json"), "w+"))
         geo_archive.addfile(
@@ -454,9 +462,6 @@ def generate_datasets(args):
         join(node_root, "geo_package_node_{}.tar.gz".format(rank)),
         join(global_geo_output, "geo_package_node_{}.tar.gz".format(rank))
     )
-
-    tmpsave = "temp_node{}".format(rank)
-    makedirs(join(node_root, "..", tmpsave), exist_ok=True)
 
     move(
         join(node_root, "geo_package_node_{}.tar.gz".format(rank)),
