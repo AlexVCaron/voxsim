@@ -6,9 +6,9 @@ import json
 import logging
 
 import numpy as np
-from os import makedirs, environ, remove, rmdir, listdir
+from os import makedirs, environ, remove, walk, listdir
 from os.path import exists, join, basename, isdir
-from shutil import rmtree, copyfile, move, copy2
+from shutil import rmtree, copyfile, move, copy2, copy
 import tarfile
 
 from mpi4py import MPI
@@ -281,6 +281,20 @@ def gather_hash_dicts(hash_dict, comm, rank, data_root):
     return comm.bcast(hash_dict, root=0)
 
 
+# From https://lukelogbook.tech/2018/01/25/merging-two-folders-in-python/
+def fuse_directories_and_overwrite_files(root_src_dir, root_dst_dir):
+    for src_dir, dirs, files in walk(root_src_dir):
+        dst_dir = src_dir.replace(root_src_dir, root_dst_dir, 1)
+        if not exists(dst_dir):
+            makedirs(dst_dir)
+        for file_ in files:
+            src_file = join(src_dir, file_)
+            dst_file = join(dst_dir, file_)
+            if exists(dst_file):
+                remove(dst_file)
+            copy(src_file, dst_dir)
+
+
 def generate_datasets(args):
     print(args)
     # Get basic MPI variables
@@ -407,6 +421,7 @@ def generate_datasets(args):
                 hash_dict[geo_hash] = infos
 
                 print("[NODE {}] Unpacking {}".format(rank, data_package))
+                tmp_merge = tempfile.mkdtemp()
 
                 with tarfile.open(data_package) as sub_archive:
                     tmp = tempfile.mkdtemp()
@@ -414,13 +429,14 @@ def generate_datasets(args):
                     data_root = join(tmp, "data")
 
                     print("[NODE {}] Archive content {}".format(rank, listdir(data_root)))
+                    fuse_directories_and_overwrite_files(data_root, tmp_merge)
 
-                    for item in listdir(data_root):
+                    for item in listdir(tmp_merge):
                         base = join(data_name, item)
-                        if isdir(join(data_root, item)):
-                            geo_archive.add(join(data_root, item), arcname=base)
+                        if isdir(join(tmp_merge, item)):
+                            geo_archive.add(join(tmp_merge, item), arcname=base)
                         else:
-                            geo_archive.addfile(tarfile.TarInfo(base), open(join(data_root, item)))
+                            geo_archive.addfile(tarfile.TarInfo(base), open(join(tmp_merge, item)))
 
                 d_out.append(description)
 
@@ -459,25 +475,8 @@ def generate_datasets(args):
                     print("[NODE {}] Unpacking {} to {}".format(rank, join(global_geo_output, item), tmp))
                     with tarfile.open(join(global_geo_output, item), "r:gz") as archive:
                         archive.extractall(tmp)
-                else:
-                    copyfile(
-                        join(global_geo_output, item),
-                        join(tmp, item)
-                    )
-                remove(join(global_geo_output, item))
-            else:
-                move(
-                    join(global_geo_output, item),
-                    join(tmp, item)
-                )
-
-        rmtree(global_geo_output)
-
-        move(
-            tmp,
-            global_geo_output,
-            copy_function=copy2
-        )
+                    remove(join(global_geo_output, item))
+                    fuse_directories_and_overwrite_files(tmp, global_geo_output)
 
     hash_dict = gather_hash_dicts(hash_dict, comm, rank, global_geo_output)
 
