@@ -414,33 +414,32 @@ def generate_datasets(args):
 
     print("[NODE {}] Opening {} to save all geos".format(rank, join(node_root, "geo_package_node_{}.tar.gz".format(rank))))
 
-    with tarfile.open(join(node_root, "geo_package_node_{}.tar.gz".format(rank)), "w:gz") as geo_archive:
-        for infos, description in zip(geometries_infos, descriptions):
-            data_package = infos["data_package"]
-            geo_hash = infos.pop("hash")
-            if geo_hash not in hash_dict:
-                data_name = basename(data_package).split(".")[0]
-                infos["data_package"] = data_name
-                description["data_package"] = data_name
-                hash_dict[geo_hash] = infos
+    for infos, description in zip(geometries_infos, descriptions):
+        data_package = infos["data_package"]
+        geo_hash = infos.pop("hash")
+        if geo_hash not in hash_dict:
+            data_name = basename(data_package).split(".")[0]
+            infos["data_package"] = data_name
+            description["data_package"] = data_name
+            hash_dict[geo_hash] = infos
 
-                print("[NODE {}] Unpacking {}".format(rank, data_package))
-                tmp_merge = tempfile.mkdtemp()
+            print("[NODE {}] Unpacking {}".format(rank, data_package))
+            tmp_merge = tempfile.mkdtemp()
 
-                with tarfile.open(data_package) as sub_archive:
-                    tmp = tempfile.mkdtemp()
-                    sub_archive.extractall(tmp)
-                    data_root = join(tmp, "data")
+            with tarfile.open(data_package) as sub_archive:
+                tmp = tempfile.mkdtemp()
+                sub_archive.extractall(tmp)
+                data_root = join(tmp, "data")
 
-                    print("[NODE {}] Archive content {}".format(rank, listdir(data_root)))
-                    fuse_directories_and_overwrite_files(data_root, tmp_merge)
+                print("[NODE {}] Archive content {}".format(rank, listdir(data_root)))
+                fuse_directories_and_overwrite_files(data_root, tmp_merge)
 
+            with tarfile.open(join(node_root, "geo_package_node_{}.tar.gz".format(rank)), "w:gz") as geo_archive:
                 for item in listdir(tmp_merge):
-                    base = join(data_name, item)
                     if isdir(join(tmp_merge, item)):
-                        geo_archive.add(join(tmp_merge, item), arcname=base)
+                        geo_archive.add(join(tmp_merge, item), arcname=item)
                     else:
-                        geo_archive.addfile(tarfile.TarInfo(base), open(join(tmp_merge, item)))
+                        geo_archive.addfile(tarfile.TarInfo(item), open(join(tmp_merge, item)))
 
                 d_out.append(description)
 
