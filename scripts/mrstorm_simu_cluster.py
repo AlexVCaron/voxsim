@@ -537,7 +537,7 @@ def generate_datasets(args):
         description_filename = join(node_sim_output, "{}_description.json".format(sim_pre))
         description = json.load(open(description_filename))
         for i in range(len(description["paths"])):
-            description["paths"][i] = join(global_sim_output, "simulation_outputs", basename(description["paths"][i]))
+            description["paths"][str(i)] = join(global_sim_output, "simulation_outputs", basename(description["paths"][str(i)]))
         json.dump(description, open(description_filename, "w+"))
 
         with tarfile.open(sim_archive, "a:gz") as archive:
