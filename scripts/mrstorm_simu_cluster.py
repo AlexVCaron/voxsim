@@ -407,7 +407,7 @@ def generate_datasets(args):
     )
     logger.debug("Number of geometries generated {}".format(len(geometries_infos)))
 
-    # Taking only unique realisations of geometries
+    # Taking only unique realisations of geometries on each node
     hash_dict = {}
     descriptions = json.load(open(join(node_geo_output, "description.json")))
     d_out = []
@@ -419,8 +419,8 @@ def generate_datasets(args):
         geo_hash = infos.pop("hash")
         if geo_hash not in hash_dict:
             data_name = basename(data_package).split(".")[0]
-            infos["data_package"] = data_name
-            description["data_package"] = data_name
+            infos["data_package"] = join(global_geo_output, "geometry", data_name.lstrip('data_package_'))
+            description["data_package"] = infos["data_package"]
             hash_dict[geo_hash] = infos
 
             print("[NODE {}] Unpacking {}".format(rank, data_package))
@@ -470,16 +470,21 @@ def generate_datasets(args):
 
     comm.Barrier()
 
+    # Unpacking all geometries in the global geometry directory
     if rank == 0:
         tmp = tempfile.mkdtemp()
         for item in listdir(global_geo_output):
             if not isdir(join(global_geo_output, item)):
                 if tarfile.is_tarfile(join(global_geo_output, item)):
+                    tmp_arc = tempfile.mkdtemp()
                     print("[NODE {}] Unpacking {} to {}".format(rank, join(global_geo_output, item), tmp))
                     with tarfile.open(join(global_geo_output, item), "r:gz") as archive:
-                        archive.extractall(tmp)
-                    remove(join(global_geo_output, item))
-                    fuse_directories_and_overwrite_files(tmp, global_geo_output)
+                        archive.extractall(tmp_arc)
+                    fuse_directories_and_overwrite_files(tmp, tmp_arc)
+
+        rmtree(global_geo_output)
+        makedirs(global_geo_output, exist_ok=True)
+        fuse_directories_and_overwrite_files(tmp, global_geo_output)
 
     hash_dict = gather_hash_dicts(hash_dict, comm, rank, global_geo_output)
 
