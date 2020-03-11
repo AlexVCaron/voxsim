@@ -371,14 +371,15 @@ def generate_datasets(args):
     # Format geometry_json file depending on which node
     # is on to have the right number of samples at the end
     remainder = 0
+    if "n_output" in geometry_json:
+        remainder = geometry_json["n_output"] % world_size
+
     if rank == 0:
         logger.info("Creating geometry and simulation output folders")
         makedirs(global_geo_output, exist_ok=True)
         makedirs(global_sim_output, exist_ok=True)
 
-        remainder = 0
         if "n_output" in geometry_json:
-            remainder = geometry_json["n_output"] % world_size
             geometry_json["n_output"] = int(geometry_json["n_output"] / world_size)
             logger.debug(
                 "A batch of geometries will have size {} with remainder {}".format(geometry_json["n_output"], remainder)
@@ -517,9 +518,7 @@ def generate_datasets(args):
     sim_archive = join(node_root, "data_node{}.tar.gz".format(rank))
     for infos in hash_dict[rank * step:(rank + 1) * step + remainder]:
         sim_pre = infos.get_base_file_name().split(".")[0].rstrip("_base")
-        data_package = join(node_geo_output, infos["data_subpath"], infos["data_package"])
-
-        infos["file_path"] = data_package
+        infos["file_path"] = node_geo_output
         infos.generate_new_key("processing_node", rank)
 
         handler = infos.pop("handler")
