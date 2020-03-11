@@ -419,8 +419,10 @@ def generate_datasets(args):
         geo_hash = infos.pop("hash")
         if geo_hash not in hash_dict:
             data_name = basename(data_package).split(".")[0]
-            infos["data_package"] = join(global_geo_output, "geometry", data_name.replace("data_package_", "", 1))
+            infos["data_package"] = data_name.replace("data_package_", "", 1)
+            infos.generate_new_key("data_subpath", "geometry_outputs")
             description["data_package"] = infos["data_package"]
+            description["data_subpath"] = infos["data_subpath"]
             hash_dict[geo_hash] = infos
 
             print("[NODE {}] Unpacking {}".format(rank, data_package))
@@ -515,7 +517,7 @@ def generate_datasets(args):
     sim_archive = join(node_root, "data_node{}.tar.gz".format(rank))
     for infos in hash_dict[rank * step:(rank + 1) * step + remainder]:
         sim_pre = infos.get_base_file_name().split(".")[0].rstrip("_base")
-        data_package = join(node_geo_output, infos["data_package"])
+        data_package = join(node_geo_output, infos["data_subpath"], infos["data_package"])
 
         infos["file_path"] = data_package
         infos.generate_new_key("processing_node", rank)

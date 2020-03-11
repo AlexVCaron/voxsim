@@ -78,6 +78,7 @@ def generate_geometries(
         geo_ready_callback=lambda a: None, dump_infos=False, singularity_conf=None
 ):
     geometries_infos = []
+    print("Received starting index {}".format(init_i))
 
     for i, clusters in enumerate(clusters_groups):
         handler = GeometryFactory.get_geometry_handler(resolution, spacing)
