@@ -497,7 +497,8 @@ def generate_datasets(args):
             d.pop("handler")
         json.dump(serializable_dicts, open(join(global_geo_output, "description.json"), "w+"))
         with tarfile.open(join(base_output, "geo_package.tar.gz"), "w:gz") as archive:
-            archive.add(global_geo_output, arcname=basename(global_geo_output))
+            for item in listdir(global_geo_output):
+                archive.add(join(global_geo_output, item), arcname=item)
 
     comm.Barrier()
 
