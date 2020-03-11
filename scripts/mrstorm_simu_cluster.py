@@ -507,7 +507,13 @@ def generate_datasets(args):
     )
 
     with tarfile.open(join(node_root, "geo_package.tar.gz"), "r:gz") as archive:
-        archive.extractall(node_geo_output)
+        for item in archive:
+            if item.isdir():
+                tmp = tempfile.mkdtemp()
+                archive.extract(item, tmp)
+                fuse_directories_and_overwrite_files(tmp, node_geo_output)
+            else:
+                archive.extract(item, node_geo_output)
 
     remove(join(node_root, "geo_package.tar.gz"))
 
