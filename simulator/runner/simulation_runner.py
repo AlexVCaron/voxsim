@@ -153,13 +153,22 @@ class SimulationRunner:
         )
 
         if self._number_of_maps > 1:
-            copyfile(
-                path.join(geometry_output_folder, self._geometry_base_naming + "_mergedMaps.nrrd"),
-                path.join(
-                    simulation_output_folder,
-                    "{}_simulation.ffp_VOLUME{}.nrrd".format(self._base_naming, self._compartment_ids[1])
+            if exists(path.join(geometry_output_folder, self._geometry_base_naming + "_mergedMaps.nrrd")):
+                copyfile(
+                    path.join(geometry_output_folder, self._geometry_base_naming + "_mergedMaps.nrrd"),
+                    path.join(
+                        simulation_output_folder,
+                        "{}_simulation.ffp_VOLUME{}.nrrd".format(self._base_naming, self._compartment_ids[1])
+                    )
                 )
-            )
+            else:
+                copyfile(
+                    path.join(geometry_output_folder, self._geometry_base_naming + "{}.nrrd".format(self._compartment_ids[1])),
+                    path.join(
+                        simulation_output_folder,
+                        "{}_simulation.ffp_VOLUME{}.nrrd".format(self._base_naming, self._compartment_ids[1])
+                    )
+                )
 
         if len(self._compartment_ids) > 2:
             self._generate_background_map(geometry_output_folder, simulation_output_folder, self._compartment_ids)
