@@ -480,7 +480,7 @@ def generate_datasets(args):
                     print("[NODE {}] Unpacking {} to {}".format(rank, join(global_geo_output, item), tmp))
                     with tarfile.open(join(global_geo_output, item), "r:gz") as archive:
                         archive.extractall(tmp_arc)
-                    fuse_directories_and_overwrite_files(tmp, tmp_arc)
+                    fuse_directories_and_overwrite_files(tmp_arc, tmp)
 
         rmtree(global_geo_output)
         makedirs(global_geo_output, exist_ok=True)
