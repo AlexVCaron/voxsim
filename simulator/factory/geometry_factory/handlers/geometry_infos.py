@@ -3,7 +3,6 @@ from simulator.factory.common import AttributeAsDictClass
 
 class GeometryInfos(AttributeAsDictClass):
     def __init__(self, file_path, base_file, resolution, spacing, n_maps, **kwargs):
-        print(kwargs)
         super().__init__(**kwargs)
         self.generate_new_key("file_path", file_path)
         self.generate_new_key("base_file", base_file)

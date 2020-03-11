@@ -270,6 +270,9 @@ def gather_hash_dicts(hash_dict, comm, rank, data_root):
         for hd in hash_dicts[1:]:
             for k, infos in hd.items():
                 if k in hash_dict:
+                    logger.debug("Data package {} already present in the dataset {}".format(
+                        infos["data_package"], hash_dict[k]["data_package"])
+                    )
                     rmtree(join(data_root, infos["data_package"]))
                 else:
                     infos.generate_new_key("data_path", join(data_root, infos["data_package"]))
@@ -296,7 +299,6 @@ def fuse_directories_and_overwrite_files(root_src_dir, root_dst_dir):
 
 
 def generate_datasets(args):
-    print(args)
     # Get basic MPI variables
     comm = MPI.COMM_WORLD
     world_size = comm.Get_size()
@@ -307,11 +309,26 @@ def generate_datasets(args):
     logger = logging.getLogger("{} | PROC {} / {}".format(__name__.split(".")[0], rank, world_size))
     logger.info("Setting up for dataset generation on node {}".format(rank))
 
+    logger.debug("Arguments from the command line")
+    logger.debug(json.dumps(args, indent=4))
+
+    # Set up global directories
+    logger.info("Setting up global paths")
+
+    base_output = args["out"]
+    global_geo_output = join(base_output, args["geoout"])
+    global_sim_output = join(base_output, args["simout"])
+
+    logger.debug("  -> Global output : {}".format(base_output))
+    logger.debug("      -> Geometry output   : {}".format(global_geo_output))
+    logger.debug("      -> Simulation output : {}".format(global_sim_output))
+
     # Get base directories on node
-    logger.debug("Setting up paths")
+    logger.info("Setting up local paths")
+
     node_root = join(environ["SLURM_TMPDIR"], "node{}_root".format(rank))
-    geometry_cfg = join(node_root, "geo_cnf.json")
-    simulation_cfg = join(node_root, "sim_cnf.json")
+    node_geo_output = join(node_root, args["geoout"])
+    node_sim_output = join(node_root, args["simout"])
     params_root = join(node_root, "params")
     geo_params = join(params_root, "geo")
     sim_params = join(params_root, "sim")
@@ -321,13 +338,28 @@ def generate_datasets(args):
     makedirs(geo_params, exist_ok=True)
     makedirs(sim_params, exist_ok=True)
 
+    logger.debug("  -> Node root   : {}".format(node_root))
+    logger.debug("  -> Params root : {}".format(params_root))
+    logger.debug("  -> Outputs     :")
+    logger.debug("      -> Geometry   : {}".format(node_geo_output))
+    logger.debug("      -> Simulation : {}".format(node_sim_output))
+
     # Copy config files on node
-    logger.debug("Copying config files on node")
+    logger.info("Copying config files on node")
+
+    geometry_cfg = join(node_root, "geo_cnf.json")
+    simulation_cfg = join(node_root, "sim_cnf.json")
     copyfile(args["geojson"], geometry_cfg)
     copyfile(args["simjson"], simulation_cfg)
 
+    logger.debug("  -> Source      : {}".format(args["geojson"]))
+    logger.debug("  -> Destination : {}".format(geometry_cfg))
+    logger.debug("  -> Source      : {}".format(args["simjson"]))
+    logger.debug("  -> Destination : {}".format(simulation_cfg))
+
     # Get singularity to run the code
-    logger.info("Copying singularity")
+    logger.info("Copying singularity on the node")
+
     conf = config.get_config()
     singularity_path = join(node_root, conf["singularity_name"])
 
@@ -341,32 +373,25 @@ def generate_datasets(args):
         )
     conf["singularity_path"] = node_root
 
-    # Fetch image parameters from parser
+    # Fetch remaining parameters from parser
     resolution = args["resolution"]
     spacing = args["spacing"]
+    geo_fmt = args["geo_fmt"]
 
     logger.debug("Output images parameters")
     logger.debug("  -> Resolution : {}, {}, {}".format(*resolution))
-    logger.debug("  -> Spacing : {}, {}, {}".format(*spacing))
+    logger.debug("  -> Spacing    : {:.2}, {:.2}, {:.2}".format(*spacing))
 
-    # Fetch parameters and outputs from parser
+    logger.debug("Format for output geometry files : {}".format(geo_fmt))
+
+    # Fetch geometry and simulation configurations
+    logger.info("Opening configuration files for generation")
+
     geometry_json = json.load(open(geometry_cfg))
     simulation_json = json.load(open(simulation_cfg))
-    geo_fmt = args["geo_fmt"]
-    base_output = args["out"]
-    global_geo_output = join(base_output, args["geoout"])
-    global_sim_output = join(base_output, args["simout"])
-    node_geo_output = join(node_root, args["geoout"])
-    node_sim_output = join(node_root, args["simout"])
 
-    logger.debug("Configuration files")
-    logger.debug("  -> Geometry : {}".format(geometry_json))
-    logger.debug("  -> Simulation : {}".format(simulation_json))
-    logger.debug("Output for datasets : {}".format(base_output))
-
-    # Debug
-    tmpsave = "temp_node{}".format(rank)
-    makedirs(join(node_root, "..", tmpsave), exist_ok=True)
+    logger.debug("  -> Geometry :\n{}".format(json.dumps(geometry_json, indent=4)))
+    logger.debug("  -> Simulation :\n{}".format(json.dumps(simulation_json, indent=4)))
 
     # Format geometry_json file depending on which node
     # is on to have the right number of samples at the end
@@ -375,7 +400,7 @@ def generate_datasets(args):
         remainder = geometry_json["n_output"] % world_size
 
     if rank == 0:
-        logger.info("Creating geometry and simulation output folders")
+        logger.info("Creating global geometry and simulation output folders")
         makedirs(global_geo_output, exist_ok=True)
         makedirs(global_sim_output, exist_ok=True)
 
@@ -387,6 +412,8 @@ def generate_datasets(args):
 
         logger.debug("Sending geometry configuration to slave nodes")
         for i in range(1, world_size):
+            if i < remainder:
+                geometry_json["n_output"] += 1
             req = comm.isend(geometry_json, dest=i, tag=11)
             req.wait()
 
@@ -399,50 +426,59 @@ def generate_datasets(args):
 
     # Generate the geometries by batch
     logger.info("Generating clusters from configuration")
+
     clusters = generate_clusters(**geometry_json)
+
     logger.debug("Number of clusters generated {}".format(len(clusters)))
+
     logger.info("Generating geometries")
+
     geometries_infos = generate_geometries(
         clusters, resolution, spacing, geo_fmt, geo_params, node_geo_output,
-        rank * geometry_json["n_output"] + (rank > 0) * remainder, singularity_conf=conf, dump_infos=True
+        rank * (geometry_json["n_output"] + remainder) + (1 - remainder) * remainder,
+        singularity_conf=conf, dump_infos=True
     )
+
     logger.debug("Number of geometries generated {}".format(len(geometries_infos)))
 
     # Taking only unique realisations of geometries on each node
-    hash_dict = {}
-    descriptions = json.load(open(join(node_geo_output, "description.json")))
-    d_out = []
+    logger.info("Merging locally overly similar geometries together")
+    logger.debug("Opening {} to save all geos".format(join(node_root, "geo_package_node_{}.tar.gz".format(rank))))
 
-    print("[NODE {}] Opening {} to save all geos".format(rank, join(node_root, "geo_package_node_{}.tar.gz".format(rank))))
+    hash_dict, d_out = {}, []
+    descriptions = json.load(open(join(node_geo_output, "description.json")))
     tmp_merge = tempfile.mkdtemp()
+
     for infos, description in zip(geometries_infos, descriptions):
         data_package = infos["data_package"]
         geo_hash = infos.pop("hash")
+        data_name = basename(data_package).split(".")[0]
+
         if geo_hash not in hash_dict:
-            data_name = basename(data_package).split(".")[0]
             infos["data_package"] = data_name.replace("data_package_", "", 1)
             infos.generate_new_key("data_subpath", "geometry_outputs")
             description["data_package"] = infos["data_package"]
             description["data_subpath"] = infos["data_subpath"]
             hash_dict[geo_hash] = infos
 
-            print("[NODE {}] Unpacking {}".format(rank, data_package))
+            logger.debug("Unpacking {}".format(data_package))
 
             with tarfile.open(data_package) as sub_archive:
                 tmp = tempfile.mkdtemp()
                 sub_archive.extractall(tmp)
                 data_root = join(tmp, "data")
 
-                print("[NODE {}] Archive content {}".format(rank, listdir(data_root)))
+                logger.debug("Archive content {}".format(listdir(data_root)))
+
                 fuse_directories_and_overwrite_files(data_root, tmp_merge)
 
-            # remove(data_package)
-            move(
-                data_package,
-                join(node_root, "..", tmpsave, basename(data_package))
-            )
+            remove(data_package)
 
             d_out.append(description)
+        else:
+            logger.debug("Geometry {} is already present in the dataset".format(data_name))
+
+    logger.info("Archiving remaining geometries to dump to global output")
 
     with tarfile.open(join(node_root, "geo_package_node_{}.tar.gz".format(rank)), "w:gz") as geo_archive:
         for item in listdir(tmp_merge):
@@ -456,33 +492,34 @@ def generate_datasets(args):
             tarfile.TarInfo("description_node_{}.json".format(rank)), open(join(node_geo_output, "description.json"))
         )
 
-    print("[NODE {}] Copying data from {} to {}".format(rank, join(node_root, "geo_package_node_{}.tar.gz".format(rank)),
-          join(global_geo_output, "geo_package_node_{}.tar.gz".format(rank))))
+    logger.debug("Copying data from {} to {}".format(
+        join(node_root, "geo_package_node_{}.tar.gz".format(rank)),
+        join(global_geo_output, "geo_package_node_{}.tar.gz".format(rank)))
+    )
 
     copyfile(
         join(node_root, "geo_package_node_{}.tar.gz".format(rank)),
         join(global_geo_output, "geo_package_node_{}.tar.gz".format(rank))
     )
 
-    move(
-        join(node_root, "geo_package_node_{}.tar.gz".format(rank)),
-        join(node_root, "..", tmpsave, "geo_package_node_{}.tar.gz".format(rank))
-    )
-
-    # remove(join(node_root, "geo_package_node_{}.tar.gz".format(rank)))
+    remove(join(node_root, "geo_package_node_{}.tar.gz".format(rank)))
 
     comm.Barrier()
 
     # Unpacking all geometries in the global geometry directory
     if rank == 0:
+        logger.info("Merging globally overly similar geometries together")
+
         tmp = tempfile.mkdtemp()
         for item in listdir(global_geo_output):
             if not isdir(join(global_geo_output, item)):
                 if tarfile.is_tarfile(join(global_geo_output, item)):
+                    logger.debug("Unpacking {} to {}".format(join(global_geo_output, item), tmp))
+
                     tmp_arc = tempfile.mkdtemp()
-                    print("[NODE {}] Unpacking {} to {}".format(rank, join(global_geo_output, item), tmp))
                     with tarfile.open(join(global_geo_output, item), "r:gz") as archive:
                         archive.extractall(tmp_arc)
+
                     fuse_directories_and_overwrite_files(tmp_arc, tmp)
 
         rmtree(global_geo_output)
@@ -521,10 +558,12 @@ def generate_datasets(args):
     logger.info("Generating simulations on datasets")
     # Generate simulations on remaining geometries
     step = int(len(hash_dict) / world_size)
-    remainder = len(hash_dict) % world_size if rank == (world_size - 1) else 0
+    remainder = len(hash_dict) % world_size
     sim_archive = join(node_root, "data_node{}.tar.gz".format(rank))
     with tarfile.open(sim_archive, "w:gz") as archive:
-        for infos in hash_dict[rank * step:(rank + 1) * step + remainder]:
+        i0 = rank * step + (rank if rank < remainder else remainder)
+        i1 = (rank + 1) * (rank + 1 if (rank + 1) < remainder else remainder)
+        for infos in hash_dict[i0:i1]:
             sim_pre = infos.get_base_file_name().split(".")[0].rstrip("_base")
             infos["file_path"] = node_geo_output
             infos.generate_new_key("processing_node", rank)

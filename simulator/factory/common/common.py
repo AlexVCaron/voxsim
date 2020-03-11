@@ -7,7 +7,6 @@ class AttributeAsDictClass(MutableMapping):
         self.__dict__.update({self._generate_attr_key(k): v for k, v in kwargs.items()})
 
     def generate_new_key(self, key, value):
-        print("GEOMETRY INFOS : adding {} -> {}".format(key, value))
         self._valid_keys.append(key)
         self.__dict__[self._generate_attr_key(key)] = value
 
