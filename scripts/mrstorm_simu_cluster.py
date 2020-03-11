@@ -523,27 +523,25 @@ def generate_datasets(args):
     step = int(len(hash_dict) / world_size)
     remainder = len(hash_dict) % world_size if rank == (world_size - 1) else 0
     sim_archive = join(node_root, "data_node{}.tar.gz".format(rank))
-    for infos in hash_dict[rank * step:(rank + 1) * step + remainder]:
-        sim_pre = infos.get_base_file_name().split(".")[0].rstrip("_base")
-        infos["file_path"] = node_geo_output
-        infos.generate_new_key("processing_node", rank)
+    with tarfile.open(sim_archive, "w:gz") as archive:
+        for infos in hash_dict[rank * step:(rank + 1) * step + remainder]:
+            sim_pre = infos.get_base_file_name().split(".")[0].rstrip("_base")
+            infos["file_path"] = node_geo_output
+            infos.generate_new_key("processing_node", rank)
 
-        handler = infos.pop("handler")
-        generate_simulation(
-            handler, infos, sim_pre, sim_params, node_sim_output,
-            singularity_conf=conf, **simulation_json
-        )
+            handler = infos.pop("handler")
+            generate_simulation(
+                handler, infos, sim_pre, sim_params, node_sim_output,
+                singularity_conf=conf, **simulation_json
+            )
 
-        description_filename = join(node_sim_output, "{}_description.json".format(sim_pre))
-        description = json.load(open(description_filename))
-        for i in range(len(description["paths"])):
-            description["paths"][str(i)] = [join(global_sim_output, "simulation_outputs", basename(sim)) for sim in description["paths"][str(i)]]
-        json.dump(description, open(description_filename, "w+"))
-
-        with tarfile.open(sim_archive, "a:gz") as archive:
+            description_filename = join(node_sim_output, "{}_description.json".format(sim_pre))
+            description = json.load(open(description_filename))
+            for i in range(len(description["paths"])):
+                description["paths"][str(i)] = [join(global_sim_output, "simulation_outputs", basename(sim)) for sim in description["paths"][str(i)]]
+            json.dump(description, open(description_filename, "w+"))
             archive.addfile(tarfile.TarInfo("{}_description.json".format(sim_pre)), open(description))
 
-    with tarfile.open(sim_archive, "a:gz") as archive:
         archive.add(join(node_sim_output, "simulations_outputs"), arcname="simulations_outputs")
 
     copyfile(sim_archive, join(global_sim_output, "data_node{}.tar.gz".format(rank)))
