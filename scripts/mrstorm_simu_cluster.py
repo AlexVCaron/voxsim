@@ -391,7 +391,7 @@ def generate_datasets(args):
             req.wait()
 
         if "n_output" in geometry_json:
-            geometry_json["n_output"] += remainder
+            geometry_json["n_output"] += int(remainder > 0)
     else:
         logger.debug("Receiving geometry configuration from master node")
         req = comm.irecv(source=0, tag=11)
@@ -537,7 +537,7 @@ def generate_datasets(args):
         description_filename = join(node_sim_output, "{}_description.json".format(sim_pre))
         description = json.load(open(description_filename))
         for i in range(len(description["paths"])):
-            description["paths"][str(i)] = join(global_sim_output, "simulation_outputs", basename(description["paths"][str(i)]))
+            description["paths"][str(i)] = [join(global_sim_output, "simulation_outputs", basename(sim)) for sim in description["paths"][str(i)]]
         json.dump(description, open(description_filename, "w+"))
 
         with tarfile.open(sim_archive, "a:gz") as archive:
