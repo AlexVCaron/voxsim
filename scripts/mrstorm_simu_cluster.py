@@ -70,7 +70,7 @@ def get_parser():
         help="Wanted resolution for the output images"
     )
     main_parser.add_argument(
-        "-s", "--spacing", required=True, nargs=3, type=int, metavar=("Sx", "Sy", "Sz"),
+        "-s", "--spacing", required=True, nargs=3, type=float, metavar=("Sx", "Sy", "Sz"),
         help="Size of voxels of the output images"
     )
 
