@@ -419,7 +419,7 @@ def generate_datasets(args):
         geo_hash = infos.pop("hash")
         if geo_hash not in hash_dict:
             data_name = basename(data_package).split(".")[0]
-            infos["data_package"] = join(global_geo_output, "geometry", data_name.lstrip('data_package_'))
+            infos["data_package"] = join(global_geo_output, "geometry", data_name.replace("data_package_", "", 1))
             description["data_package"] = infos["data_package"]
             hash_dict[geo_hash] = infos
 
