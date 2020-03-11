@@ -114,6 +114,8 @@ class SimulationRunner:
             async_loop.close()
 
     def _rename_and_copy_compartments_standalone(self, simulation_infos, geometry_output_folder, simulation_output_folder):
+        merged_maps = False
+
         copyfile(
             path.join(geometry_output_folder, self._geometry_base_naming + "0.nrrd"),
             path.join(
@@ -124,6 +126,7 @@ class SimulationRunner:
 
         if len(simulation_infos["compartment_ids"]) > 1:
             if exists(path.join(geometry_output_folder, self._geometry_base_naming + "_mergedMaps.nrrd")):
+                merged_maps = True
                 copyfile(
                     path.join(geometry_output_folder, self._geometry_base_naming + "_mergedMaps.nrrd"),
                     path.join(
@@ -131,7 +134,7 @@ class SimulationRunner:
                         "{}_simulation.ffp_VOLUME{}.nrrd".format(self._base_naming, simulation_infos["compartment_ids"][1])
                     )
                 )
-            else:
+            elif exists(path.join(geometry_output_folder, self._geometry_base_naming + "{}.nrrd".format(simulation_infos["compartment_ids"][1]))):
                 copyfile(
                     path.join(geometry_output_folder, self._geometry_base_naming + "{}.nrrd".format(simulation_infos["compartment_ids"][1])),
                     path.join(
@@ -139,9 +142,11 @@ class SimulationRunner:
                         "{}_simulation.ffp_VOLUME{}.nrrd".format(self._base_naming, simulation_infos["compartment_ids"][1])
                     )
                 )
+            elif not simulation_infos["compartment_ids"][1] == "2":
+                self._generate_background_map(geometry_output_folder, simulation_output_folder, simulation_infos["compartment_ids"])
 
         if len(simulation_infos["compartment_ids"]) > 2:
-            self._generate_background_map(geometry_output_folder, simulation_output_folder, simulation_infos["compartment_ids"])
+            self._generate_background_map(geometry_output_folder, simulation_output_folder, simulation_infos["compartment_ids"], merged_maps)
 
     def _rename_and_copy_compartments(self, geometry_output_folder, simulation_output_folder):
         copyfile(
@@ -173,15 +178,17 @@ class SimulationRunner:
         if len(self._compartment_ids) > 2:
             self._generate_background_map(geometry_output_folder, simulation_output_folder, self._compartment_ids)
 
-    def _generate_background_map(self, geometry_output_folder, simulation_output_folder, compartment_ids):
+    def _generate_background_map(self, geometry_output_folder, simulation_output_folder, compartment_ids, merged_maps=False):
         maps = [
             nrrd.read(
                 path.join(geometry_output_folder, "{}{}.nrrd".format(self._geometry_base_naming, 0))
-            )[0],
-            nrrd.read(
-                path.join(geometry_output_folder, "{}{}.nrrd".format(self._geometry_base_naming, "_mergedMaps"))
             )[0]
         ]
+
+        if merged_maps:
+            maps.append(nrrd.read(
+                path.join(geometry_output_folder, "{}{}.nrrd".format(self._geometry_base_naming, "_mergedMaps"))
+            )[0])
 
         header = nrrd.read_header(path.join(geometry_output_folder, "{}{}.nrrd".format(self._geometry_base_naming, 0)))
         extra_map = ones_like(maps[0]) - sum(maps, axis=0)
