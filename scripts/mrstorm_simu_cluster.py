@@ -1,5 +1,6 @@
 import tempfile
 from argparse import ArgumentParser
+from copy import deepcopy
 from enum import Enum
 import json
 
@@ -412,9 +413,10 @@ def generate_datasets(args):
 
         logger.debug("Sending geometry configuration to slave nodes")
         for i in range(1, world_size):
+            geo_json = deepcopy(geometry_json)
             if i < remainder:
-                geometry_json["n_output"] += 1
-            req = comm.isend(geometry_json, dest=i, tag=11)
+                geo_json["n_output"] += 1
+            req = comm.isend(geo_json, dest=i, tag=11)
             req.wait()
 
         if "n_output" in geometry_json:
@@ -435,7 +437,7 @@ def generate_datasets(args):
 
     geometries_infos = generate_geometries(
         clusters, resolution, spacing, geo_fmt, geo_params, node_geo_output,
-        rank * (geometry_json["n_output"] + remainder) + (1 - remainder) * remainder,
+        rank * geometry_json["n_output"] + rank if rank < remainder else remainder,
         singularity_conf=conf, dump_infos=True
     )
 
