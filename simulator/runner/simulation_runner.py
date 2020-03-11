@@ -42,7 +42,7 @@ class SimulationRunner:
             ",".join([simulation_infos["file_path"], simulation_output_folder]),
             self._singularity,
             path.join(simulation_output_folder, "{}_simulation.ffp".format(self._base_naming)),
-            path.join(geometry_output_folder, self._base_naming) + "_merged_bundles.fib",
+            path.join(geometry_output_folder, self._geometry_base_naming) + "_merged_bundles.fib",
             path.join(simulation_output_folder, self._base_naming),
             "-v" if test_mode else ""
         )
@@ -80,7 +80,7 @@ class SimulationRunner:
             path.join(self._geometry_path, self._geometry_base_file),
             ",".join([str(r) for r in self._geometry_resolution]),
             ",".join([str(s) for s in self._geometry_spacing]),
-            path.join(geometry_output_folder, self._base_naming),
+            path.join(geometry_output_folder, self._geometry_base_naming),
             "rel" if relative_fiber_compartment else "abs",
             "--no-process" if test_mode else "--quiet"
         )
@@ -90,7 +90,7 @@ class SimulationRunner:
                 ",".join([self._simulation_path, simulation_output_folder]),
                 self._singularity,
                 path.join(simulation_output_folder, "{}_simulation.ffp".format(self._base_naming)),
-                path.join(geometry_output_folder, self._base_naming) + "_merged_bundles.fib",
+                path.join(geometry_output_folder, self._geometry_base_naming) + "_merged_bundles.fib",
                 path.join(simulation_output_folder, self._base_naming),
                 "-v" if test_mode else ""
             )
@@ -135,7 +135,7 @@ class SimulationRunner:
 
     def _rename_and_copy_compartments(self, geometry_output_folder, simulation_output_folder):
         copyfile(
-            path.join(geometry_output_folder, self._base_naming + "0.nrrd"),
+            path.join(geometry_output_folder, self._geometry_base_naming + "0.nrrd"),
             path.join(
                 simulation_output_folder,
                 "{}_simulation.ffp_VOLUME{}.nrrd".format(self._base_naming, self._compartment_ids[0])
@@ -144,7 +144,7 @@ class SimulationRunner:
 
         if self._number_of_maps > 1:
             copyfile(
-                path.join(geometry_output_folder, self._base_naming + "_mergedMaps.nrrd"),
+                path.join(geometry_output_folder, self._geometry_base_naming + "_mergedMaps.nrrd"),
                 path.join(
                     simulation_output_folder,
                     "{}_simulation.ffp_VOLUME{}.nrrd".format(self._base_naming, self._compartment_ids[1])
@@ -157,14 +157,14 @@ class SimulationRunner:
     def _generate_background_map(self, geometry_output_folder, simulation_output_folder, compartment_ids):
         maps = [
             nrrd.read(
-                path.join(geometry_output_folder, "{}{}.nrrd".format(self._base_naming, 0))
+                path.join(geometry_output_folder, "{}{}.nrrd".format(self._geometry_base_naming, 0))
             )[0],
             nrrd.read(
-                path.join(geometry_output_folder, "{}{}.nrrd".format(self._base_naming, "_mergedMaps"))
+                path.join(geometry_output_folder, "{}{}.nrrd".format(self._geometry_base_naming, "_mergedMaps"))
             )[0]
         ]
 
-        header = nrrd.read_header(path.join(geometry_output_folder, "{}{}.nrrd".format(self._base_naming, 0)))
+        header = nrrd.read_header(path.join(geometry_output_folder, "{}{}.nrrd".format(self._geometry_base_naming, 0)))
         extra_map = ones_like(maps[0]) - sum(maps, axis=0)
         extra_map[extra_map < 0] = 0
 
