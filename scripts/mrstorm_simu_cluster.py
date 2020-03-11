@@ -437,7 +437,7 @@ def generate_datasets(args):
 
     geometries_infos = generate_geometries(
         clusters, resolution, spacing, geo_fmt, geo_params, node_geo_output,
-        rank * geometry_json["n_output"] + rank if rank < remainder else remainder,
+        rank * geometry_json["n_output"] + 0 if rank < remainder else remainder,
         singularity_conf=conf, dump_infos=True
     )
 
