@@ -414,7 +414,7 @@ def generate_datasets(args):
         logger.debug("Sending geometry configuration to slave nodes")
         for i in range(1, world_size):
             geo_json = deepcopy(geometry_json)
-            if i < remainder:
+            if "n_output" in geometry_json and i < remainder:
                 geo_json["n_output"] += 1
             req = comm.isend(geo_json, dest=i, tag=11)
             req.wait()
@@ -437,7 +437,7 @@ def generate_datasets(args):
 
     geometries_infos = generate_geometries(
         clusters, resolution, spacing, geo_fmt, geo_params, node_geo_output,
-        rank * geometry_json["n_output"] + 0 if rank < remainder else remainder,
+        rank * geometry_json["n_output"] + (0 if rank < remainder else remainder),
         singularity_conf=conf, dump_infos=True
     )
 
