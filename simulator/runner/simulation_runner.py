@@ -1,5 +1,6 @@
 from asyncio import sleep, create_subprocess_shell, get_event_loop, new_event_loop, set_event_loop
 from os import path, makedirs
+from os.path import exists
 from shutil import copyfile
 from subprocess import PIPE
 from numpy import sum, ones_like
@@ -122,13 +123,22 @@ class SimulationRunner:
         )
 
         if len(simulation_infos["compartment_ids"]) > 1:
-            copyfile(
-                path.join(geometry_output_folder, self._geometry_base_naming + "_mergedMaps.nrrd"),
-                path.join(
-                    simulation_output_folder,
-                    "{}_simulation.ffp_VOLUME{}.nrrd".format(self._base_naming, simulation_infos["compartment_ids"][1])
+            if exists(path.join(geometry_output_folder, self._geometry_base_naming + "_mergedMaps.nrrd")):
+                copyfile(
+                    path.join(geometry_output_folder, self._geometry_base_naming + "_mergedMaps.nrrd"),
+                    path.join(
+                        simulation_output_folder,
+                        "{}_simulation.ffp_VOLUME{}.nrrd".format(self._base_naming, simulation_infos["compartment_ids"][1])
+                    )
                 )
-            )
+            else:
+                copyfile(
+                    path.join(geometry_output_folder, self._geometry_base_naming + "{}.nrrd".format(simulation_infos["compartment_ids"][1])),
+                    path.join(
+                        simulation_output_folder,
+                        "{}_simulation.ffp_VOLUME{}.nrrd".format(self._base_naming, simulation_infos["compartment_ids"][1])
+                    )
+                )
 
         if len(simulation_infos["compartment_ids"]) > 2:
             self._generate_background_map(geometry_output_folder, simulation_output_folder, simulation_infos["compartment_ids"])
