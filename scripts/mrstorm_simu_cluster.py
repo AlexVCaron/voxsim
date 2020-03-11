@@ -540,7 +540,7 @@ def generate_datasets(args):
             for i in range(len(description["paths"])):
                 description["paths"][str(i)] = [join(global_sim_output, "simulation_outputs", basename(sim)) for sim in description["paths"][str(i)]]
             json.dump(description, open(description_filename, "w+"))
-            archive.addfile(tarfile.TarInfo("{}_description.json".format(sim_pre)), open(description))
+            archive.addfile(tarfile.TarInfo("{}_description.json".format(sim_pre)), open(description_filename))
 
         archive.add(join(node_sim_output, "simulations_outputs"), arcname="simulations_outputs")
 
