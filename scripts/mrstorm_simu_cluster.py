@@ -562,7 +562,7 @@ def generate_datasets(args):
     sim_archive = join(node_root, "data_node{}.tar.gz".format(rank))
     with tarfile.open(sim_archive, "w:gz") as archive:
         i0 = rank * step + (rank if rank < remainder else remainder)
-        i1 = (rank + 1) * (rank + 1 if (rank + 1) < remainder else remainder)
+        i1 = (rank + 1) * step + (rank + 1 if (rank + 1) < remainder else remainder)
         for infos in hash_dict[i0:i1]:
             sim_pre = infos.get_base_file_name().split(".")[0].rstrip("_base")
             infos["file_path"] = node_geo_output
