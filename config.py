@@ -10,4 +10,4 @@ def get_config(path=dirname(realpath(__file__))):
 def override_global_config(config):
     print(config)
     with open(join(dirname(realpath(__file__)), "config.json"), "w+") as f:
-        json.dump(config, f)
+        json.dump(config, f*)

@@ -113,7 +113,7 @@ def generate_simulation(
             runner.run_simulation_standalone(output_data, geometry_infos["file_path"], simulation_infos)
 
         if artifacts_model:
-            simulation_handler.set_artifact_model(artifacts_model)
+            simulation_handler.set_artifact_model(*artifacts_model)
 
             simulation_infos = simulation_handler.generate_xml_configuration_file(
                 "{}_sim_{}".format(output_name, i), output_params
