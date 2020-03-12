@@ -16,5 +16,6 @@ setup(
     license='',
     author='avcaron',
     author_email='',
-    description=''
+    description='',
+    data_files=[('.', ["config.py", "config.json"])]
 )
