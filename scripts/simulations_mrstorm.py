@@ -10,7 +10,7 @@ from simulator.runner.simulation_runner import SimulationRunner
 def generate_simulation(
         geometry_handler, geometry_infos, output_name, output_params, output_data,
         bvalues, shells=None, randomize_bvecs=True,
-        n_simulations=100, artifacts_model=None, generate_noiseless=True,
+        n_simulations=100, artifacts_models=None, generate_noiseless=True,
         n_b0_mean=1., n_b0_var=0.,
         fib_adiff_range=np.arange(1.4E-3, 1.8E-3, 0.4E-5),
         fib_rdiff_range=np.arange(0.6E-3, 0.8E-3, 0.2E-5),
@@ -29,7 +29,7 @@ def generate_simulation(
     else:
         assert len(bvalues) == len(shells)
 
-    assert (artifacts_model or generate_noiseless)
+    assert (artifacts_models or generate_noiseless)
 
     n_b0 = int(norm.rvs(loc=n_b0_mean, scale=n_b0_var, size=1))
 
@@ -64,8 +64,8 @@ def generate_simulation(
             "n_coils": n_coils
         }
 
-        if artifacts_model:
-            simulations["parameters"][i]["artifacts"] = artifacts_model
+        if artifacts_models:
+            simulations["parameters"][i]["artifacts"] = artifacts_models
 
         simulations["paths"][i] = []
         parameters = simulations["parameters"][i]
@@ -112,8 +112,9 @@ def generate_simulation(
             runner.set_geometry_base_naming(output_name)
             runner.run_simulation_standalone(output_data, geometry_infos["file_path"], simulation_infos)
 
-        if artifacts_model:
-            simulation_handler.set_artifact_model(*artifacts_model)
+        if artifacts_models:
+            artifacts_model = SimulationFactory.generate_artifact_model(*artifacts_models)
+            simulation_handler.set_artifact_model(artifacts_model)
 
             simulation_infos = simulation_handler.generate_xml_configuration_file(
                 "{}_sim_{}".format(output_name, i), output_params
