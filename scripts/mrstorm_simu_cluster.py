@@ -606,7 +606,7 @@ def generate_simulation_json(args):
     artifacts = parameters.pop("artifacts", None)
     if artifacts:
         model = json.load(open(artifacts))
-        parameters["artifacts_model"] = model
+        parameters["artifacts_models"] = model
 
     logging.debug("Parameters as parsed and renamed for function call")
     logging.debug(json.dumps(parameters, indent=4))
