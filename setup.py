@@ -5,7 +5,7 @@ if __name__ == "__main__":
     setup(
         name='simulation_generator',
         version='1.0.0',
-        packages=['test', 'test.helpers', 'external', 'external.qspace_sampler', 'external.qspace_sampler.visu',
+        packages=['test', 'test.helpers', 'scripts', 'external', 'external.qspace_sampler', 'external.qspace_sampler.visu',
                   'external.qspace_sampler.bases', 'external.qspace_sampler.bases.tests',
                   'external.qspace_sampler.sampling', 'simulator', 'simulator.runner', 'simulator.runner.impl',
                   'simulator.factory', 'simulator.factory.common', 'simulator.factory.geometry_factory',
