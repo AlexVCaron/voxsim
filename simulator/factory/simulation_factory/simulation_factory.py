@@ -145,7 +145,7 @@ class SimulationFactory:
         """
         return GradientProfile(
             cat(([0 for i in range(n_b0)], bvals)),
-            cat(([[0, 0, 0] for i in range(n_b0)], bvecs)),
+            cat(([[0, 0, 0] for i in range(n_b0)], bvecs)) if n_b0 > 0 else bvecs,
             g_type.value(*g_type_args, **g_type_kwargs)
         )
 
