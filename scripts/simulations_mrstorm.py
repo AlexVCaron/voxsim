@@ -1,3 +1,5 @@
+import copy
+
 import numpy as np
 from scipy.stats import norm
 import json
@@ -10,7 +12,7 @@ from simulator.runner.simulation_runner import SimulationRunner
 def generate_simulation(
         geometry_handler, geometry_infos, output_name, output_params, output_data,
         bvalues, shells=None, randomize_bvecs=True,
-        n_simulations=100, artifacts_models=None, generate_noiseless=True,
+        n_simus=100, artifacts_models=None, generate_noiseless=True,
         n_b0_mean=1., n_b0_var=0.,
         fib_adiff_range=np.arange(1.4E-3, 1.8E-3, 0.4E-5),
         fib_rdiff_range=np.arange(0.6E-3, 0.8E-3, 0.2E-5),
@@ -22,7 +24,9 @@ def generate_simulation(
         echo_time_range=np.arange(70., 190., 3. / 5.),
         rep_time_range=np.arange(600., 1600., 5.),
         n_coils=30,
-        singularity_conf=None
+        singularity_conf=None,
+        sim_ready_callback=lambda *args, **kwargs: None,
+        callback_stride=-1
 ):
     if shells is None:
         shells = [10 for i in range(len(bvalues))]
@@ -44,7 +48,7 @@ def generate_simulation(
         "parameters": {}
     }
 
-    for i in range(n_simulations):
+    for i in range(n_simus):
         simulations["parameters"][i] = {
             "fiber": {
                 "adiff": np.random.choice(fib_adiff_range),
@@ -127,5 +131,24 @@ def generate_simulation(
             )
             runner.set_geometry_base_naming(output_name)
             runner.run_simulation_standalone(output_data, geometry_infos["file_path"], simulation_infos)
+
+        if callback_stride > 0 and i % callback_stride == 0:
+            sim_ready_callback(
+                simulations['paths'][-callback_stride:],
+                copy.deepcopy(
+                    simulations['parameters'][-callback_stride:]
+                )
+            )
+
+    if callback_stride > 0:
+        args = ()
+        if n_simus % callback_stride > 0:
+            args += (
+                simulations['paths'][-(n_simus % callback_stride):],
+                copy.deepcopy(
+                    simulations['parameters'][-(n_simus % callback_stride):]
+                )
+            )
+        sim_ready_callback(*args, end=True)
 
     json.dump(simulations, open(join(output_data, "{}_description.json".format(output_name)), "w+"), indent=4)

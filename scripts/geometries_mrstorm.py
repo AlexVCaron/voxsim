@@ -75,9 +75,10 @@ def generate_clusters(
 
 def generate_geometries(
         clusters_groups, resolution, spacing, output_name_fmt, output_params, output_data, init_i=0,
-        geo_ready_callback=lambda a: None, dump_infos=False, singularity_conf=None
+        geo_ready_callback=lambda *args, **kwargs: None, callback_stride=-1, dump_infos=False, singularity_conf=None
 ):
     geometries_infos = []
+    persistent_infos = []
 
     for i, clusters in enumerate(clusters_groups):
         handler = GeometryFactory.get_geometry_handler(resolution, spacing)
@@ -107,16 +108,25 @@ def generate_geometries(
 
         rmtree(join(output_data, output_name_fmt.format(i + init_i)))
 
-        geo_ready_callback(geometries_infos)
+        if callback_stride > 0 and i % callback_stride == 0:
+            if geo_ready_callback(copy.deepcopy(geometries_infos)):
+                if dump_infos:
+                    persistent_infos.extend(geometries_infos)
+                geometries_infos.clear()
+
+    if callback_stride > 0 and len(clusters_groups) % callback_stride > 0:
+        if geo_ready_callback(copy.deepcopy(geometries_infos), end=True):
+            if dump_infos:
+                persistent_infos.extend(geometries_infos)
+            geometries_infos.clear()
 
     if dump_infos:
         serializable_infos = []
-        for info in geometries_infos:
+        for info in geometries_infos + persistent_infos:
             cp = copy.deepcopy(info)
             cp.pop("handler")
             serializable_infos.append(cp.as_dict())
 
         json.dump(serializable_infos, open(join(output_data, "description.json"), "w+"))
 
-    return geometries_infos
-
+    return geometries_infos + persistent_infos
