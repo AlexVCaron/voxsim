@@ -882,12 +882,15 @@ def unpack_geometry_output(geo_path, empty_path=True):
                     archive.extractall(tmp_arc)
 
                 fuse_directories_and_overwrite_files(tmp_arc, tmp)
+                rmtree(tmp_arc)
+
 
     if empty_path:
         rmtree(geo_path)
         makedirs(geo_path, exist_ok=True)
 
     fuse_directories_and_overwrite_files(tmp, geo_path)
+    rmtree(tmp)
 
 
 def execute_collecting_node(rank, args, mpi_conf):
