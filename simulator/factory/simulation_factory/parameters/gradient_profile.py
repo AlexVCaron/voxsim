@@ -80,15 +80,18 @@ class TensorValuedByParamsType(XmlTreeElement):
 
 class GradientProfile(XmlTreeElement):
     def __init__(self, bvals, bvecs, g_type):
-        self._nominal_bval = max(bvals) if type(g_type) is StejskalTannerType else g_type.get_bval()
-        self._directions = self._scale_gradients(bvecs, bvals, self._nominal_bval)
+        self._nominal_bval = max(bvals) if type(g_type) is StejskalTannerType \
+                        else g_type.get_bval()
+        self._directions = self._scale_gradients(bvecs, bvals)
         self._num_gradients = self._get_number_of_gradients(self._directions)
         self._gtype = g_type
 
-    def _scale_gradients(self, bvecs, bvals, nominal_bval):
+    def _scale_gradients(self, bvecs, bvals):
         return [
-            (sqrt(bval / nominal_bval) * array(bvec) 
-             if not (isclose(norm(bvec), 0) or isclose(bval, 0)) else array(bvec)
+            (
+                (sqrt(bval / self._nominal_bval) * array(bvec))
+                if not (isclose(norm(bvec), 0) or isclose(bval, 0))
+                else array(bvec)
             ).tolist() for bvec, bval, in zip(bvecs, bvals)
         ]
 

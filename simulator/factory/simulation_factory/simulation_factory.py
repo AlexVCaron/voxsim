@@ -123,6 +123,7 @@ class SimulationFactory:
             bvals,
             bvecs,
             n_b0=1,
+            b0_bvec=(0, 0, 0),
             g_type=AcquisitionType.STEJSKAL_TANNER,
             *g_type_args,
             **g_type_kwargs
@@ -136,6 +137,8 @@ class SimulationFactory:
         :type bvecs: list(list(float))
         :param n_b0: number of b0 volumes to simulate
         :type n_b0: int, optional
+        :param b0_bvec: bvec to assign to all b0 volumes
+        :type b0_bvec: list(float)
         :param g_type: type of sequence to simulate (see AcquisitionType enum)
         :type g_type: AcquisitionType, optional
         :param g_type_args: positional arguments needed to initialize the sequence type (see .parameters.GradientProfile)
@@ -144,8 +147,8 @@ class SimulationFactory:
         :rtype: GradientProfile
         """
         return GradientProfile(
-            cat(([0 for i in range(n_b0)], bvals)),
-            cat(([[0, 0, 0] for i in range(n_b0)], bvecs)) if n_b0 > 0 else bvecs,
+            cat(([0 for i in range(n_b0)], bvals)) if n_b0 > 0 else bvals,
+            cat(([b0_bvec for i in range(n_b0)], bvecs)) if n_b0 > 0 else bvecs,
             g_type.value(*g_type_args, **g_type_kwargs)
         )
 

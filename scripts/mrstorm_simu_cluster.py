@@ -10,10 +10,15 @@ import logging
 from itertools import cycle
 
 import numpy as np
-from os import makedirs, environ, remove, walk, listdir
+from os import makedirs, environ, remove, walk, listdir, getcwd
 from os.path import exists, join, basename, isdir, dirname
-from shutil import rmtree, copyfile, move, copy2, copy
+from shutil import rmtree, copyfile, move, copy2, copy, copytree
 import tarfile
+
+import pydevd_pycharm
+from scipy import stats
+
+port_mapping = [51690, 51691, 51692, 51693, 51694, 51695]
 
 from mpi4py import MPI
 
@@ -22,7 +27,7 @@ from scripts.simulations_mrstorm import generate_simulation
 
 import config
 
-logger = logging.getLogger(__name__.split(".")[0])
+logger = logging.getLogger(basename(__file__).split(".")[0])
 
 DESCRIPTION = """
 This program contains all the utilities needed to generate geometries
@@ -77,6 +82,10 @@ def get_parser():
         "-s", "--spacing", required=True, nargs=3, type=float, metavar=("Sx", "Sy", "Sz"),
         help="Size of voxels of the output images"
     )
+    main_parser.add_argument(
+        "-fp", "--float_precision", default=10, type=int, metavar="fp",
+        help="Precision for lossy float conversion (ex: conversion to string)"
+    )
 
     main_parser.add_argument(
         '-gj', "--geojson", required=True, metavar="<geo.json>",
@@ -86,6 +95,10 @@ def get_parser():
         '-sj', "--simjson", required=True, metavar="<sim.json>",
         help="Json file for simulation (see sim_json parser to generate)"
     )
+    main_parser.add_argument(
+        '-v', "--verbose", action="store_true",
+        help="Enables debug messages output"
+    )
 
     pg = main_parser.add_argument_group("Parallelism")
     pg.add_argument(
@@ -94,12 +107,17 @@ def get_parser():
              "main thread will do the collecting when its part of the job is done. (Default : %(default)s)"
     )
     pg.add_argument(
-        '-ngc', "--n-geo-collect", default=10, metavar="ngc",
+        '-ngc', "--n-geo-collect", default=10, type=int, metavar="ngc",
         help="Number of geometries to generate per node before archiving and calling collect. (Default : %(default)s)"
     )
     pg.add_argument(
-        '-nsc', "--n-sim-collect", default=5, metavar="nsc",
+        '-nsc', "--n-sim-collect", default=5, type=int, metavar="nsc",
         help="Number of simulations to generate per node before archiving and calling collect. (Default : %(default)s)"
+    )
+    pg.add_argument(
+        '-nbv', "--n-collect-bf-valid", default=-1, type=int, metavar="nbv",
+        help="Number of processes to collect before starting slaves collectors data validation. This number will "
+             "be capped by the number of available slaves. (Default : %(default)s)"
     )
 
     og = main_parser.add_argument_group("Outputs")
@@ -118,6 +136,12 @@ def get_parser():
     og.add_argument(
         '-gf', "--geo-fmt", default="geo_{}", metavar="<fmt>",
         help="Format for the file names in the geometry output"
+    )
+    og.add_argument(
+        "-t", "--timings-file", default=None, metavar="<times.json>",
+        help="Outputs statistics about execution times in the simulator ("
+             "e.g. : time it took to generate geometry a geometry, mean time"
+             " of simulation generation, ...)"
     )
 
     geo_parser = subparser.add_parser(
@@ -218,6 +242,10 @@ def get_parser():
     gg.add_argument("-b0m", "--b0-mean", type=int, help="Mean number of b0 to generate (Default : 1)")
     gg.add_argument("-b0v", "--b0-var", type=float, help="Variance for the number of b0 distribution (Default : 0)")
     gg.add_argument(
+        "-b0d", "--b0-dir", nargs=3, type=float, metavar=("<b0_x>", "<b0_y>", "<b0_z>"),
+        help="Gradient direction for b0 volumes (Default : [0, 0, 0])"
+    )
+    gg.add_argument(
         "-er", "--echo-range", nargs=2, type=int, metavar=("TE_min", "TE_max"),
         help="Possible range of echo time (Default : [70, 190])"
     )
@@ -262,19 +290,58 @@ def get_parser():
     return parser
 
 
-class COMM_TAGS(Enum):
+class MrstormCOMM(Enum):
     GENERAL = 0
     COLLECT = 1
     PROCESS = 2
     REGROUP = 3
     COLLECT_INTER = 4
+    ALL_COLLECT = 5
+
+    @classmethod
+    def isend(cls, *args, tag=None, **kwargs):
+        tag = tag if tag else MrstormCOMM.GENERAL
+        MPI.COMM_WORLD.isend(*args, tag=tag.value, **kwargs).wait()
+
+    @classmethod
+    def irecv(cls, *args, tag=None, **kwargs):
+        tag = tag if tag else MrstormCOMM.GENERAL
+        return MPI.COMM_WORLD.irecv(*args, tag=tag.value, **kwargs).wait()
+
+    @classmethod
+    def block_all(cls):
+        MPI.COMM_WORLD.Barrier()
+
+    @classmethod
+    def gather(cls, *args, **kwargs):
+        return MPI.COMM_WORLD.gather(*args, **kwargs)
+
+    @classmethod
+    def size(cls):
+        return MPI.COMM_WORLD.Get_size()
+
+    @classmethod
+    def rank(cls):
+        return MPI.COMM_WORLD.Get_rank()
 
 
 class Message:
     def __init__(self, data=None, end_flag=False, meta=None):
         self.data = data
         self.end_flag = end_flag
-        self.meta = None
+        self.metadata = meta
+        self._multipart = False
+
+    def multipart(self):
+        self._multipart = True
+        return self
+
+    def last(self):
+        self._multipart = False
+        return self
+
+    def has_next(self):
+        return self._multipart
 
     def __getstate__(self):
         return deepcopy(self.__dict__)
@@ -331,27 +398,27 @@ def convert_arange(in_dict, conversions):
     return in_dict
 
 
-def gather_hash_dicts(hash_dict, comm, rank, data_root):
-    hash_dicts = comm.gather(hash_dict, root=COMM_TAGS.REGROUP)
-
-    if rank == 0:
-        hash_dict = hash_dicts[0]
-
-        for hd in hash_dicts[1:]:
-            for k, infos in hd.items():
-                if k in hash_dict:
-                    logger.debug("Data package {} already present in the dataset {}".format(
-                        infos["data_package"], hash_dict[k]["data_package"])
-                    )
-                    rmtree(join(data_root, infos["data_package"]))
-                else:
-                    infos.generate_new_key("data_path", join(data_root, infos["data_package"]))
-                    hash_dict[k] = infos
-
-        hash_dict = list(hash_dict.values())
-        logger.debug("Final number of unique datasets {}".format(len(hash_dict)))
-
-    return comm.bcast(hash_dict, root=COMM_TAGS.REGROUP)
+# def gather_hash_dicts(hash_dict, comm, rank, data_root):
+#     hash_dicts = comm.gather(hash_dict, root=MrstormCOMM.REGROUP)
+#
+#     if rank == 0:
+#         hash_dict = hash_dicts[0]
+#
+#         for hd in hash_dicts[1:]:
+#             for k, infos in hd.items():
+#                 if k in hash_dict:
+#                     logger.debug("Data package {} already present in the dataset {}".format(
+#                         infos["data_package"], hash_dict[k]["data_package"])
+#                     )
+#                     rmtree(join(data_root, infos["data_package"]))
+#                 else:
+#                     infos.generate_new_key("data_path", join(data_root, infos["data_package"]))
+#                     hash_dict[k] = infos
+#
+#         hash_dict = list(hash_dict.values())
+#         logger.debug("Final number of unique datasets {}".format(len(hash_dict)))
+#
+#     return comm.bcast(hash_dict, root=MrstormCOMM.REGROUP)
 
 
 # From https://lukelogbook.tech/2018/01/25/merging-two-folders-in-python/
@@ -366,6 +433,19 @@ def fuse_directories_and_overwrite_files(root_src_dir, root_dst_dir):
             if exists(dst_file):
                 remove(dst_file)
             copy(src_file, dst_dir)
+
+
+def get_stat_dist(name):
+    return [
+        getattr(stats, d) for d in dir(stats)
+        if isinstance(getattr(stats, d), stats.rv_continuous) and d == name
+    ][0]
+
+
+def import_parameters_dists(params, keys):
+    return {
+        k: get_stat_dist(v) if k in keys else v for k, v in params.items()
+    }
 
 
 def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
@@ -448,10 +528,8 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
 
     # Format geo_json file depending on which node
     # is on to have the right number of samples at the end
-    comm = MPI.COMM_WORLD
-    world_size = comm.Get_size()
-    processing_size = world_size if is_master_collect \
-        else (world_size - args["collect"])
+    world_size = MrstormCOMM.size()
+    processing_size = len(mpi_conf.workers)
 
     remainder = 0
     if "n_output" in geo_json:
@@ -466,45 +544,63 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
             )
 
         logger.debug("Sending geometry configuration to slave nodes")
-        for i in range(len(mpi_conf.workers)):
+        slaves = list(filter(
+            lambda w: not w == mpi_conf.master, mpi_conf.workers
+        ))
+
+        # Calculate bundle to world transformation
+        limits = [l[1] - l[0] for l in geo_json['limits']]
+        res = args['resolution']
+        geo_json['world_scale'] = np.diag(np.array(res) / limits).tolist()
+
+        for i in range(len(slaves)):
             geo_json = deepcopy(geo_json)
             if "n_output" in geo_json and i < remainder:
                 geo_json["n_output"] += 1
-            req = comm.isend(
-                geo_json, dest=mpi_conf.workers[i], tag=COMM_TAGS.PROCESS
+            MrstormCOMM.isend(
+                geo_json, dest=slaves[i], tag=MrstormCOMM.PROCESS
             )
-            req.wait()
 
         if "n_output" in geo_json:
             geo_json["n_output"] += int(remainder > 0)
     else:
         logger.debug("Receiving geometry configuration from master node")
-        req = comm.irecv(source=mpi_conf.master, tag=COMM_TAGS.PROCESS)
-        geo_json = req.wait()
+        geo_json = MrstormCOMM.irecv(
+            source=mpi_conf.master, tag=MrstormCOMM.PROCESS
+        )
+
+    geo_json = import_parameters_dists(geo_json, ['rad_dist', 'trans_dist'])
 
     # Define the collection callback
     if is_master_collect:
         f_collect = None
-        args['ngc'] = -1
+        args['n_geo_collect'] = -1
     else:
-        collector_iter = iter_collectors(mpi_conf)
+        def _collect_callback(data_infos, idx, end=False, **kwargs):
+            arc = join(node_root, "geo_iter{}_node{}.tar.gz".format(
+                idx, rank
+            ))
 
-        def _collect_callback(data_infos, end=False):
-            arc = join(node_root, "geo_iter_node{}.tar.gz".format(rank))
             with tarfile.open(arc, "w") as archive:
                 for data in data_infos:
-                    data.pop("handler")
+                    # data.pop("handler")
                     archive.add(
                         data['data_package'],
                         arcname=basename(data['data_package'])
                     )
                     remove(data['data_package'])
-            rq = comm.isend(
-                Message(data_infos, end, meta={"archive": arc}),
-                dest=next(collector_iter),
-                tag=COMM_TAGS.COLLECT
+                    data['data_package'] = basename(data['data_package'])
+
+            meta = {"archive": arc}
+            if "time_exec" in args and "extra" in kwargs:
+                if "timings" in kwargs["extra"]:
+                    meta["timings"] = kwargs["extra"]["timings"]
+
+            MrstormCOMM.isend(
+                Message(data_infos, end, meta=meta),
+                dest=mpi_conf.master_collector,
+                tag=MrstormCOMM.ALL_COLLECT
             )
-            rq.wait()
             return True
 
         f_collect = _collect_callback
@@ -522,22 +618,31 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
         clusters, resolution, spacing, geo_fmt, geo_params, node_geo_output,
         rank * geo_json["n_output"] + (0 if rank < remainder else remainder),
         singularity_conf=conf, dump_infos=True, geo_ready_callback=f_collect,
-        callback_stride=args['ngc']
+        callback_stride=args['n_geo_collect'], get_timings=args["time_exec"]
     )
 
     logger.debug("Number of geometries generated {}".format(len(geo_infos)))
 
-    comm.Barrier()
+    if not is_master_collect \
+       and len(mpi_conf.workers) < len(mpi_conf.slaves_collectors):
+        if rank == mpi_conf.master:
+            for i in range(
+                    len(mpi_conf.slaves_collectors) - len(mpi_conf.workers)
+            ):
+                MrstormCOMM.isend(
+                    Message(end_flag=True),
+                    dest=mpi_conf.master_collector,
+                    tag=MrstormCOMM.ALL_COLLECT
+                )
 
     if is_master_collect:
         package_path, geo_infos = collect_geometries_offline(
-            rank, comm, args, geo_infos, mpi_conf
+            rank, args, geo_infos, mpi_conf
         )
     else:
-        req = comm.irecv(
-            source=mpi_conf.master_collector, tag=COMM_TAGS.COLLECT
+        package_path, geo_infos = MrstormCOMM.irecv(
+            source=mpi_conf.master_collector, tag=MrstormCOMM.COLLECT
         )
-        package_path, geo_infos = req.wait()
 
     arc = join(node_geo_output, basename(package_path))
 
@@ -552,41 +657,61 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
 
     if is_master_collect:
         f_sim_collect = None
-        args['ngc'] = -1
+        args['n_geo_collect'] = -1
         sim_archive = join(node_root, "data_node{}.tar.gz".format(rank))
         pathlib.Path(sim_archive).touch()
     else:
-        collector_iter = iter_collectors(mpi_conf)
         sim_archive = None
 
-        def f_sim_collect(paths, infos, end=False):
-            tmpf = tempfile.tempdir(node_root)
-            json.dump(infos, open(join(tmpf, "description.json")))
-            archive_path = join(tmpf, "sim_iter_node{}.tar.gz")
-            with tarfile.open(archive_path, 'w') as archive:
-                for path in paths:
-                    folder = dirname(path)
-                    search_tag = basename(path).split(".")[0]
-                    for item in glob.glob1(folder, "{}*".format(search_tag)):
-                        archive.addfile(
-                            tarfile.TarInfo(item), open(join(folder, item))
-                        )
+        def f_sim_collect(paths, infos, end=False, **kwargs):
+            archive_path = None
+            if len(paths) > 0:
+                tmpf = tempfile.mkdtemp(prefix=node_root)
+                json.dump(
+                    serialize_floats(
+                        deepcopy(infos), dec=args['float_precision']
+                    ),
+                    open(join(tmpf, "description.json"), 'w+')
+                )
+                archive_path = join(
+                    tmpf, "sim_iter_node{}.tar.gz".format(rank)
+                )
+                with tarfile.open(archive_path, 'w') as archive:
+                    for path_group in paths:
+                        for path in path_group:
+                            folder = dirname(path)
+                            search_tag = basename(path).split(".")[0]
+                            sim_path = join(folder, "simulation_outputs")
+                            for item in glob.glob1(
+                                sim_path, "{}*".format(search_tag)
+                            ):
+                                archive.addfile(
+                                    tarfile.TarInfo(item),
+                                    open(join(sim_path, item))
+                                )
 
-            req = comm.isend(
-                Message(archive_path, end),
-                dest=next(collector_iter),
-                tag=COMM_TAGS.COLLECT
+            meta = None
+
+            if args["time_exec"] and "extra" in kwargs:
+                if "timings" in kwargs["extra"]:
+                    meta = {"timings": kwargs["extra"]["timings"]}
+
+            MrstormCOMM.isend(
+                Message(archive_path, end, meta=meta),
+                dest=mpi_conf.master_collector,
+                tag=MrstormCOMM.COLLECT
             )
-            req.wait()
 
     # Generate simulations on remaining geometries
-    step = int(len(geo_infos) / world_size)
-    remainder = len(geo_infos) % world_size
+    step = int(len(geo_infos) / len(mpi_conf.workers))
+    remainder = len(geo_infos) % len(mpi_conf.workers)
     # sim_archive = join(node_root, "data_node{}.tar.gz".format(rank))
     # with tarfile.open(sim_archive, "w:gz") as archive:
     i0 = rank * step + (rank if rank < remainder else remainder)
-    i1 = (rank + 1) * step + (rank + 1 if (rank + 1) < remainder else remainder)
-    for infos in geo_infos[i0:i1]:
+    i1 = (rank + 1) * step + (
+        (rank + 1) if (rank + 1) < remainder else remainder
+    )
+    for infos in list(geo_infos.values())[i0:i1]:
         sim_pre = infos.get_base_file_name().split(".")[0].rstrip("_base")
         infos["file_path"] = node_geo_output
         infos.generate_new_key("processing_node", rank)
@@ -595,7 +720,8 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
         generate_simulation(
             handler, infos, sim_pre, sim_params, node_sim_output,
             singularity_conf=conf, sim_ready_callback=f_sim_collect,
-            callback_stride=args['nsc'], **simulation_json
+            callback_stride=args['n_sim_collect'],
+            get_timings=args["time_exec"], **simulation_json
         )
 
         if is_master_collect:
@@ -623,15 +749,25 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
             "r:gz"
         ) as archive:
             archive.extractall(join(global_sim_output))
+    else:
+        MrstormCOMM.isend(
+            Message(end_flag=True),
+            dest=mpi_conf.master_collector,
+            tag=MrstormCOMM.COLLECT
+        )
 
 
-def iter_collectors(mpi_conf):
-    collector_iter = deepcopy(mpi_conf.collectors)
-    np.random.shuffle(collector_iter)
-    return cycle(collector_iter)
+def serialize_floats(obj, dec=10):
+    def serialize_dict(ob, p):
+        return {k: serialize_floats(o, p) for k, o in ob.items()}
+
+    return serialize_dict(obj, dec) \
+        if isinstance(obj, dict) else [serialize_floats(o, dec) for o in obj] \
+        if isinstance(obj, list) else ("{:" + str(dec) + "f}").format(obj) \
+        if isinstance(obj, float) else str(obj)
 
 
-def collect_geometries_offline(rank, comm, args, geo_infos, mpi_conf):
+def collect_geometries_offline(rank, args, geo_infos, mpi_conf):
     base_output = args["out"]
     global_geo_output = join(base_output, args["geoout"])
     node_root = join(environ["SLURM_TMPDIR"], "node{}_root".format(rank))
@@ -646,7 +782,7 @@ def collect_geometries_offline(rank, comm, args, geo_infos, mpi_conf):
 
     move_package_to(arc, global_geo_output, True, True)
 
-    infos = comm.gather(geo_infos, root=mpi_conf.master)
+    infos = MrstormCOMM.gather(geo_infos, root=mpi_conf.master)
 
     if rank == mpi_conf.master:
         unique_geos = {}
@@ -662,35 +798,39 @@ def collect_geometries_offline(rank, comm, args, geo_infos, mpi_conf):
         )
 
         for i in mpi_conf.workers:
-            req = comm.isend(
+            MrstormCOMM.isend(
                 (package_path, unique_geos),
                 dest=i,
-                tag=COMM_TAGS.PROCESS
+                tag=MrstormCOMM.PROCESS
             )
-            req.wait()
     else:
-        req = comm.irecv(source=mpi_conf.master, tag=COMM_TAGS.PROCESS)
-        package_path, unique_geos = req.wait()
+        package_path, unique_geos = MrstormCOMM.irecv(
+            source=mpi_conf.master, tag=MrstormCOMM.PROCESS
+        )
 
     return package_path, unique_geos
 
 
 def validate_slaves(collective_hash_dict, collect_slaves):
-    comm = MPI.COMM_WORLD
-
     for i in deepcopy(collect_slaves):
-        req = comm.irecv(source=i, tag=COMM_TAGS.COLLECT_INTER)
-        message = req.wait()
-        if message.end_flag:
-            collect_slaves.remove(i)
-        else:
-            data_hash = message.data["hash"]
-            if data_hash in collective_hash_dict.keys():
-                req = comm.isend(False, i, tag=COMM_TAGS.COLLECT_INTER)
-            else:
-                collective_hash_dict[data_hash] = message.data
-                req = comm.isend(True, i, tag=COMM_TAGS.COLLECT_INTER)
-            req.wait()
+        while True:
+            message = MrstormCOMM.irecv(
+                source=i, tag=MrstormCOMM.COLLECT_INTER
+            )
+            if message.end_flag:
+                collect_slaves = tuple(
+                    filter(lambda k: not (k == i), collect_slaves)
+                )
+            if message.data:
+                data_hash = message.data["hash"]
+                if data_hash in collective_hash_dict.keys():
+                    MrstormCOMM.isend(False, i, tag=MrstormCOMM.COLLECT_INTER)
+                else:
+                    collective_hash_dict[data_hash] = message.data
+                    MrstormCOMM.isend(True, i, tag=MrstormCOMM.COLLECT_INTER)
+
+            if not message.has_next():
+                break
 
     return collective_hash_dict, collect_slaves
 
@@ -714,7 +854,7 @@ def unpack_geometry_output(geo_path, empty_path=True):
                 ))
 
                 tmp_arc = tempfile.mkdtemp()
-                with tarfile.open(join(geo_path, item), "r:gz") as archive:
+                with tarfile.open(join(geo_path, item), "r") as archive:
                     archive.extractall(tmp_arc)
 
                 fuse_directories_and_overwrite_files(tmp_arc, tmp)
@@ -727,44 +867,93 @@ def unpack_geometry_output(geo_path, empty_path=True):
 
 
 def execute_collecting_node(rank, args, mpi_conf):
-    comm = MPI.COMM_WORLD
-    world_size = comm.Get_size()
+    extra = None
+
     base_output = args["out"]
     global_geo_output = join(base_output, args["geoout"])
     global_sim_output = join(base_output, args["simout"])
 
-    # Execute collection for geometry generation
-    tmp_arc_dir = tempfile.mkdtemp(global_geo_output)
+    if args['n_collect_bf_valid'] == -1:
+        args['n_collect_bf_valid'] = len(mpi_conf.slaves_collectors)
+
+        # Execute collection for geometry generation
+    tmp_arc_dir = tempfile.mkdtemp(prefix=global_geo_output)
     if rank == mpi_conf.master_collector:
+        if args["time_exec"]:
+            extra = {"timings": {"geo": {"values": []}, "sim": {"values": []}}}
+
         collective_hash_dict = {}
         collect_slaves = deepcopy(mpi_conf.slaves_collectors)
 
-        def geo_unpacker(geo_info):
+        def geo_unpacker(geo_info, **kwargs):
             data_hash = geo_info['hash']
             if data_hash not in collective_hash_dict.keys():
                 collective_hash_dict[data_hash] = geo_info
                 move_package_to(
-                    join(tmp_arc_dir, message.data["package"]),
+                    geo_info["data_package"],
                     global_geo_output
                 )
                 return True
             return False
 
+        n_proc_active = len(mpi_conf.workers)
         while True:
-            req = comm.irecv(tag=COMM_TAGS.COLLECT)
-            message = req.wait()
-            unpack_geo_data(message, tmp_arc_dir, geo_unpacker)
+            cycle_slaves = cycle(collect_slaves)
+            idle_slaves, working_slaves = (), ()
+            for i in range(
+                args['n_collect_bf_valid']
+                if args['n_collect_bf_valid'] < len(collect_slaves)
+                else len(collect_slaves)
+            ):
+                message = MrstormCOMM.irecv(tag=MrstormCOMM.ALL_COLLECT)
 
-            if message.end_flag:
-                while len(collect_slaves) > 0:
-                    collective_hash_dict, collect_slaves = validate_slaves(
-                        collective_hash_dict, collect_slaves
-                    )
+                if message.end_flag:
+                    n_proc_active -= 1
+
+                working_slaves += (next(cycle_slaves),)
+
+                MrstormCOMM.isend(
+                    message,
+                    dest=working_slaves[-1],
+                    tag=MrstormCOMM.COLLECT_INTER
+                )
+
+                if args["time_exec"]:
+                    if message.metadata and "timings" in message.metadata:
+                        extra["timings"]["geo"]["values"].extend(
+                            message.metadata["timings"]
+                        )
+
+                if n_proc_active == 0:
+                    break
+
+            for i in range(len(collect_slaves) - len(working_slaves)):
+                idle_slaves += (next(cycle_slaves),)
+
+            collective_hash_dict, working_slaves = validate_slaves(
+                collective_hash_dict, working_slaves
+            )
+
+            collect_slaves = idle_slaves + working_slaves
+
+            if len(collect_slaves) == 0 or n_proc_active == 0:
                 break
 
-            collective_hash_dict, collect_slaves = validate_slaves(
-                collective_hash_dict, collect_slaves
+        for slave in collect_slaves:
+            MrstormCOMM.isend(
+                Message(end_flag=True),
+                dest=slave,
+                tag=MrstormCOMM.COLLECT_INTER
             )
+
+        if len(mpi_conf.workers) > len(mpi_conf.slaves_collectors):
+            i = len(mpi_conf.workers) - len(mpi_conf.slaves_collectors)
+            while i > 0:
+                message = MrstormCOMM.irecv(tag=MrstormCOMM.ALL_COLLECT)
+                if message.data:
+                    unpack_geo_data(message, tmp_arc_dir, geo_unpacker)
+                if message.end_flag:
+                    i -= 1
 
         rmtree(tmp_arc_dir)
         package_path = create_geometry_archive(
@@ -772,29 +961,26 @@ def execute_collecting_node(rank, args, mpi_conf):
         )
 
         for i in mpi_conf.workers:
-            req = comm.isend(
+            MrstormCOMM.isend(
                 (package_path, collective_hash_dict),
                 i,
-                tag=COMM_TAGS.COLLECT
+                tag=MrstormCOMM.COLLECT
             )
-            req.wait()
 
     else:
-        def geo_unpacker_slave(geo_info):
-            message = Message(geo_info)
-            req = comm.isend(
-                message, mpi_conf.master_collector, tag=COMM_TAGS.COLLECT_INTER
+        def geo_unpacker_slave(info, end=False, is_multipart=False):
+            MrstormCOMM.isend(
+                Message(info, end_flag=end).multipart()
+                if is_multipart else Message(info, end_flag=end),
+                mpi_conf.master_collector, tag=MrstormCOMM.COLLECT_INTER
             )
-            req.wait()
 
-            req = comm.irecv(
+            if MrstormCOMM.irecv(
                 source=mpi_conf.master_collector,
-                tag=COMM_TAGS.COLLECT_INTER
-            )
-
-            if req.wait():
+                tag=MrstormCOMM.COLLECT_INTER
+            ):
                 move_package_to(
-                    join(tmp_arc_dir, message.data["package"]),
+                    info["data_package"],
                     global_geo_output
                 )
                 return True
@@ -802,33 +988,118 @@ def execute_collecting_node(rank, args, mpi_conf):
             return False
 
         while True:
-            req = comm.irecv(tag=COMM_TAGS.COLLECT)
-            message = req.wait()
-            unpack_geo_data(message, tmp_arc_dir, geo_unpacker_slave)
+            message = MrstormCOMM.irecv(
+                source=mpi_conf.master_collector, tag=MrstormCOMM.COLLECT_INTER
+            )
+            if message.data:
+                unpack_geo_data(message, tmp_arc_dir, geo_unpacker_slave)
 
             if message.end_flag:
-                req = comm.isend(
-                    message,
-                    mpi_conf.master_collector,
-                    tag=COMM_TAGS.COLLECT_INTER
-                )
-                req.wait()
                 break
 
         rmtree(tmp_arc_dir)
 
-    while True:
-        req = comm.irecv(tag=COMM_TAGS.COLLECT)
-        message = req.wait()
-        unpack_sim_data(message, global_sim_output)
-        if message.end_flag:
-            break
+    if rank == mpi_conf.master_collector:
+        n_workers = len(mpi_conf.workers)
+        collectors = mpi_conf.slaves_collectors
+        collect_iter = cycle(collectors)
+
+        while True:
+            message = MrstormCOMM.irecv(tag=MrstormCOMM.COLLECT)
+            collector = next(collect_iter)
+
+            if message.end_flag:
+                n_workers -= 1
+                collectors = list(
+                    filter(lambda c: not c == collector, collectors)
+                )
+                collect_iter = cycle(collectors)
+
+            MrstormCOMM.isend(
+                message, dest=collector, tag=MrstormCOMM.COLLECT_INTER
+            )
+
+            if args["time_exec"]:
+                if message.metadata and "timings" in message.metadata:
+                    for item in message.metadata["timings"].values():
+                        extra["timings"]["sim"]["values"].extend(item)
+
+            if len(collectors) == 0 or n_workers == 0:
+                break
+
+        if len(collectors) > 0:
+            for i in collectors:
+                MrstormCOMM.isend(
+                    Message(end_flag=True),
+                    dest=i,
+                    tag=MrstormCOMM.COLLECT_INTER
+                )
+
+        if len(mpi_conf.workers) > len(mpi_conf.slaves_collectors):
+            remainder = len(mpi_conf.workers) - len(mpi_conf.slaves_collectors)
+            while remainder > 0:
+                message = MrstormCOMM.irecv(tag=MrstormCOMM.COLLECT)
+                if message.data:
+                    unpack_sim_data(message, global_sim_output)
+                if message.end_flag:
+                    remainder -= 1
+
+        if args["time_exec"]:
+            extra["timings"]["geo"]["mean"] = np.mean(extra["timings"]["geo"]["values"])
+            extra["timings"]["sim"]["mean"] = np.mean(extra["timings"]["sim"]["values"])
+            extra["timings"]["geo"]["var"] = np.var(extra["timings"]["geo"]["values"])
+            extra["timings"]["sim"]["var"] = np.var(extra["timings"]["sim"]["values"])
+
+            logger.debug("Timings statistics")
+            logger.debug("  -> Geometry : {} samples | mean : {} s | var : {} s".format(
+                len(extra["timings"]["geo"]["values"]),
+                extra["timings"]["geo"]["mean"], extra["timings"]["geo"]["var"]
+            ))
+            logger.debug("  -> Simulation : {} samples | mean : {} s | var : {} s".format(
+                len(extra["timings"]["sim"]["values"]),
+                extra["timings"]["sim"]["mean"], extra["timings"]["sim"]["var"]
+            ))
+
+            json.dump(extra["timings"], open(args["timings_file"], "w+"))
+
+    else:
+        while True:
+            message = MrstormCOMM.irecv(
+                source=mpi_conf.master_collector, tag=MrstormCOMM.COLLECT_INTER
+            )
+            if message.data:
+                unpack_sim_data(message, global_sim_output)
+            if message.end_flag:
+                break
 
 
 def create_geometry_archive(geo_root, infos_dict, output):
     unpack_geometry_output(geo_root)
 
-    json.dump(infos_dict, open(
+    data_root = join(geo_root, "data")
+    logs_root = join(geo_root, "logs")
+    outputs_root = join(data_root, "geometry_outputs")
+
+    makedirs(logs_root)
+    for log_file in glob.glob1(data_root, "*.log"):
+        move(join(data_root, log_file), join(logs_root, log_file))
+
+    move(
+        outputs_root,
+        join(geo_root, "geometry_outputs"),
+        copy_function=copytree
+    )
+    rmtree(data_root)
+
+    serializable_infos = {}
+    for k, info in infos_dict.items():
+        info_copy = deepcopy(info)
+        info_copy.pop('data_package')
+        info_copy.pop('handler')
+        info_copy['file_path'] = geo_root
+        serializable_infos[k] = info_copy.as_dict()
+
+    json.dump(serializable_infos, open(
         join(geo_root, "description.json"), "w+"
     ))
 
@@ -848,33 +1119,45 @@ def unpack_sim_data(message, output_dir):
     )
 
 
-def unpack_geo_data(message, output_dir, valid_data_fn=lambda a: True):
+def unpack_geo_data(
+        message, output_dir, valid_data_fn=lambda *args, **kwargs: True
+):
     archive = message.metadata["archive"]
     move_package_to(
         archive, output_dir, unload=True, delete_dest_pkg=True
     )
-    for geo_info in message.data:
-        package = geo_info["data_package"]
+    for i in range(len(message.data)):
+        message.data[i]["data_package"] = join(
+            output_dir, message.data[i]["data_package"]
+        )
 
-        if not valid_data_fn(geo_info):
-            remove(join(output_dir, package))
+        if not valid_data_fn(
+                message.data[i], end=message.end_flag, is_multipart=(i < (len(message.data) - 1))
+        ):
+            remove(message.data[i]["data_package"])
 
 
 def generate_datasets(args):
     # Get basic MPI variables
-    comm = MPI.COMM_WORLD
-    world_size = comm.Get_size()
+    world_size = MrstormCOMM.size()
     assert world_size > 1
-    rank = comm.Get_rank()
+    rank = MrstormCOMM.rank()
+
+    pydevd_pycharm.settrace(
+        '10.0.2.2', port=port_mapping[rank],
+        stdoutToServer=True, stderrToServer=True
+    )
 
     # Initialize per computing logging
     logger = logging.getLogger("{} | PROC {} / {}".format(
-        __name__.split(".")[0], rank, world_size
+        basename(__file__).split(".")[0], rank, world_size
     ))
     logger.info("Setting up for dataset generation on node {}".format(rank))
 
     logger.debug("Arguments from the command line")
     logger.debug(json.dumps(args, indent=4))
+
+    args["time_exec"] = "timings_file" in args
 
     # Set up global directories
     logger.info("Setting up global paths")
@@ -907,7 +1190,7 @@ def generate_datasets(args):
     if n_collect > 0:
         mpi_jobs_ranks += (
             world_size - n_collect,
-            range(world_size - n_collect + 1, world_size)
+            list(range(world_size - n_collect + 1, world_size))
         )
 
     mpi_conf = WorkersConfiguration(*mpi_jobs_ranks)
@@ -915,27 +1198,24 @@ def generate_datasets(args):
     if rank == 0:
         if n_collect > 0:
             job = JOB.process
-            collect_ranks = list(range(world_size - n_collect, world_size))
+            collect_ranks = mpi_conf.collectors
             assert world_size - n_collect > 0 and \
                 (world_size - n_collect + len(collect_ranks)) == world_size, \
                 ("Bad number of collect nodes ({})"
                  " for MPI world capacity ({})".format(n_collect, world_size))
 
             for i in range(1, world_size):
-                req = comm.isend(
+                MrstormCOMM.isend(
                     JOB.process if i < world_size - n_collect else JOB.collect,
-                    dest=i, tag=11
+                    dest=i
                 )
-                req.wait()
 
         else:
             job = JOB.master_collect
             for i in range(1, world_size):
-                req = comm.isend(JOB.process, dest=i, tag=11)
-                req.wait()
+                MrstormCOMM.isend(JOB.process, dest=i)
     else:
-        req = comm.irecv(source=0, tag=11)
-        job = req.wait()
+        job = MrstormCOMM.irecv(source=0)
 
     if job is JOB.collect:
         execute_collecting_node(rank, args, mpi_conf)
@@ -944,14 +1224,20 @@ def generate_datasets(args):
     elif job is JOB.master_collect:
         execute_computing_node(rank, args, mpi_conf, is_master_collect=True)
 
+    logger.info("Worker {} / {} has ended its tasks".format(
+        rank + 1, MrstormCOMM.size())
+    )
+
 
 def generate_simulation_json(args):
     logging.info("Generating simulation parameters json file")
     parameters = {k.replace("-", "_"): v for k, v in args.items()}
     parameters = rename_parameters(parameters, {
+        "n_simulations": "n_simus",
         "randomize": "randomize_bvecs",
         "b0_mean": "n_b0_mean",
         "b0_var": "n_b0_var",
+        "b0_dir": "b0_base_bvec",
         "echo_range": "echo_time_range",
         "rep_range": "rep_time_range",
         "noiseless": "generate_noiseless"
@@ -1026,6 +1312,12 @@ if __name__ == "__main__":
 
     parser = get_parser()
     args = vars(parser.parse_args())
+
+    if "verbose" in args:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.INFO)
+
     logger.debug("Arguments parsed")
     step = args.pop("step")
     if step is None:

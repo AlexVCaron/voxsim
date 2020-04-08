@@ -1,12 +1,18 @@
+import logging
+import glob
 from asyncio import sleep, create_subprocess_shell, get_event_loop, new_event_loop, set_event_loop
-from os import path, makedirs
-from os.path import exists
+from os import path, makedirs, remove
+from os.path import exists, join, basename
 from shutil import copyfile
 from subprocess import PIPE
-from numpy import sum, ones_like
+from numpy import sum, ones_like, moveaxis, hstack, vstack
 import nrrd
+import nibabel as nib
 
 from config import get_config
+from simulator.exceptions import SimulationRunnerException
+
+logger = logging.getLogger(basename(__file__).split(".")[0])
 
 
 class SimulationRunner:
@@ -32,7 +38,43 @@ class SimulationRunner:
     def set_geometry_base_naming(self, name):
         self._geometry_base_naming = name
 
-    def run_simulation_standalone(self, output_folder, geometry_folder, simulation_infos, test_mode=False):
+    def run_simulation_dwimage(self, output_folder, image_file, simulation_infos, test_mode=False, remove_nrrd=False):
+        simulation_output_folder = path.join(output_folder, "simulation_outputs")
+        if not path.exists(simulation_output_folder):
+            makedirs(simulation_output_folder, exist_ok=True)
+
+        simulation_command = "singularity run -B {} --app launch_mitk {} -p {} -i {} -o {} {}".format(
+            ",".join([simulation_infos["file_path"], simulation_output_folder]),
+            self._singularity,
+            path.join(simulation_output_folder, "{}_simulation.ffp".format(self._base_naming)),
+            image_file,
+            path.join(simulation_output_folder, "{}.nii.gz".format(self._base_naming)),
+            "-v" if test_mode else ""
+        )
+
+        copyfile(
+            path.join(simulation_infos["file_path"], simulation_infos["param_file"]),
+            path.join(simulation_output_folder, "{}_simulation.ffp".format(self._base_naming))
+        )
+
+        set_event_loop(self._event_loop)
+        async_loop = get_event_loop()
+
+        with open(path.join(output_folder, "{}.log".format(self._base_naming)), "w+") as log_file:
+            logger.info("Simulating DWI signal")
+            return_code, out, err = async_loop.run_until_complete(self._launch_command(simulation_command, log_file, "[RUNNING FIBERFOX]"))
+            if not return_code == 0:
+                raise SimulationRunnerException(
+                    "Simulation ended in error",
+                    SimulationRunnerException.ExceptionType.Fiberfox,
+                    return_code, (out, err)
+                )
+
+            # self._convert_nrrd_to_nifti(simulation_output_folder, remove_nrrd)
+            logger.debug("Simulation {} ended with code {}".format(self._base_naming, return_code))
+            async_loop.close()
+
+    def run_simulation_standalone(self, output_folder, geometry_folder, simulation_infos, test_mode=False, remove_nrrd=False):
         simulation_output_folder = path.join(output_folder, "simulation_outputs")
         geometry_output_folder = path.join(geometry_folder, "geometry_outputs")
 
@@ -44,7 +86,7 @@ class SimulationRunner:
             self._singularity,
             path.join(simulation_output_folder, "{}_simulation.ffp".format(self._base_naming)),
             path.join(geometry_output_folder, self._geometry_base_naming) + "_merged_bundles.fib",
-            path.join(simulation_output_folder, self._base_naming),
+            path.join(simulation_output_folder, "{}.nii.gz".format(self._base_naming)),
             "-v" if test_mode else ""
         )
 
@@ -58,11 +100,44 @@ class SimulationRunner:
 
         with open(path.join(output_folder, "{}.log".format(self._base_naming)), "w+") as log_file:
             self._rename_and_copy_compartments_standalone(simulation_infos, geometry_output_folder, simulation_output_folder)
-            print("Simulating DWI signal")
-            async_loop.run_until_complete(self._launch_command(simulation_command, log_file, "[RUNNING FIBERFOX]"))
+            logger.info("Simulating DWI signal")
+            return_code, out, err = async_loop.run_until_complete(self._launch_command(simulation_command, log_file, "[RUNNING FIBERFOX]"))
+            if not return_code == 0:
+                raise SimulationRunnerException(
+                    "Simulation ended in error",
+                    SimulationRunnerException.ExceptionType.Fiberfox,
+                    return_code, (out, err)
+                )
+
+            # self._convert_nrrd_to_nifti(simulation_output_folder, remove_nrrd)
+            logger.debug("Simulation {} ended with code {}".format(self._base_naming, return_code))
             async_loop.close()
 
-    def run(self, output_folder, test_mode=False, relative_fiber_compartment=True):
+    def _convert_nrrd_to_nifti(self, root, remove_nrrd=False):
+        for item in glob.glob1(root, "{}*.nrrd".format(self._base_naming)):
+            data, header = nrrd.read(join(root, item))
+
+            if header["space directions"].shape[0] == 4:
+                data = moveaxis(data, 0, -1)
+                rotation = header["space directions"][1:, :]
+                bottom = [[0, 0, 0, 1]]
+            else:
+                rotation = header["space directions"]
+                bottom = [[0, 0, 0, 1]]
+
+            affine = vstack((hstack((
+                rotation, header["space origin"][:, None]
+            )), bottom))
+
+            nib.save(
+                nib.Nifti1Image(data.astype(header["type"]), affine),
+                join(root, "{}.nii.gz".format(item.split(".")[0]))
+            )
+
+            if remove_nrrd:
+                remove(join(root, item))
+
+    def run(self, output_folder, test_mode=False, relative_fiber_compartment=True, remove_nrrd=False):
         geometry_output_folder = path.join(output_folder, "geometry_outputs")
 
         if not path.exists(geometry_output_folder):
@@ -91,7 +166,7 @@ class SimulationRunner:
                 self._singularity,
                 path.join(simulation_output_folder, "{}_simulation.ffp".format(self._base_naming)),
                 path.join(geometry_output_folder, self._geometry_base_naming) + "_merged_bundles.fib",
-                path.join(simulation_output_folder, self._base_naming),
+                path.join(simulation_output_folder, "{}.nii.gz".format(self._base_naming)),
                 "-v" if test_mode else ""
             )
 
@@ -104,12 +179,20 @@ class SimulationRunner:
         async_loop = get_event_loop()
 
         with open(path.join(output_folder, "{}.log".format(self._base_naming)), "w+") as log_file:
-            print("Generating simulation geometry")
+            logger.info("Generating simulation geometry")
             async_loop.run_until_complete(self._launch_command(geometry_command, log_file, "[RUNNING VOXSIM]"))
             if self._run_simulation:
                 self._rename_and_copy_compartments(geometry_output_folder, simulation_output_folder)
-                print("Simulating DWI signal")
-                async_loop.run_until_complete(self._launch_command(simulation_command, log_file, "[RUNNING FIBERFOX]"))
+                logger.info("Simulating DWI signal")
+                return_code, out, err = async_loop.run_until_complete(self._launch_command(simulation_command, log_file, "[RUNNING FIBERFOX]"))
+                if not return_code == 0:
+                    raise SimulationRunnerException(
+                        "Simulation ended in error",
+                        SimulationRunnerException.ExceptionType.Fiberfox,
+                        return_code, (out, err)
+                    )
+                # self._convert_nrrd_to_nifti(simulation_output_folder, remove_nrrd)
+                logger.debug("Simulation ended with code {}".format(return_code))
             async_loop.close()
 
     def _rename_and_copy_compartments_standalone(self, simulation_infos, geometry_output_folder, simulation_output_folder):
@@ -212,7 +295,10 @@ class SimulationRunner:
             await sleep(5)
 
         out, err = await process.communicate()
-        log_file.write("{} - {}".format(log_tag, out.decode("utf-8")))
-        log_file.write("{} - {}".format(log_tag, err.decode("utf-8")))
+        err_str, out_str = err.decode("utf-8"), out.decode("utf-8")
+        log_file.write("{} - {}".format(log_tag, out_str))
+        log_file.write("{} - {}".format(log_tag, err_str))
         log_file.write("Process ended with return code {}\n".format(process.returncode))
         log_file.flush()
+
+        return process.returncode, out_str, err_str
