@@ -1,31 +1,27 @@
+import logging
 import glob
 import pathlib
 import tempfile
+import tarfile
+import json
+
 from argparse import ArgumentParser
 from copy import deepcopy
 from enum import Enum
-import json
-
-import logging
+from os import makedirs, environ, remove, walk, listdir
+from os.path import exists, join, basename, isdir, dirname
+from shutil import rmtree, copyfile, move, copy, copytree
 from itertools import cycle
 
 import numpy as np
-from os import makedirs, environ, remove, walk, listdir, getcwd
-from os.path import exists, join, basename, isdir, dirname
-from shutil import rmtree, copyfile, move, copy2, copy, copytree
-import tarfile
-
-import pydevd_pycharm
-from scipy import stats
-
-port_mapping = [51690, 51691, 51692, 51693, 51694, 51695]
 
 from mpi4py import MPI
+from scipy import stats
+
+import config
 
 from scripts.geometries_mrstorm import generate_clusters, generate_geometries
 from scripts.simulations_mrstorm import generate_simulation
-
-import config
 
 logger = logging.getLogger(basename(__file__).split(".")[0])
 
@@ -1142,11 +1138,6 @@ def generate_datasets(args):
     world_size = MrstormCOMM.size()
     assert world_size > 1
     rank = MrstormCOMM.rank()
-
-    pydevd_pycharm.settrace(
-        '10.0.2.2', port=port_mapping[rank],
-        stdoutToServer=True, stderrToServer=True
-    )
 
     # Initialize per computing logging
     logger = logging.getLogger("{} | PROC {} / {}".format(

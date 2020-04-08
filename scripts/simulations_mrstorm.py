@@ -1,13 +1,15 @@
 import logging
 import copy
 import glob
+import json
+
 from os import remove
 from time import time
+from os.path import join, dirname, basename
 
 import numpy as np
+
 from scipy.stats import norm
-import json
-from os.path import join, dirname, basename
 
 from simulator.exceptions import SimulationRunnerException
 from simulator.factory import SimulationFactory

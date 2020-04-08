@@ -1,14 +1,16 @@
 import logging
 import tarfile
+import json
+import copy
+
 from os import makedirs
 from shutil import rmtree
 from os.path import join, basename
 from time import time
 
-from scipy.stats import norm, vonmises
 import numpy as np
-import json
-import copy
+
+from scipy.stats import norm, vonmises
 
 from simulator.factory.geometry_factory.geometry_factory import GeometryFactory, Plane
 from simulator.runner.simulation_runner import SimulationRunner
