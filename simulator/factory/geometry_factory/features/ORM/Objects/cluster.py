@@ -7,8 +7,8 @@ class Cluster(Structure):
     def _get_base_object(self):
         return Cluster()
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, init_values=None):
+        super().__init__(init_values)
         self._values["type"] = "external"
         self._values["scalings"] = []
         self._values["names"] = []

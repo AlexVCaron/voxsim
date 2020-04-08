@@ -4,8 +4,8 @@ from .ORM.Objects import Structure, ORMException
 
 
 class Sphere(Structure):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, init_values=None):
+        super().__init__(init_values)
         self._values["type"] = "internal"
         self._values["object"] = "sphere"
 

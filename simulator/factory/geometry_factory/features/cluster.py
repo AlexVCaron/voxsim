@@ -10,8 +10,8 @@ class Cluster(JsonData):
     def _get_base_object(self):
         return Cluster()
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, init_values=None):
+        super().__init__(init_values)
         self._values["meta"] = ClusterMeta()
         self._values["data"] = []
         self._world_center = None

@@ -9,24 +9,19 @@ encoder.FLOAT_REPR = lambda o: format(o, '.10f')
 
 class JsonData(metaclass=ABCMeta):
 
-    def __init__(self):
+    def __init__(self, init_values=None):
         self._values = {}
+        if init_values:
+            self._values.update(init_values)
         self._required = []
 
     def __reduce__(self):
         obj = self._get_base_object()
-        return (
-            obj.init_by_pickle,
-            (self._values,)
-        )
+        return obj, (self._values,)
 
     @abstractmethod
     def _get_base_object(self):
         pass
-
-    def init_by_pickle(self, values):
-        self._values.update(values)
-        return self
 
     def _type(self):
         return self.__class__.__name__
