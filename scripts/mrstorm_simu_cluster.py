@@ -551,7 +551,7 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
 
         for i in range(len(slaves)):
             geo_conf = deepcopy(geo_json)
-            if "n_output" in geo_conf and i < remainder:
+            if "n_output" in geo_conf and i < (remainder - 1):
                 geo_conf["n_output"] += 1
             MrstormCOMM.isend(
                 geo_conf, dest=slaves[i], tag=MrstormCOMM.PROCESS
@@ -636,6 +636,8 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
                     dest=mpi_conf.master_collector,
                     tag=MrstormCOMM.ALL_COLLECT
                 )
+
+    logger.info("Node {} finished computing geometries".format(rank))
 
     if is_master_collect:
         package_path, geo_infos = collect_geometries_offline(
@@ -952,6 +954,13 @@ def execute_collecting_node(rank, args, mpi_conf):
                 tag=MrstormCOMM.COLLECT_INTER
             )
 
+        while active_wks > 0:
+            message = MrstormCOMM.irecv(tag=MrstormCOMM.ALL_COLLECT)
+            if message.data:
+                unpack_geo_data(message, tmp_arc_dir, geo_unpacker)
+            if message.end_flag:
+                active_wks -= 1
+
         # if len(mpi_conf.workers) > len(mpi_conf.slaves_collectors):
         #     i = len(mpi_conf.workers) - len(mpi_conf.slaves_collectors)
         #     while i > 0:
@@ -1004,6 +1013,7 @@ def execute_collecting_node(rank, args, mpi_conf):
                 break
 
         rmtree(tmp_arc_dir)
+        logger.info("Node {} finished collecting geometries".format(rank))
 
     if rank == mpi_conf.master_collector:
         n_workers = len(mpi_conf.workers)
@@ -1047,6 +1057,13 @@ def execute_collecting_node(rank, args, mpi_conf):
                     dest=i,
                     tag=MrstormCOMM.COLLECT_INTER
                 )
+
+        while n_workers > 0:
+            message = MrstormCOMM.irecv(tag=MrstormCOMM.COLLECT)
+            if message.data:
+                unpack_sim_data(message, global_sim_output)
+            if message.end_flag:
+                n_workers -= 1
 
         # if len(mpi_conf.workers) > len(mpi_conf.slaves_collectors):
         #     remainder = len(mpi_conf.workers) - len(mpi_conf.slaves_collectors)
