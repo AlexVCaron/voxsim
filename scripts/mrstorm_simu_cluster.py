@@ -618,6 +618,12 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
         )
 
         logger.debug("Number of geometries generated {}".format(len(geo_infos)))
+    else:
+        MrstormCOMM.isend(
+            Message(end_flag=True),
+            dest=mpi_conf.master_collector,
+            tag=MrstormCOMM.ALL_COLLECT
+        )
 
     if not is_master_collect \
        and len(mpi_conf.workers) < len(mpi_conf.slaves_collectors):
@@ -911,7 +917,7 @@ def execute_collecting_node(rank, args, mpi_conf):
                 MrstormCOMM.isend(
                     Message(
                         data=message.data,
-                        end_flag=active_wks <= len(collect_slaves) and message.end_flag,
+                        end_flag=active_wks <= len(mpi_conf.slaves_collectors) and message.end_flag,
                         meta=message.metadata
                     ),
                     dest=working_slaves[-1],
@@ -1010,7 +1016,7 @@ def execute_collecting_node(rank, args, mpi_conf):
 
             if message.end_flag:
                 n_workers -= 1
-                if n_workers <= len(collectors):
+                if n_workers < len(collectors):
                     collectors = list(
                         filter(lambda c: not c == collector, collectors)
                     )
@@ -1019,7 +1025,7 @@ def execute_collecting_node(rank, args, mpi_conf):
             MrstormCOMM.isend(
                 Message(
                     data=message.data,
-                    end_flag=n_workers <= len(collectors) and message.end_flag,
+                    end_flag=n_workers < len(mpi_conf.slaves_collectors) and message.end_flag,
                     meta=message.metadata
                 ),
                 dest=collector,
