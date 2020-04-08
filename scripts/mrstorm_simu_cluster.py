@@ -922,17 +922,18 @@ def execute_collecting_node(rank, args, mpi_conf):
                     active_wks -= 1
                     logger.debug("Workforce reduced to {}".format(active_wks))
 
-                working_slaves += (next(cycle_slaves),)
+                if message.data:
+                    working_slaves += (next(cycle_slaves),)
 
-                MrstormCOMM.isend(
-                    Message(
-                        data=message.data,
-                        end_flag=((active_wks < len(mpi_conf.slaves_collectors)) and message.end_flag),
-                        meta=message.metadata
-                    ),
-                    dest=working_slaves[-1],
-                    tag=MrstormCOMM.COLLECT_INTER
-                )
+                    MrstormCOMM.isend(
+                        Message(
+                            data=message.data,
+                            end_flag=((active_wks < len(mpi_conf.slaves_collectors)) and message.end_flag),
+                            meta=message.metadata
+                        ),
+                        dest=working_slaves[-1],
+                        tag=MrstormCOMM.COLLECT_INTER
+                    )
 
                 if args["time_exec"]:
                     if message.metadata and "timings" in message.metadata:
@@ -1023,9 +1024,11 @@ def execute_collecting_node(rank, args, mpi_conf):
                 source=mpi_conf.master_collector, tag=MrstormCOMM.COLLECT_INTER
             )
             if message.data:
+                logger.debug("Node {} received a geometry message".format(rank))
                 unpack_geo_data(message, tmp_arc_dir, geo_unpacker_slave)
 
             if message.end_flag:
+                logger.debug("Node {} called to end geometry collecting")
                 break
 
         rmtree(tmp_arc_dir)
