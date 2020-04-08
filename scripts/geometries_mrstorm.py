@@ -138,7 +138,7 @@ def generate_geometries(
             extra_package["timings"][-1] = (
                 time() - extra_package["timings"][-1]
             )
-            logger.debug("Simulation took {} s".format(
+            logger.debug("Geometry took {} s".format(
                 extra_package["timings"][-1]
             ))
 

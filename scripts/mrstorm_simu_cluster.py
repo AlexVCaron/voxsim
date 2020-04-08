@@ -550,11 +550,11 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
         geo_json['world_scale'] = np.diag(np.array(res) / limits).tolist()
 
         for i in range(len(slaves)):
-            geo_json = deepcopy(geo_json)
-            if "n_output" in geo_json and i < remainder:
-                geo_json["n_output"] += 1
+            geo_conf = deepcopy(geo_json)
+            if "n_output" in geo_conf and i < remainder:
+                geo_conf["n_output"] += 1
             MrstormCOMM.isend(
-                geo_json, dest=slaves[i], tag=MrstormCOMM.PROCESS
+                geo_conf, dest=slaves[i], tag=MrstormCOMM.PROCESS
             )
 
         if "n_output" in geo_json:
@@ -603,7 +603,7 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
 
     # Generate the geometries by batch
     logger.info("Generating clusters from configuration")
-    if geo_json["n_output"] > 0:
+    if "n_output" not in geo_json or geo_json["n_output"] > 0:
         clusters = generate_clusters(**geo_json)
 
         logger.debug("Number of clusters generated {}".format(len(clusters)))
