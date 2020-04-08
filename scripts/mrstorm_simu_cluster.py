@@ -353,7 +353,7 @@ class WorkersConfiguration:
     ):
         self._master = master_node
         self._workers = process_nodes
-        self._collectors = [collect_master] + collect_slaves
+        self._collectors = (collect_master,) + collect_slaves
 
     @property
     def master(self):
