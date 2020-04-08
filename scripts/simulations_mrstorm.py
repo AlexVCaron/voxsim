@@ -274,7 +274,8 @@ def generate_simulation(
                  if j not in failed_samples],
                 [copy.deepcopy(simulations['parameters'][j])
                  for j in range(i - callback_stride + 1, i + 1)
-                 if j not in failed_samples]
+                 if j not in failed_samples],
+                (i + 1) % callback_stride
             )
             failed_samples.clear()
 
@@ -287,7 +288,8 @@ def generate_simulation(
                  if j not in failed_samples],
                 [copy.deepcopy(simulations['parameters'][j])
                  for j in range(n_simus - (n_simus % callback_stride), n_simus)
-                 if j not in failed_samples]
+                 if j not in failed_samples],
+                n_simus % callback_stride
             )
         sim_ready_callback(*args, end=callback_signal_end, extra=extra_package)
 

@@ -454,6 +454,7 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
 
     base_output = args["out"]
     global_sim_output = join(base_output, args["simout"])
+    global_geo_output = join(base_output, args["geoout"])
 
     node_root = join(environ["SLURM_TMPDIR"], "node{}_root".format(rank))
     node_geo_output = join(node_root, args["geoout"])
@@ -589,7 +590,14 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
                     remove(data['data_package'])
                     data['data_package'] = basename(data['data_package'])
 
-            meta = {"archive": arc}
+            out_arc = join(global_geo_output, "geo_iter{}_node{}.tar.gz".format(
+                idx, rank
+            ))
+
+            copyfile(arc, out_arc)
+            remove(arc)
+
+            meta = {"archive": out_arc}
             if "time_exec" in args and "extra" in kwargs:
                 if "timings" in kwargs["extra"]:
                     meta["timings"] = kwargs["extra"]["timings"]
@@ -671,9 +679,12 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
     else:
         sim_archive = None
 
-        def f_sim_collect(paths, infos, end=False, **kwargs):
+        def f_sim_collect(paths=None, infos=None, idx=None, end=False, **kwargs):
             archive_path = None
-            if len(paths) > 0:
+            if paths:
+                archive_path = join(
+                    global_sim_output, "sim_iter{}_node{}.tar.gz".format(idx, rank)
+                )
                 tmpf = tempfile.mkdtemp(prefix=node_root)
                 json.dump(
                     serialize_floats(
@@ -681,10 +692,10 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
                     ),
                     open(join(tmpf, "description.json"), 'w+')
                 )
-                archive_path = join(
-                    tmpf, "sim_iter_node{}.tar.gz".format(rank)
+                node_archive_path = join(
+                    tmpf, "sim_iter{}_node{}.tar.gz".format(idx, rank)
                 )
-                with tarfile.open(archive_path, 'w') as archive:
+                with tarfile.open(node_archive_path, 'w') as archive:
                     for path_group in paths:
                         for path in path_group:
                             folder = dirname(path)
@@ -697,6 +708,10 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
                                     tarfile.TarInfo(item),
                                     open(join(sim_path, item))
                                 )
+
+                copyfile(node_archive_path, archive_path)
+                remove(node_archive_path)
+                rmtree(tmpf)
 
             meta = None
 
@@ -844,7 +859,8 @@ def validate_slaves(collective_hash_dict, collect_slaves):
 
 
 def move_package_to(package, dest, unload=False, delete_dest_pkg=False):
-    copyfile(package, join(dest, basename(package)))
+    if not dest == dirname(package):
+        copyfile(package, join(dest, basename(package)))
     if unload:
         with tarfile.open(join(dest, basename(package)), "r") as archive:
             archive.extractall(dest)
@@ -1041,25 +1057,27 @@ def execute_collecting_node(rank, args, mpi_conf):
 
         while True:
             message = MrstormCOMM.irecv(tag=MrstormCOMM.COLLECT)
-            collector = next(collect_iter)
 
             if message.end_flag:
                 n_workers -= 1
-                if n_workers < len(collectors):
+
+            if message.data:
+                collector = next(collect_iter)
+                if n_workers < len(mpi_conf.slaves_collectors) and message.end_flag:
                     collectors = list(
                         filter(lambda c: not c == collector, collectors)
                     )
                     collect_iter = cycle(collectors)
 
-            MrstormCOMM.isend(
-                Message(
-                    data=message.data,
-                    end_flag=n_workers < len(mpi_conf.slaves_collectors) and message.end_flag,
-                    meta=message.metadata
-                ),
-                dest=collector,
-                tag=MrstormCOMM.COLLECT_INTER
-            )
+                MrstormCOMM.isend(
+                    Message(
+                        data=message.data,
+                        end_flag=n_workers < len(mpi_conf.slaves_collectors) and message.end_flag,
+                        meta=message.metadata
+                    ),
+                    dest=collector,
+                    tag=MrstormCOMM.COLLECT_INTER
+                )
 
             if args["time_exec"]:
                 if message.metadata and "timings" in message.metadata:
