@@ -5,6 +5,9 @@ from .ORM.Objects import JsonData, ORMException
 
 class ClusterMeta(JsonData):
 
+    def _get_base_object(self):
+        return ClusterMeta()
+
     def __init__(self):
         super().__init__()
         self._values["limits"] = ""

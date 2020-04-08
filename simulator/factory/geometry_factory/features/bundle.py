@@ -3,6 +3,9 @@ from .ORM.Objects import JsonData, ORMException
 
 class Bundle(JsonData):
 
+    def _get_base_object(self):
+        return Bundle()
+
     def __init__(self):
         super().__init__()
         self._values["anchors"] = []

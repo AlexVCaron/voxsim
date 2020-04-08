@@ -5,13 +5,21 @@ from .geometry_infos import GeometryInfos
 
 
 class GeometryHandler:
-    def __init__(self, resolution, spacing):
+    def __init__(self, resolution, spacing, clusters=[], spheres=[]):
         self._parameters_dict = {
             "resolution": resolution,
             "spacing": spacing,
-            "clusters": [],
-            "spheres": []
+            "clusters": clusters,
+            "spheres": spheres
         }
+
+    def __reduce__(self):
+        return (GeometryHandler, (
+            self._parameters_dict["resolution"],
+            self._parameters_dict["spacing"],
+            self._parameters_dict["clusters"],
+            self._parameters_dict["spheres"]
+        ))
 
     def add_sphere(self, sphere):
         self._parameters_dict["spheres"].append(sphere)

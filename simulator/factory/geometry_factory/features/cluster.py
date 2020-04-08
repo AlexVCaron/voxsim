@@ -7,6 +7,9 @@ from .bundle import Bundle
 
 class Cluster(JsonData):
 
+    def _get_base_object(self):
+        return Cluster()
+
     def __init__(self):
         super().__init__()
         self._values["meta"] = ClusterMeta()

@@ -1011,7 +1011,7 @@ def execute_collecting_node(rank, args, mpi_conf):
         for i in mpi_conf.workforce:
             MrstormCOMM.isend(
                 (package_path, collective_hash_dict),
-                i,
+                dest=i,
                 tag=MrstormCOMM.COLLECT
             )
 

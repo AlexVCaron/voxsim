@@ -4,6 +4,9 @@ from .orm_exception import ORMException
 
 class World(JsonData):
 
+    def _get_base_object(self):
+        return World()
+
     def __init__(self):
         super().__init__()
         self._values["resolution"] = []

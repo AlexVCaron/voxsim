@@ -4,6 +4,9 @@ from .orm_exception import ORMException
 
 class Cluster(Structure):
 
+    def _get_base_object(self):
+        return Cluster()
+
     def __init__(self):
         super().__init__()
         self._values["type"] = "external"

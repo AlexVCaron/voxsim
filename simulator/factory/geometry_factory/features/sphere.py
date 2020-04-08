@@ -1,14 +1,18 @@
+from functools import partial
+
 from .ORM.Objects import Structure, ORMException
 
 
 class Sphere(Structure):
-
     def __init__(self):
         super().__init__()
         self._values["type"] = "internal"
         self._values["object"] = "sphere"
 
         self._required += ["radius", "scalings"]
+
+    def _get_base_object(self):
+        return Sphere()
 
     def set_radius(self, radius):
         self._set_value("radius", radius)
