@@ -603,21 +603,21 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
 
     # Generate the geometries by batch
     logger.info("Generating clusters from configuration")
+    if geo_json["n_output"] > 0:
+        clusters = generate_clusters(**geo_json)
 
-    clusters = generate_clusters(**geo_json)
+        logger.debug("Number of clusters generated {}".format(len(clusters)))
 
-    logger.debug("Number of clusters generated {}".format(len(clusters)))
+        logger.info("Generating geometries")
 
-    logger.info("Generating geometries")
+        geo_infos = generate_geometries(
+            clusters, resolution, spacing, geo_fmt, geo_params, node_geo_output,
+            rank * geo_json["n_output"] + (0 if rank < remainder else remainder),
+            singularity_conf=conf, dump_infos=True, geo_ready_callback=f_collect,
+            callback_stride=args['n_geo_collect'], get_timings=args["time_exec"]
+        )
 
-    geo_infos = generate_geometries(
-        clusters, resolution, spacing, geo_fmt, geo_params, node_geo_output,
-        rank * geo_json["n_output"] + (0 if rank < remainder else remainder),
-        singularity_conf=conf, dump_infos=True, geo_ready_callback=f_collect,
-        callback_stride=args['n_geo_collect'], get_timings=args["time_exec"]
-    )
-
-    logger.debug("Number of geometries generated {}".format(len(geo_infos)))
+        logger.debug("Number of geometries generated {}".format(len(geo_infos)))
 
     if not is_master_collect \
        and len(mpi_conf.workers) < len(mpi_conf.slaves_collectors):
@@ -872,7 +872,7 @@ def execute_collecting_node(rank, args, mpi_conf):
     if args['n_collect_bf_valid'] == -1:
         args['n_collect_bf_valid'] = len(mpi_conf.slaves_collectors)
 
-        # Execute collection for geometry generation
+    # Execute collection for geometry generation
     tmp_arc_dir = tempfile.mkdtemp(prefix=global_geo_output)
     if rank == mpi_conf.master_collector:
         if args["time_exec"]:
@@ -892,7 +892,7 @@ def execute_collecting_node(rank, args, mpi_conf):
                 return True
             return False
 
-        n_proc_active = len(mpi_conf.workers)
+        active_wks = len(mpi_conf.workers)
         while True:
             cycle_slaves = cycle(collect_slaves)
             idle_slaves, working_slaves = (), ()
@@ -904,12 +904,16 @@ def execute_collecting_node(rank, args, mpi_conf):
                 message = MrstormCOMM.irecv(tag=MrstormCOMM.ALL_COLLECT)
 
                 if message.end_flag:
-                    n_proc_active -= 1
+                    active_wks -= 1
 
                 working_slaves += (next(cycle_slaves),)
 
                 MrstormCOMM.isend(
-                    message,
+                    Message(
+                        data=message.data,
+                        end_flag=active_wks <= len(collect_slaves) and message.end_flag,
+                        meta=message.metadata
+                    ),
                     dest=working_slaves[-1],
                     tag=MrstormCOMM.COLLECT_INTER
                 )
@@ -920,7 +924,7 @@ def execute_collecting_node(rank, args, mpi_conf):
                             message.metadata["timings"]
                         )
 
-                if n_proc_active == 0:
+                if active_wks == 0:
                     break
 
             for i in range(len(collect_slaves) - len(working_slaves)):
@@ -932,7 +936,7 @@ def execute_collecting_node(rank, args, mpi_conf):
 
             collect_slaves = idle_slaves + working_slaves
 
-            if len(collect_slaves) == 0 or n_proc_active == 0:
+            if len(collect_slaves) == 0 or active_wks == 0:
                 break
 
         for slave in collect_slaves:
@@ -942,14 +946,14 @@ def execute_collecting_node(rank, args, mpi_conf):
                 tag=MrstormCOMM.COLLECT_INTER
             )
 
-        if len(mpi_conf.workers) > len(mpi_conf.slaves_collectors):
-            i = len(mpi_conf.workers) - len(mpi_conf.slaves_collectors)
-            while i > 0:
-                message = MrstormCOMM.irecv(tag=MrstormCOMM.ALL_COLLECT)
-                if message.data:
-                    unpack_geo_data(message, tmp_arc_dir, geo_unpacker)
-                if message.end_flag:
-                    i -= 1
+        # if len(mpi_conf.workers) > len(mpi_conf.slaves_collectors):
+        #     i = len(mpi_conf.workers) - len(mpi_conf.slaves_collectors)
+        #     while i > 0:
+        #         message = MrstormCOMM.irecv(tag=MrstormCOMM.ALL_COLLECT)
+        #         if message.data:
+        #             unpack_geo_data(message, tmp_arc_dir, geo_unpacker)
+        #         if message.end_flag:
+        #             i -= 1
 
         rmtree(tmp_arc_dir)
         package_path = create_geometry_archive(
@@ -1006,13 +1010,20 @@ def execute_collecting_node(rank, args, mpi_conf):
 
             if message.end_flag:
                 n_workers -= 1
-                collectors = list(
-                    filter(lambda c: not c == collector, collectors)
-                )
-                collect_iter = cycle(collectors)
+                if n_workers <= len(collectors):
+                    collectors = list(
+                        filter(lambda c: not c == collector, collectors)
+                    )
+                    collect_iter = cycle(collectors)
 
             MrstormCOMM.isend(
-                message, dest=collector, tag=MrstormCOMM.COLLECT_INTER
+                Message(
+                    data=message.data,
+                    end_flag=n_workers <= len(collectors) and message.end_flag,
+                    meta=message.metadata
+                ),
+                dest=collector,
+                tag=MrstormCOMM.COLLECT_INTER
             )
 
             if args["time_exec"]:
@@ -1031,14 +1042,14 @@ def execute_collecting_node(rank, args, mpi_conf):
                     tag=MrstormCOMM.COLLECT_INTER
                 )
 
-        if len(mpi_conf.workers) > len(mpi_conf.slaves_collectors):
-            remainder = len(mpi_conf.workers) - len(mpi_conf.slaves_collectors)
-            while remainder > 0:
-                message = MrstormCOMM.irecv(tag=MrstormCOMM.COLLECT)
-                if message.data:
-                    unpack_sim_data(message, global_sim_output)
-                if message.end_flag:
-                    remainder -= 1
+        # if len(mpi_conf.workers) > len(mpi_conf.slaves_collectors):
+        #     remainder = len(mpi_conf.workers) - len(mpi_conf.slaves_collectors)
+        #     while remainder > 0:
+        #         message = MrstormCOMM.irecv(tag=MrstormCOMM.COLLECT)
+        #         if message.data:
+        #             unpack_sim_data(message, global_sim_output)
+        #         if message.end_flag:
+        #             remainder -= 1
 
         if args["time_exec"]:
             extra["timings"]["geo"]["mean"] = np.mean(extra["timings"]["geo"]["values"])
