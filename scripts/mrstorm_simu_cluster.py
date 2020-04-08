@@ -919,7 +919,7 @@ def execute_collecting_node(rank, args, mpi_conf):
                 MrstormCOMM.isend(
                     Message(
                         data=message.data,
-                        end_flag=active_wks <= len(mpi_conf.slaves_collectors) and message.end_flag,
+                        end_flag=active_wks < len(mpi_conf.slaves_collectors) and message.end_flag,
                         meta=message.metadata
                     ),
                     dest=working_slaves[-1],
