@@ -360,6 +360,10 @@ class WorkersConfiguration:
         return self._master
 
     @property
+    def workforce(self):
+        return (self._master,) + self._workers
+
+    @property
     def workers(self):
         return self._workers
 
@@ -900,7 +904,7 @@ def execute_collecting_node(rank, args, mpi_conf):
                 return True
             return False
 
-        active_wks = len(mpi_conf.workers)
+        active_wks = len(mpi_conf.workforce)
         while True:
             cycle_slaves = cycle(collect_slaves)
             idle_slaves, working_slaves = (), ()
@@ -919,7 +923,7 @@ def execute_collecting_node(rank, args, mpi_conf):
                 MrstormCOMM.isend(
                     Message(
                         data=message.data,
-                        end_flag=active_wks < len(mpi_conf.slaves_collectors) and message.end_flag,
+                        end_flag=((active_wks < len(mpi_conf.slaves_collectors)) and message.end_flag),
                         meta=message.metadata
                     ),
                     dest=working_slaves[-1],
@@ -1016,7 +1020,7 @@ def execute_collecting_node(rank, args, mpi_conf):
         logger.info("Node {} finished collecting geometries".format(rank))
 
     if rank == mpi_conf.master_collector:
-        n_workers = len(mpi_conf.workers)
+        n_workers = len(mpi_conf.workforce)
         collectors = mpi_conf.slaves_collectors
         collect_iter = cycle(collectors)
 
@@ -1162,7 +1166,7 @@ def unpack_geo_data(
         )
 
         if not valid_data_fn(
-                message.data[i], end=message.end_flag, is_multipart=(i < (len(message.data) - 1))
+            message.data[i], end=message.end_flag, is_multipart=(i < (len(message.data) - 1))
         ):
             remove(message.data[i]["data_package"])
 
