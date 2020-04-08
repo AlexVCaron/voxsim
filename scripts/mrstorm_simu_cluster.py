@@ -529,7 +529,7 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
     # Format geo_json file depending on which node
     # is on to have the right number of samples at the end
     world_size = MrstormCOMM.size()
-    processing_size = len(mpi_conf.workers)
+    processing_size = len(mpi_conf.workforce)
 
     remainder = 0
     if "n_output" in geo_json:
@@ -544,9 +544,7 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
             )
 
         logger.debug("Sending geometry configuration to slave nodes")
-        slaves = list(filter(
-            lambda w: not w == mpi_conf.master, mpi_conf.workers
-        ))
+        slaves = mpi_conf.workers
 
         # Calculate bundle to world transformation
         limits = [l[1] - l[0] for l in geo_json['limits']]
@@ -596,6 +594,8 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
                 if "timings" in kwargs["extra"]:
                     meta["timings"] = kwargs["extra"]["timings"]
 
+            logger.debug("Node {} sending out infos. Ended {}".format(rank, end))
+
             MrstormCOMM.isend(
                 Message(data_infos, end, meta=meta),
                 dest=mpi_conf.master_collector,
@@ -630,10 +630,10 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
         )
 
     if not is_master_collect \
-       and len(mpi_conf.workers) < len(mpi_conf.slaves_collectors):
+       and len(mpi_conf.workforce) < len(mpi_conf.slaves_collectors):
         if rank == mpi_conf.master:
             for i in range(
-                    len(mpi_conf.slaves_collectors) - len(mpi_conf.workers)
+                    len(mpi_conf.slaves_collectors) - len(mpi_conf.workforce)
             ):
                 MrstormCOMM.isend(
                     Message(end_flag=True),
@@ -711,8 +711,8 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
             )
 
     # Generate simulations on remaining geometries
-    step = int(len(geo_infos) / len(mpi_conf.workers))
-    remainder = len(geo_infos) % len(mpi_conf.workers)
+    step = int(len(geo_infos) / len(mpi_conf.workforce))
+    remainder = len(geo_infos) % len(mpi_conf.workforce)
     # sim_archive = join(node_root, "data_node{}.tar.gz".format(rank))
     # with tarfile.open(sim_archive, "w:gz") as archive:
     i0 = rank * step + (rank if rank < remainder else remainder)
@@ -908,6 +908,9 @@ def execute_collecting_node(rank, args, mpi_conf):
         while True:
             cycle_slaves = cycle(collect_slaves)
             idle_slaves, working_slaves = (), ()
+
+            logger.debug("Available slaves {}".format(collect_slaves))
+
             for i in range(
                 args['n_collect_bf_valid']
                 if args['n_collect_bf_valid'] < len(collect_slaves)
@@ -917,6 +920,7 @@ def execute_collecting_node(rank, args, mpi_conf):
 
                 if message.end_flag:
                     active_wks -= 1
+                    logger.debug("Workforce reduced to {}".format(active_wks))
 
                 working_slaves += (next(cycle_slaves),)
 
@@ -951,6 +955,11 @@ def execute_collecting_node(rank, args, mpi_conf):
             if len(collect_slaves) == 0 or active_wks == 0:
                 break
 
+        logger.debug("Master collector has finished its geometry overseeing")
+
+        logger.debug("Dequeueing slaves {}".format(collect_slaves))
+        logger.debug("Dequeueing active workers {}".format(active_wks))
+
         for slave in collect_slaves:
             MrstormCOMM.isend(
                 Message(end_flag=True),
@@ -964,6 +973,7 @@ def execute_collecting_node(rank, args, mpi_conf):
                 unpack_geo_data(message, tmp_arc_dir, geo_unpacker)
             if message.end_flag:
                 active_wks -= 1
+                logger.debug("Workforce reduced to {}".format(active_wks))
 
         # if len(mpi_conf.workers) > len(mpi_conf.slaves_collectors):
         #     i = len(mpi_conf.workers) - len(mpi_conf.slaves_collectors)
@@ -979,7 +989,9 @@ def execute_collecting_node(rank, args, mpi_conf):
             global_geo_output, collective_hash_dict, base_output
         )
 
-        for i in mpi_conf.workers:
+        logger.debug("Master collector sending geometry config to workers")
+
+        for i in mpi_conf.workforce:
             MrstormCOMM.isend(
                 (package_path, collective_hash_dict),
                 i,
@@ -1214,7 +1226,7 @@ def generate_datasets(args):
     n_collect = args["collect"]
     mpi_jobs_ranks = (
         0,
-        ((0,) if n_collect > 0 else ()) + tuple(range(1, world_size - n_collect))
+        tuple(range(1, world_size - n_collect))
     )
     if n_collect > 0:
         mpi_jobs_ranks += (
