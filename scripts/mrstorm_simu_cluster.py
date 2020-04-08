@@ -1176,12 +1176,12 @@ def generate_datasets(args):
     n_collect = args["collect"]
     mpi_jobs_ranks = (
         0,
-        ([0] if n_collect > 0 else []) + list(range(1, world_size - n_collect))
+        ((0,) if n_collect > 0 else ()) + tuple(range(1, world_size - n_collect))
     )
     if n_collect > 0:
         mpi_jobs_ranks += (
             world_size - n_collect,
-            list(range(world_size - n_collect + 1, world_size))
+            tuple(range(world_size - n_collect + 1, world_size))
         )
 
     mpi_conf = WorkersConfiguration(*mpi_jobs_ranks)
