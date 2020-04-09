@@ -673,8 +673,8 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
     with tarfile.open(arc, 'r') as archive:
         archive.extractall(geo_tmp_dir)
 
-    for info in geo_infos:
-        info["file_path"] = join(geo_tmp_dir, "geometry_outputs")
+    for k in geo_infos.keys():
+        geo_infos[k]["file_path"] = join(geo_tmp_dir, "geometry_outputs")
 
     logger.debug("Content of extracted geometry directory\n{}".format(listdir(geo_tmp_dir)))
 
