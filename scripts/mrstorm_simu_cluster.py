@@ -1049,6 +1049,9 @@ def execute_collecting_node(rank, args, mpi_conf):
             global_geo_output, collective_hash_dict, base_output
         )
 
+        for k in collective_hash_dict.keys():
+            collective_hash_dict[k].clear()
+
         logger.debug("Master collector sending geometry config to workers")
 
         for i in mpi_conf.workforce:

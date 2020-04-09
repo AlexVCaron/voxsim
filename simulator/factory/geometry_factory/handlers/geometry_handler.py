@@ -21,6 +21,10 @@ class GeometryHandler:
             self._parameters_dict["spheres"]
         ))
 
+    def clear(self):
+        self._parameters_dict["clusters"] = []
+        self._parameters_dict["spheres"] = []
+
     def add_sphere(self, sphere):
         self._parameters_dict["spheres"].append(sphere)
         return self
