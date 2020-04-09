@@ -44,6 +44,8 @@ def generate_simulation(
         callback_stride=-1, callback_signal_end=False,
         n_retry=3, get_timings=False
 ):
+    logger.debug("Generating simulations to {}".format(output_data))
+
     extra_package = {}
     if get_timings:
         extra_package["timings"] = {}
