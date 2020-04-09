@@ -13,6 +13,15 @@ class GeometryHandler:
             "spheres": spheres
         }
 
+    def as_dict(self):
+        return self.__getstate__()
+
+    @classmethod
+    def from_dict(cls, d):
+        h = GeometryHandler(d["resolution"], d["spacing"])
+        h.__setstate__(d)
+        return h
+
     def __reduce__(self):
         return (GeometryHandler, (
             self._parameters_dict["resolution"],

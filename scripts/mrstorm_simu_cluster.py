@@ -22,6 +22,8 @@ import config
 
 from scripts.geometries_mrstorm import generate_clusters, generate_geometries
 from scripts.simulations_mrstorm import generate_simulation
+from simulator.factory.geometry_factory.handlers import GeometryHandler, \
+    GeometryInfos
 
 logger = logging.getLogger(basename(__file__).split(".")[0])
 
@@ -660,6 +662,12 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
             source=mpi_conf.master_collector, tag=MrstormCOMM.COLLECT
         )
 
+        for k in geo_infos.keys():
+            info = geo_infos[k]
+            if "handler" in info:
+                info["handler"] = GeometryHandler.from_dict(info["handler"])
+            geo_infos[k] = GeometryInfos.from_dict(info)
+
     if islink(node_geo_output):
         unlink(node_geo_output)
     else:
@@ -1050,7 +1058,10 @@ def execute_collecting_node(rank, args, mpi_conf):
         )
 
         for k in collective_hash_dict.keys():
-            collective_hash_dict[k].clear()
+            hash_dict = collective_hash_dict[k].as_dict()
+            if "handler" in hash_dict:
+                hash_dict["handler"] = hash_dict["handler"].as_dict()
+            collective_hash_dict[k] = hash_dict
 
         logger.debug("Master collector sending geometry config to workers")
 

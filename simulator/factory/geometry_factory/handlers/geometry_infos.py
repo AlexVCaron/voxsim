@@ -34,3 +34,6 @@ class GeometryInfos(AttributeAsDictClass):
     def set_spacing(self, spacing):
         self._spacing = spacing
 
+    @classmethod
+    def from_dict(cls, info):
+        return GeometryInfos(**info)
