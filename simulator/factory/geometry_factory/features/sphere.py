@@ -1,5 +1,3 @@
-from functools import partial
-
 from .ORM.Objects import Structure, ORMException
 
 
@@ -12,7 +10,7 @@ class Sphere(Structure):
         self._required += ["radius", "scalings"]
 
     def _get_base_object(self):
-        return Sphere()
+        return Sphere
 
     def set_radius(self, radius):
         self._set_value("radius", radius)

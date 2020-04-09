@@ -5,7 +5,7 @@ from .orm_exception import ORMException
 class World(JsonData):
 
     def _get_base_object(self):
-        return World()
+        return World
 
     def __init__(self, init_values=None):
         super().__init__(init_values)

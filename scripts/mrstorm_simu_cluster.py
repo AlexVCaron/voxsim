@@ -907,7 +907,12 @@ def execute_collecting_node(rank, args, mpi_conf):
     tmp_arc_dir = tempfile.mkdtemp(prefix=global_geo_output)
     if rank == mpi_conf.master_collector:
         if args["time_exec"]:
-            extra = {"timings": {"geo": {"values": []}, "sim": {"values": []}}}
+            extra = {
+                "timings": {
+                    "geo": {"start": [], "end": [], "duration": []},
+                    "sim": {"values": []}
+                }
+            }
 
         collective_hash_dict = {}
         collect_slaves = deepcopy(mpi_conf.slaves_collectors)
@@ -956,8 +961,16 @@ def execute_collecting_node(rank, args, mpi_conf):
 
                 if args["time_exec"]:
                     if message.metadata and "timings" in message.metadata:
-                        extra["timings"]["geo"]["values"].extend(
-                            message.metadata["timings"]
+                        extra["timings"]["geo"]["start"].extend(
+                            message.metadata["timings"]["start"]
+                        )
+
+                        extra["timings"]["geo"]["end"].extend(
+                            message.metadata["timings"]["end"]
+                        )
+
+                        extra["timings"]["geo"]["duration"].extend(
+                            message.metadata["timings"]["duration"]
                         )
 
                 if active_wks == 0:
@@ -966,9 +979,10 @@ def execute_collecting_node(rank, args, mpi_conf):
             for i in range(len(collect_slaves) - len(working_slaves)):
                 idle_slaves += (next(cycle_slaves),)
 
-            collective_hash_dict, working_slaves = validate_slaves(
-                collective_hash_dict, working_slaves
-            )
+            if len(working_slaves) > 0:
+                collective_hash_dict, working_slaves = validate_slaves(
+                    collective_hash_dict, working_slaves
+                )
 
             collect_slaves = idle_slaves + working_slaves
 
@@ -1115,14 +1129,14 @@ def execute_collecting_node(rank, args, mpi_conf):
         #             remainder -= 1
 
         if args["time_exec"]:
-            extra["timings"]["geo"]["mean"] = np.mean(extra["timings"]["geo"]["values"])
+            extra["timings"]["geo"]["mean"] = np.mean(extra["timings"]["geo"]["duration"])
             extra["timings"]["sim"]["mean"] = np.mean(extra["timings"]["sim"]["values"])
-            extra["timings"]["geo"]["var"] = np.var(extra["timings"]["geo"]["values"])
+            extra["timings"]["geo"]["var"] = np.var(extra["timings"]["geo"]["duration"])
             extra["timings"]["sim"]["var"] = np.var(extra["timings"]["sim"]["values"])
 
             logger.debug("Timings statistics")
             logger.debug("  -> Geometry : {} samples | mean : {} s | var : {} s".format(
-                len(extra["timings"]["geo"]["values"]),
+                len(extra["timings"]["geo"]["duration"]),
                 extra["timings"]["geo"]["mean"], extra["timings"]["geo"]["var"]
             ))
             logger.debug("  -> Simulation : {} samples | mean : {} s | var : {} s".format(

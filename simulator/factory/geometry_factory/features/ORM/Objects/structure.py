@@ -1,5 +1,4 @@
-from abc import ABCMeta, abstractmethod
-from functools import partial
+from abc import ABCMeta
 
 from .json_data import JsonData
 

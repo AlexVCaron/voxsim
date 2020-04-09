@@ -4,7 +4,7 @@ from .ORM.Objects import JsonData, ORMException
 class Bundle(JsonData):
 
     def _get_base_object(self):
-        return Bundle()
+        return Bundle
 
     def __init__(self, init_values=None):
         super().__init__(init_values)

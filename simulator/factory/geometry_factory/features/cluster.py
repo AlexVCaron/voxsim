@@ -8,7 +8,7 @@ from .bundle import Bundle
 class Cluster(JsonData):
 
     def _get_base_object(self):
-        return Cluster()
+        return Cluster
 
     def __init__(self, init_values=None):
         super().__init__(init_values)

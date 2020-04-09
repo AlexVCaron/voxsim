@@ -1,6 +1,7 @@
 import logging
 import glob
 from asyncio import sleep, create_subprocess_shell, get_event_loop, new_event_loop, set_event_loop
+from multiprocessing import Process
 from os import path, makedirs, remove
 from os.path import exists, join, basename
 from shutil import copyfile
@@ -182,7 +183,7 @@ class SimulationRunner:
             logger.info("Generating simulation geometry")
             async_loop.run_until_complete(self._launch_command(geometry_command, log_file, "[RUNNING VOXSIM]"))
             if self._run_simulation:
-                self._rename_and_copy_compartments(geometry_output_folder, simulation_output_folder)
+                self._execute_parallel(self._rename_and_copy_compartments, (geometry_output_folder, simulation_output_folder))
                 logger.info("Simulating DWI signal")
                 return_code, out, err = async_loop.run_until_complete(self._launch_command(simulation_command, log_file, "[RUNNING FIBERFOX]"))
                 if not return_code == 0:
@@ -194,6 +195,11 @@ class SimulationRunner:
                 # self._convert_nrrd_to_nifti(simulation_output_folder, remove_nrrd)
                 logger.debug("Simulation ended with code {}".format(return_code))
             async_loop.close()
+
+    def _execute_parallel(self, method, args):
+        p = Process(target=method, args=args)
+        p.start()
+        p.join()
 
     def _rename_and_copy_compartments_standalone(self, simulation_infos, geometry_output_folder, simulation_output_folder):
         merged_maps = False

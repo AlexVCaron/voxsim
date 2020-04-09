@@ -5,7 +5,7 @@ from .orm_exception import ORMException
 class Cluster(Structure):
 
     def _get_base_object(self):
-        return Cluster()
+        return Cluster
 
     def __init__(self, init_values=None):
         super().__init__(init_values)

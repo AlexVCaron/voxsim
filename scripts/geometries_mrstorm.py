@@ -107,7 +107,7 @@ def generate_geometries(
 ):
     extra_package = {}
     if get_timings:
-        extra_package["timings"] = []
+        extra_package["timings"] = {"start": [], "end": [], "duration": []}
 
     geometries_infos = []
     persistent_infos = []
@@ -130,16 +130,17 @@ def generate_geometries(
         makedirs(join(output_data, output_name_fmt.format(geo_idx + init_i)), exist_ok=True)
 
         if get_timings:
-            extra_package["timings"].append(time())
+            extra_package["timings"]["start"].append(time())
 
         runner.run(join(output_data, output_name_fmt.format(geo_idx + init_i)))
 
         if get_timings:
-            extra_package["timings"][-1] = (
-                time() - extra_package["timings"][-1]
+            extra_package["timings"]["end"].append(time())
+            extra_package["timings"]["duration"].append(
+                extra_package["timings"]["end"][-1] - extra_package["timings"]["start"][-1]
             )
             logger.debug("Geometry took {} s".format(
-                extra_package["timings"][-1]
+                extra_package["timings"]["duration"][-1]
             ))
 
         infos.generate_new_key(
@@ -157,13 +158,16 @@ def generate_geometries(
             if geo_ready_callback(
                 copy.deepcopy(geometries_infos),
                 idx=int((geo_idx + 1) / callback_stride),
+                end=(geo_idx + 1 == len(clusters_groups)),
                 extra=extra_package
             ):
                 if dump_infos:
                     persistent_infos.extend(geometries_infos)
                 geometries_infos.clear()
                 if get_timings:
-                    extra_package["timings"].clear()
+                    extra_package["timings"]["start"].clear()
+                    extra_package["timings"]["end"].clear()
+                    extra_package["timings"]["duration"].clear()
 
     if callback_stride > 0 and len(clusters_groups) % callback_stride > 0:
         if geo_ready_callback(

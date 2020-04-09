@@ -6,7 +6,7 @@ from .ORM.Objects import JsonData, ORMException
 class ClusterMeta(JsonData):
 
     def _get_base_object(self):
-        return ClusterMeta()
+        return ClusterMeta
 
     def __init__(self, init_values=None):
         super().__init__(init_values)
