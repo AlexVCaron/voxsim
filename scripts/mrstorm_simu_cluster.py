@@ -669,6 +669,8 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
     with tarfile.open(arc, 'r') as archive:
         archive.extractall(node_geo_output)
 
+    logger.debug("Content of extracted geometry directory\n{}".format(listdir(node_geo_output)))
+
     logger.info("Generating simulations on datasets")
 
     if is_master_collect:
@@ -1062,7 +1064,7 @@ def execute_collecting_node(rank, args, mpi_conf):
                 unpack_geo_data(message, tmp_arc_dir, geo_unpacker_slave)
 
             if message.end_flag:
-                logger.debug("Node {} called to end geometry collecting")
+                logger.debug("Node {} called to end geometry collecting".format(rank))
                 break
 
         rmtree(tmp_arc_dir)
