@@ -268,6 +268,13 @@ def generate_simulation(
                         raise e
 
         if callback_stride > 0 and (i + 1) % callback_stride == 0:
+            kwargs = {}
+            if i + 1 == n_simus:
+                kwargs["meta"] = filter(
+                    lambda it: ".log" in it or ".json" in it,
+                    listdir(output_data)
+                )
+
             sim_ready_callback(
                 [simulations['paths'][j]
                  for j in range(i - callback_stride + 1, i + 1)
@@ -275,9 +282,18 @@ def generate_simulation(
                 [copy.deepcopy(simulations['parameters'][j])
                  for j in range(i - callback_stride + 1, i + 1)
                  if j not in failed_samples],
-                (i + 1) % callback_stride
+                (i + 1) % callback_stride,
+                **kwargs
             )
             failed_samples.clear()
+
+    json.dump(
+        simulations,
+        open(join(
+            output_data, "{}_description.json".format(output_name)
+        ), "w+"),
+        indent=4
+    )
 
     if callback_stride > 0:
         args = ()
@@ -297,11 +313,3 @@ def generate_simulation(
                 lambda it: ".log" in it or ".json" in it, listdir(output_data)
             )
         )
-
-    json.dump(
-        simulations,
-        open(join(
-            output_data, "{}_description.json".format(output_name)
-        ), "w+"),
-        indent=4
-    )
