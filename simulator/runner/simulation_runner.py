@@ -83,7 +83,7 @@ class SimulationRunner:
             makedirs(simulation_output_folder, exist_ok=True)
 
         simulation_command = "singularity run -B {} --app launch_mitk {} -p {} -i {} -o {} {}".format(
-            ",".join([simulation_infos["file_path"], simulation_output_folder]),
+            ",".join([geometry_folder, simulation_infos["file_path"], simulation_output_folder]),
             self._singularity,
             path.join(simulation_output_folder, "{}_simulation.ffp".format(self._base_naming)),
             path.join(geometry_output_folder, self._geometry_base_naming) + "_merged_bundles.fib",
