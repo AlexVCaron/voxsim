@@ -21,6 +21,15 @@ class GeometryHandler:
             self._parameters_dict["spheres"]
         ))
 
+    def __getstate__(self):
+        members = self._parameters_dict.copy()
+        members.pop("clusters")
+        members.pop("spheres")
+        return members
+
+    def __setstate__(self, state):
+        self._parameters_dict.update(state)
+
     def clear(self):
         self._parameters_dict["clusters"] = []
         self._parameters_dict["spheres"] = []
