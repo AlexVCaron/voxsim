@@ -8,8 +8,8 @@ import json
 from argparse import ArgumentParser
 from copy import deepcopy
 from enum import Enum
-from os import makedirs, environ, remove, walk, listdir
-from os.path import exists, join, basename, isdir, dirname
+from os import makedirs, environ, remove, walk, listdir, unlink
+from os.path import exists, join, basename, isdir, dirname, islink
 from shutil import rmtree, copyfile, move, copy, copytree
 from itertools import cycle
 
@@ -662,7 +662,10 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
 
     arc = join(node_geo_output, basename(package_path))
 
-    rmtree(node_geo_output, ignore_errors=True)
+    if islink(node_geo_output):
+        unlink(node_geo_output)
+    else:
+        rmtree(node_geo_output, ignore_errors=True)
     makedirs(node_geo_output, exist_ok=True)
     copyfile(package_path, arc)
 
@@ -685,6 +688,7 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
             archive_path = None
             if paths:
                 logger.debug("Received {} simulation paths to pack".format(len(paths)))
+                logger.debug("{}".format(paths))
 
                 archive_path = join(
                     global_sim_output, "sim_iter{}_node{}.tar.gz".format(idx, rank)
@@ -703,7 +707,7 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
                     for path_group in paths:
                         for path in path_group:
                             search_tag = basename(path).split(".")[0]
-                            sim_path = join(dirname(path), "simulation_outputs")
+                            sim_path = dirname(path)
                             for item in glob.glob1(
                                 sim_path, "{}*".format(search_tag)
                             ):
@@ -714,7 +718,10 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
 
                 copyfile(node_archive_path, archive_path)
                 remove(node_archive_path)
-                rmtree(tmpf)
+                if islink(tmpf):
+                    unlink(tmpf)
+                else:
+                    rmtree(tmpf)
 
             meta = None
 
@@ -887,9 +894,11 @@ def unpack_geometry_output(geo_path, empty_path=True):
                 fuse_directories_and_overwrite_files(tmp_arc, tmp)
                 rmtree(tmp_arc)
 
-
     if empty_path:
-        rmtree(geo_path)
+        if islink(geo_path):
+            unlink(geo_path)
+        else:
+            rmtree(geo_path)
         makedirs(geo_path, exist_ok=True)
 
     fuse_directories_and_overwrite_files(tmp, geo_path)
@@ -902,12 +911,15 @@ def execute_collecting_node(rank, args, mpi_conf):
     base_output = args["out"]
     global_geo_output = join(base_output, args["geoout"])
     global_sim_output = join(base_output, args["simout"])
+    global_tmp_dir = join(base_output, "tmp")
+    if not exists(global_tmp_dir):
+        makedirs(global_tmp_dir, exist_ok=True)
 
     if args['n_collect_bf_valid'] == -1:
         args['n_collect_bf_valid'] = len(mpi_conf.slaves_collectors)
 
     # Execute collection for geometry generation
-    tmp_arc_dir = tempfile.mkdtemp(prefix=global_geo_output)
+    tmp_arc_dir = tempfile.mkdtemp(prefix=global_tmp_dir)
     if rank == mpi_conf.master_collector:
         if args["time_exec"]:
             extra = {
@@ -1021,7 +1033,6 @@ def execute_collecting_node(rank, args, mpi_conf):
         #         if message.end_flag:
         #             i -= 1
 
-        rmtree(tmp_arc_dir)
         package_path = create_geometry_archive(
             global_geo_output, collective_hash_dict, base_output
         )
@@ -1035,6 +1046,7 @@ def execute_collecting_node(rank, args, mpi_conf):
                 tag=MrstormCOMM.COLLECT
             )
 
+        rmtree(global_tmp_dir)
     else:
         def geo_unpacker_slave(info, end=False, is_multipart=False):
             MrstormCOMM.isend(
@@ -1067,7 +1079,6 @@ def execute_collecting_node(rank, args, mpi_conf):
                 logger.debug("Node {} called to end geometry collecting".format(rank))
                 break
 
-        rmtree(tmp_arc_dir)
         logger.info("Node {} finished collecting geometries".format(rank))
 
     if rank == mpi_conf.master_collector:
@@ -1166,24 +1177,24 @@ def create_geometry_archive(geo_root, infos_dict, output):
     data_root = join(geo_root, "data")
     logs_root = join(geo_root, "logs")
     outputs_root = join(data_root, "geometry_outputs")
+    geo_output = join(geo_root, "geometry_outputs")
 
     makedirs(logs_root)
     for log_file in glob.glob1(data_root, "*.log"):
         move(join(data_root, log_file), join(logs_root, log_file))
 
-    move(
-        outputs_root,
-        join(geo_root, "geometry_outputs"),
-        copy_function=copytree
-    )
-    rmtree(data_root)
+    move(outputs_root, geo_output, copy_function=copytree)
+    if islink(data_root):
+        unlink(data_root)
+    else:
+        rmtree(data_root)
 
     serializable_infos = {}
     for k, info in infos_dict.items():
         info_copy = deepcopy(info)
         info_copy.pop('data_package')
         info_copy.pop('handler')
-        info_copy['file_path'] = geo_root
+        info_copy['file_path'] = geo_output
         serializable_infos[k] = info_copy.as_dict()
 
     json.dump(serializable_infos, open(
@@ -1194,7 +1205,8 @@ def create_geometry_archive(geo_root, infos_dict, output):
             join(output, "geo_package.tar.gz"), "w:gz"
     ) as archive:
         for item in listdir(geo_root):
-            archive.add(join(geo_root, item), arcname=item)
+            if ".tar.gz" not in item:
+                archive.add(join(geo_root, item), arcname=item)
 
     return join(output, "geo_package.tar.gz")
 
