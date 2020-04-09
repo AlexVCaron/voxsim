@@ -295,6 +295,14 @@ class SimulationRunner:
         process = await create_subprocess_shell(command, stdout=PIPE, stderr=PIPE)
         while process.returncode is None:
             out, err = await process.communicate()
+            logger.debug(
+                "[ERROR OUTPUT FROM SIMULATION RUNNER]{} - {}".format(
+                    log_tag, err.decode("utf-8")
+                ))
+            logger.debug(
+                "[STANDARD OUTPUT FROM SIMULATION RUNNER]{} - {}".format(
+                    log_tag, out.decode("utf-8")
+                ))
             log_file.write("{} - {}".format(log_tag, out.decode("utf-8")))
             log_file.write("{} - {}".format(log_tag, err.decode("utf-8")))
             log_file.flush()
@@ -302,6 +310,8 @@ class SimulationRunner:
 
         out, err = await process.communicate()
         err_str, out_str = err.decode("utf-8"), out.decode("utf-8")
+        logger.debug("[ERROR OUTPUT FROM SIMULATION RUNNER]{} - {}".format(log_tag, err_str))
+        logger.debug("[STANDARD OUTPUT FROM SIMULATION RUNNER]{} - {}".format(log_tag, out_str))
         log_file.write("{} - {}".format(log_tag, out_str))
         log_file.write("{} - {}".format(log_tag, err_str))
         log_file.write("Process ended with return code {}\n".format(process.returncode))
