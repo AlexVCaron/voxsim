@@ -3,7 +3,7 @@ import copy
 import glob
 import json
 
-from os import remove
+from os import remove, listdir
 from time import time
 from os.path import join, dirname, basename
 
@@ -212,7 +212,7 @@ def generate_simulation(
                     try:
                         geo_infos = copy.deepcopy(geometry_infos)
                         runner = SimulationRunner(
-                            "{}_model_{}_sim_{}.nii.gz".format(output_name, name, i),
+                            "{}_model_{}_sim_{}".format(output_name, name, i),
                             geo_infos, singularity_conf=singularity_conf
                         )
                         runner.set_geometry_base_naming(output_name)
@@ -291,7 +291,12 @@ def generate_simulation(
                  if j not in failed_samples],
                 n_simus % callback_stride
             )
-        sim_ready_callback(*args, end=callback_signal_end, extra=extra_package)
+        sim_ready_callback(
+            *args, end=callback_signal_end, extra=extra_package,
+            meta=filter(
+                lambda it: ".log" in it or ".json" in it, listdir(output_data)
+            )
+        )
 
     json.dump(
         simulations,

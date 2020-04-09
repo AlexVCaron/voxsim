@@ -660,19 +660,20 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
             source=mpi_conf.master_collector, tag=MrstormCOMM.COLLECT
         )
 
-    arc = join(node_geo_output, basename(package_path))
-
     if islink(node_geo_output):
         unlink(node_geo_output)
     else:
         rmtree(node_geo_output, ignore_errors=True)
-    makedirs(node_geo_output, exist_ok=True)
+
+    geo_tmp_dir = tempfile.mkdtemp(prefix=node_root)
+    arc = join(node_root, basename(package_path))
+
     copyfile(package_path, arc)
 
     with tarfile.open(arc, 'r') as archive:
-        archive.extractall(node_geo_output)
+        archive.extractall(geo_tmp_dir)
 
-    logger.debug("Content of extracted geometry directory\n{}".format(listdir(node_geo_output)))
+    logger.debug("Content of extracted geometry directory\n{}".format(listdir(geo_tmp_dir)))
 
     logger.info("Generating simulations on datasets")
 
@@ -684,7 +685,7 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
     else:
         sim_archive = None
 
-        def f_sim_collect(paths=None, infos=None, idx=None, end=False, **kwargs):
+        def f_sim_collect(paths=None, infos=None, idx=None, end=False, meta=(), **kwargs):
             archive_path = None
             if paths:
                 logger.debug("Received {} simulation paths to pack".format(len(paths)))
@@ -704,6 +705,11 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
                     tmpf, "sim_iter{}_node{}.tar.gz".format(idx, rank)
                 )
                 with tarfile.open(node_archive_path, 'w') as archive:
+                    for mt in meta:
+                        archive.addfile(
+                            tarfile.TarInfo(basename(mt)),
+                            open(mt)
+                        )
                     for path_group in paths:
                         for path in path_group:
                             search_tag = basename(path).split(".")[0]
@@ -711,10 +717,11 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
                             for item in glob.glob1(
                                 sim_path, "{}*".format(search_tag)
                             ):
-                                archive.addfile(
-                                    tarfile.TarInfo(item),
-                                    open(join(sim_path, item))
-                                )
+                                if ".log" not in item:
+                                    archive.addfile(
+                                        tarfile.TarInfo(item),
+                                        open(join(sim_path, item))
+                                    )
 
                 copyfile(node_archive_path, archive_path)
                 remove(node_archive_path)
@@ -746,7 +753,7 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
     )
     for infos in list(geo_infos.values())[i0:i1]:
         sim_pre = infos.get_base_file_name().split(".")[0].rstrip("_base")
-        infos["file_path"] = node_geo_output
+        infos["file_path"] = geo_tmp_dir
         infos.generate_new_key("processing_node", rank)
 
         handler = infos.pop("handler")
@@ -779,7 +786,7 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
 
         with tarfile.open(
             join(global_sim_output, "data_node{}.tar.gz".format(rank)),
-            "r:gz"
+            "r"
         ) as archive:
             archive.extractall(join(global_sim_output))
     else:
@@ -1202,7 +1209,7 @@ def create_geometry_archive(geo_root, infos_dict, output):
     ))
 
     with tarfile.open(
-            join(output, "geo_package.tar.gz"), "w:gz"
+            join(output, "geo_package.tar.gz"), "w"
     ) as archive:
         for item in listdir(geo_root):
             if ".tar.gz" not in item:
