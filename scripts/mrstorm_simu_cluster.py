@@ -706,6 +706,8 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
                 )
                 with tarfile.open(node_archive_path, 'w') as archive:
                     for mt in meta:
+                        with open(mt) as f:
+                            logger.debug(f.read())
                         archive.addfile(
                             tarfile.TarInfo(basename(mt)),
                             open(mt)
