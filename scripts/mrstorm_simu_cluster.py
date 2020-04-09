@@ -1217,11 +1217,11 @@ def create_geometry_archive(geo_root, infos_dict, output):
 
     serializable_infos = {}
     for k, info in infos_dict.items():
-        info_copy = deepcopy(info)
+        info_copy = deepcopy(info.as_dict())
         info_copy.pop('data_package')
         info_copy.pop('handler')
         info_copy['file_path'] = geo_output
-        serializable_infos[k] = info_copy.as_dict()
+        serializable_infos[k] = info_copy
 
     json.dump(serializable_infos, open(
         join(geo_root, "description.json"), "w+"

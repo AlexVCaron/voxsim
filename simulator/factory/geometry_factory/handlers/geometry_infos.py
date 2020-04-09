@@ -8,7 +8,7 @@ class GeometryInfos(AttributeAsDictClass):
         self.generate_new_key("base_file", base_file)
         self.generate_new_key("resolution", resolution)
         self.generate_new_key("spacing", spacing)
-        self.generate_new_key("number_of_maps", n_maps)
+        self.generate_new_key("n_maps", n_maps)
 
     def get_file_path(self):
         return self._file_path

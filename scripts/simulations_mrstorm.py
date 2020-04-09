@@ -311,7 +311,7 @@ def generate_simulation(
             )
         sim_ready_callback(
             *args, end=callback_signal_end, extra=extra_package,
-            meta=filter(
+            meta=[join(output_data, it) for it in filter(
                 lambda it: ".log" in it or ".json" in it, listdir(output_data)
-            )
+            )]
         )
