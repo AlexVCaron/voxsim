@@ -662,7 +662,7 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
 
     arc = join(node_geo_output, basename(package_path))
 
-    rmtree(node_geo_output)
+    rmtree(node_geo_output, ignore_errors=True)
     makedirs(node_geo_output, exist_ok=True)
     copyfile(package_path, arc)
 
@@ -682,6 +682,8 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
         def f_sim_collect(paths=None, infos=None, idx=None, end=False, **kwargs):
             archive_path = None
             if paths:
+                logger.debug("Received {} simulation paths to pack".format(len(paths)))
+
                 archive_path = join(
                     global_sim_output, "sim_iter{}_node{}.tar.gz".format(idx, rank)
                 )
@@ -698,9 +700,8 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
                 with tarfile.open(node_archive_path, 'w') as archive:
                     for path_group in paths:
                         for path in path_group:
-                            folder = dirname(path)
                             search_tag = basename(path).split(".")[0]
-                            sim_path = join(folder, "simulation_outputs")
+                            sim_path = join(dirname(path), "simulation_outputs")
                             for item in glob.glob1(
                                 sim_path, "{}*".format(search_tag)
                             ):
