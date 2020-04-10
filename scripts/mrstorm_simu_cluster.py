@@ -559,7 +559,7 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
             if "n_output" in geo_conf and i < (remainder - 1):
                 geo_conf["n_output"] += 1
             MrstormCOMM.isend(
-                geo_conf, dest=slaves[i], tag=MrstormCOMM.PROCESS
+                geo_conf, tag=MrstormCOMM.PROCESS, dest=slaves[i]
             )
 
         if "n_output" in geo_json:
@@ -567,7 +567,7 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
     else:
         logger.debug("Receiving geometry configuration from master node")
         geo_json = MrstormCOMM.irecv(
-            source=mpi_conf.master, tag=MrstormCOMM.PROCESS
+            tag=MrstormCOMM.PROCESS, source=mpi_conf.master
         )
 
     geo_json = import_parameters_dists(geo_json, ['rad_dist', 'trans_dist'])
@@ -608,8 +608,8 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
 
             MrstormCOMM.isend(
                 Message(data_infos, end, meta=meta),
-                dest=mpi_conf.master_collector,
-                tag=MrstormCOMM.ALL_COLLECT
+                tag=MrstormCOMM.ALL_COLLECT,
+                dest=mpi_conf.master_collector
             )
             return True
 
@@ -635,8 +635,8 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
     else:
         MrstormCOMM.isend(
             Message(end_flag=True),
-            dest=mpi_conf.master_collector,
-            tag=MrstormCOMM.ALL_COLLECT
+            tag=MrstormCOMM.ALL_COLLECT,
+            dest=mpi_conf.master_collector
         )
 
     if not is_master_collect \
@@ -647,8 +647,8 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
             ):
                 MrstormCOMM.isend(
                     Message(end_flag=True),
-                    dest=mpi_conf.master_collector,
-                    tag=MrstormCOMM.ALL_COLLECT
+                    tag=MrstormCOMM.ALL_COLLECT,
+                    dest=mpi_conf.master_collector
                 )
 
     logger.info("Node {} finished computing geometries".format(rank))
@@ -659,7 +659,7 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
         )
     else:
         package_path, geo_infos = MrstormCOMM.irecv(
-            source=mpi_conf.master_collector, tag=MrstormCOMM.COLLECT
+            tag=MrstormCOMM.COLLECT, source=mpi_conf.master_collector
         )
 
         for k in geo_infos.keys():
@@ -751,8 +751,8 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
 
             MrstormCOMM.isend(
                 Message(archive_path, end, meta=meta),
-                dest=mpi_conf.master_collector,
-                tag=MrstormCOMM.COLLECT
+                tag=MrstormCOMM.COLLECT,
+                dest=mpi_conf.master_collector
             )
 
     # Generate simulations on remaining geometries
@@ -805,8 +805,8 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
     else:
         MrstormCOMM.isend(
             Message(end_flag=True),
-            dest=mpi_conf.master_collector,
-            tag=MrstormCOMM.COLLECT
+            tag=MrstormCOMM.COLLECT,
+            dest=mpi_conf.master_collector
         )
 
 
@@ -853,12 +853,12 @@ def collect_geometries_offline(rank, args, geo_infos, mpi_conf):
         for i in mpi_conf.workers:
             MrstormCOMM.isend(
                 (package_path, unique_geos),
-                dest=i,
-                tag=MrstormCOMM.PROCESS
+                tag=MrstormCOMM.PROCESS,
+                dest=i
             )
     else:
         package_path, unique_geos = MrstormCOMM.irecv(
-            source=mpi_conf.master, tag=MrstormCOMM.PROCESS
+            tag=MrstormCOMM.PROCESS, source=mpi_conf.master
         )
 
     return package_path, unique_geos
@@ -868,7 +868,7 @@ def validate_slaves(collective_hash_dict, collect_slaves):
     for i in deepcopy(collect_slaves):
         while True:
             message = MrstormCOMM.irecv(
-                source=i, tag=MrstormCOMM.COLLECT_INTER
+                tag=MrstormCOMM.COLLECT_INTER, source=i
             )
             if message.end_flag:
                 collect_slaves = tuple(
@@ -990,8 +990,8 @@ def execute_collecting_node(rank, args, mpi_conf):
                             end_flag=((active_wks < len(mpi_conf.slaves_collectors)) and message.end_flag),
                             meta=message.metadata
                         ),
-                        dest=working_slaves[-1],
-                        tag=MrstormCOMM.COLLECT_INTER
+                        tag=MrstormCOMM.COLLECT_INTER,
+                        dest=working_slaves[-1]
                     )
 
                 if args["time_exec"]:
@@ -1032,8 +1032,8 @@ def execute_collecting_node(rank, args, mpi_conf):
         for slave in collect_slaves:
             MrstormCOMM.isend(
                 Message(end_flag=True),
-                dest=slave,
-                tag=MrstormCOMM.COLLECT_INTER
+                tag=MrstormCOMM.COLLECT_INTER,
+                dest=slave
             )
 
         while active_wks > 0:
@@ -1068,8 +1068,8 @@ def execute_collecting_node(rank, args, mpi_conf):
         for i in mpi_conf.workforce:
             MrstormCOMM.isend(
                 (package_path, collective_hash_dict),
-                dest=i,
-                tag=MrstormCOMM.COLLECT
+                tag=MrstormCOMM.COLLECT,
+                dest=i
             )
 
         rmtree(global_tmp_dir)
@@ -1082,8 +1082,8 @@ def execute_collecting_node(rank, args, mpi_conf):
             )
 
             if MrstormCOMM.irecv(
-                source=mpi_conf.master_collector,
-                tag=MrstormCOMM.COLLECT_INTER
+                tag=MrstormCOMM.COLLECT_INTER,
+                source=mpi_conf.master_collector
             ):
                 move_package_to(
                     info["data_package"],
@@ -1095,7 +1095,7 @@ def execute_collecting_node(rank, args, mpi_conf):
 
         while True:
             message = MrstormCOMM.irecv(
-                source=mpi_conf.master_collector, tag=MrstormCOMM.COLLECT_INTER
+                tag=MrstormCOMM.COLLECT_INTER, source=mpi_conf.master_collector
             )
             if message.data:
                 logger.debug("Node {} received a geometry message".format(rank))
@@ -1132,8 +1132,8 @@ def execute_collecting_node(rank, args, mpi_conf):
                         end_flag=n_workers < len(mpi_conf.slaves_collectors) and message.end_flag,
                         meta=message.metadata
                     ),
-                    dest=collector,
-                    tag=MrstormCOMM.COLLECT_INTER
+                    tag=MrstormCOMM.COLLECT_INTER,
+                    dest=collector
                 )
 
             if args["time_exec"]:
@@ -1148,8 +1148,8 @@ def execute_collecting_node(rank, args, mpi_conf):
             for i in collectors:
                 MrstormCOMM.isend(
                     Message(end_flag=True),
-                    dest=i,
-                    tag=MrstormCOMM.COLLECT_INTER
+                    tag=MrstormCOMM.COLLECT_INTER,
+                    dest=i
                 )
 
         while n_workers > 0:
@@ -1189,7 +1189,7 @@ def execute_collecting_node(rank, args, mpi_conf):
     else:
         while True:
             message = MrstormCOMM.irecv(
-                source=mpi_conf.master_collector, tag=MrstormCOMM.COLLECT_INTER
+                tag=MrstormCOMM.COLLECT_INTER, source=mpi_conf.master_collector
             )
             if message.data:
                 unpack_sim_data(message, global_sim_output)
