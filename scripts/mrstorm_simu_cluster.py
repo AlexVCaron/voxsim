@@ -524,10 +524,10 @@ def execute_computing_node(rank, args, mpi_conf, is_master_collect=False):
     geo_json = json.load(open(geometry_cfg))
     simulation_json = json.load(open(simulation_cfg))
 
-    logger.debug("  -> Geometry :\n{}".format(json.dumps(geo_json, indent=4)))
-    logger.debug(
-        "  -> Simulation :\n{}".format(json.dumps(simulation_json, indent=4))
-    )
+    # logger.debug("  -> Geometry :\n{}".format(json.dumps(geo_json, indent=4)))
+    # logger.debug(
+    #     "  -> Simulation :\n{}".format(json.dumps(simulation_json, indent=4))
+    # )
 
     # Format geo_json file depending on which node
     # is on to have the right number of samples at the end
@@ -1312,6 +1312,8 @@ def generate_datasets(args):
             world_size - n_collect,
             tuple(range(world_size - n_collect + 1, world_size))
         )
+
+    logger.debug("Workers configuration for the job\n{}".format(mpi_jobs_ranks))
 
     mpi_conf = WorkersConfiguration(*mpi_jobs_ranks)
 
