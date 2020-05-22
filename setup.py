@@ -1,19 +1,12 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 import glob
+
 
 if __name__ == "__main__":
     setup(
         name='simulation_generator',
         version='1.0.0',
-        packages=['test', 'test.helpers', 'scripts', 'external', 'external.qspace_sampler', 'external.qspace_sampler.visu',
-                  'external.qspace_sampler.bases', 'external.qspace_sampler.bases.tests',
-                  'external.qspace_sampler.sampling', 'simulator', 'simulator.runner', 'simulator.runner.impl',
-                  'simulator.factory', 'simulator.factory.common', 'simulator.factory.geometry_factory',
-                  'simulator.factory.geometry_factory.utils', 'simulator.factory.geometry_factory.features',
-                  'simulator.factory.geometry_factory.features.ORM',
-                  'simulator.factory.geometry_factory.features.ORM.Objects', 'simulator.factory.geometry_factory.handlers',
-                  'simulator.factory.simulation_factory', 'simulator.factory.simulation_factory.helpers',
-                  'simulator.factory.simulation_factory.handlers', 'simulator.factory.simulation_factory.parameters'],
+        packages=find_packages(exclude=("test", "test.*")),
         url='',
         license='',
         author='avcaron',
