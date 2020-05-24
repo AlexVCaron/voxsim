@@ -46,12 +46,15 @@ class SimulationHandler:
 
     def set_gradient_profile(self, gradient_profile):
         self._grad_profile = gradient_profile
+        return self
 
     def set_artifact_model(self, artifact_model):
         self._art_model = artifact_model
+        return self
 
     def add_compartment(self, compartment):
         self._compartments.append(compartment)
+        return self
 
     def generate_xml_configuration_file(self, output_naming, simulation_path=""):
         if not path.exists(simulation_path):

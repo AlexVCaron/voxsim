@@ -35,7 +35,8 @@ Geometry primitives and simulated images are created via the **MITK** code base 
 **C++**, which ensures a low-level API for efficient processing.
 
 .. image:: img/architecture/geo_sim_arc.png
-   :width: 400
+   :width: 600
+   :align: center
    :alt: Architecture of the geometry and simulation C++ block
 
 To run a simulation, at least 3 configuration files are required :
@@ -46,7 +47,7 @@ To run a simulation, at least 3 configuration files are required :
    - the definition of some basic primitives
    - etc.
 
-- The *vspl* files define the bundle (see :ref:`concepts_head_anchor`) primitives
+- The *vspl* files define the bundle (see :doc:`concepts`) primitives
   included in the *json*. Even if the extension of the file is different, the format
   inside it is pure **json**. Its content is divided into two objects :
 
@@ -77,7 +78,7 @@ configurations for both geometry and simulation into the required parameters fil
 Aside from this, a runner class is provided to connect the flow of information from
 the factories to the **C++** applications handling the actual processing.
 
-For more information, the reader is refered to the :ref:`api_head_anchor` section of
+For more information, the reader is refered to the :doc:`api` section of
 this documentation.
 
 Portability and Cross-Platform
@@ -88,7 +89,8 @@ systems. Since the **API** was created to facilitate the usage of the simulator,
 having it hard to install and configure would have made no sense.
 
 .. image:: img/architecture/global_arc.png
-   :width: 400
+   :width: 600
+   :align: center
    :alt: Global architecture of the project
 
 With this in mind, an image containing most of the **C++** components of the project

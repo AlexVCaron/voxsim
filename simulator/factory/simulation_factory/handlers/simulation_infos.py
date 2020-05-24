@@ -20,3 +20,7 @@ class SimulationInfos(AttributeAsDictClass):
 
     def set_simulation_file_name(self, name):
         self._param_file = name
+
+    @classmethod
+    def from_dict(cls, info):
+        return SimulationInfos(**info)

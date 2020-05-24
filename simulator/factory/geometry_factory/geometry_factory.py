@@ -1,9 +1,9 @@
+from numpy import array
+
 from .features import Cluster, ClusterMeta, Bundle, Sphere
 from .utils import Plane
 from .handlers import GeometryHandler
 from .utils import rotate_bundle, Rotation, translate_bundle
-
-from numpy import array
 
 
 class GeometryFactory:

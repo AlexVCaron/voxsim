@@ -19,15 +19,20 @@ The geometry factory handles everything that has to do with the spatial configur
 of the simulation. It is used to parametrize correctly geometry primitives, which are
 then used to create images and fiber models via the geometry generation application.
 
+.. image:: img/api/geo_factory.png
+   :width: 600
+   :align: center
+   :alt: UML diagram of the geometry factory functionalities
+
 Here is a subset of the functionality offered by the factory. A complete list of them
-is available at :ref:`GeometryFactory_head_anchor`.
+is available at :py:class:`simulator.factory.geometry_factory.geometry_factory.GeometryFactory`.
 
 - Definition of a Bundle :
 
   This is done via the method *GeometryFactory.create_bundle*. A bundle is defined
   by its radius, its radial symmetry, the anchors of its centroid and the number of
   points used to estimate the spline representing the centroid (See
-  :ref:`concepts_head_anchor` for more information on the spline representation).
+  :doc:`concepts` for more information on the spline representation).
 
 - Definition of the cluster space :
 
@@ -48,8 +53,9 @@ is available at :ref:`GeometryFactory_head_anchor`.
   placed at the center of the resulting image.
 
 The factory also provides methods to create other primitives and to operate some
-affine transformation on them. See :ref:`GeometryFactory_methods_anchor` for more
-on the subject.
+affine transformation on them. See
+:py:class:`simulator.factory.geometry_factory.geometry_factory.GeometryFactory`
+for more on the subject.
 
 SimulationFactory
 _________________
@@ -58,7 +64,12 @@ The simulation factory manages all the components describing the acquisition and
 models that link the primitives of the geometry factory to the output diffusion images.
 To do so, the block that makes the simulation configuration file have been partitioned
 into different sub-categories, whose associated objects can be found in
-:ref:`simulation_factory.parameters_module_anchor`.
+:py:mod:`simulator.factory.simulation_factory.parameters`.
+
+.. image:: img/api/sim_factory.png
+   :width: 600
+   :align: center
+   :alt: UML diagram of the geometry factory functionalities
 
 The classes describing them and the associated methods in the factory are given here.
 
@@ -87,7 +98,7 @@ The classes describing them and the associated methods in the factory are given 
   the radius will be computed for each cluster at runtime.
 
   The object can be constructed calling
-  :ref:`SimulationFactory.generate_acquisition_profile_anchor`.
+  :py:meth:`simulator.factory.simulation_factory.simulation_factory.SimulationFactory.generate_acquisition_profile`.
 
 - Gradient profile
 
@@ -96,7 +107,8 @@ The classes describing them and the associated methods in the factory are given 
   To construct the GradientProfile object, one requires :
 
   - A set of gradient vectors, which if not available can be computed with the help of
-    :ref:`SimulationFactory.generate_gradient_vectors_anchor`. It uses Caruyer q-space
+    :py:meth:`simulator.factory.simulation_factory.simulation_factory.SimulationFactory.generate_gradient_vectors`.
+    It uses Caruyer q-space
     sampling tool [QSS1_P]_ [QSS2_P]_ to spread out evenly the gradient vectors across
     the different shells.
   - A set of b-values, one per vector in the previous list
@@ -124,7 +136,7 @@ The classes describing them and the associated methods in the factory are given 
      supplied.
 
   The object can be constructed calling
-  :ref:`SimulationFactory.generate_gradient_profile_anchor`.
+  :py:meth:`simulator.factory.simulation_factory.simulation_factory.SimulationFactory.generate_gradient_profile`.
 
 - Compartment models
 
@@ -165,7 +177,7 @@ The classes describing them and the associated methods in the factory are given 
   be used to parametrize it.
 
   The different models can be constructed via a few methods in the SimulationFactory
-  object here :ref:`SimulationFactory.compartment_models_head_anchor`.
+  object here :ref:`simulator.factory.simulation_factory.simulation_factory.SimulationFactory.generate_fiber_stick_compartment`.
 
 - Artifacts and Noise
 
