@@ -1,5 +1,3 @@
-# Simulation Generator
-
 Project setup
 =============
 

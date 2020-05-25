@@ -1,8 +1,5 @@
-.. _concepts_head_anchor:
-
-CONCEPTS
---------
-
+Concepts
+========
 
 Modeling MRI Signal
 -------------------

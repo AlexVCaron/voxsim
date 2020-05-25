@@ -1,7 +1,5 @@
-CHANGE BUNDLE TO CLUSTER AND FIBER TO BUNDLE
-
-ARCHITECTURE
-------------
+Architecture
+============
 
 **voXSim** is a tool developed to leverage the power of **MITK Fiberfox** simulation
 generator as well as **ITK** and **VTK** powerful and extensible rendering and
@@ -29,7 +27,7 @@ As such, the project contains a series of sub-projects focused at realising eith
 
 
 Simulation and Geometry
-=======================
+-----------------------
 
 Geometry primitives and simulated images are created via the **MITK** code base in
 **C++**, which ensures a low-level API for efficient processing.
@@ -47,15 +45,15 @@ To run a simulation, at least 3 configuration files are required :
    - the definition of some basic primitives
    - etc.
 
-- The *vspl* files define the bundle (see :doc:`concepts`) primitives
+- The *vspl* files define the clusters' (see :doc:`concepts`) primitives
   included in the *json*. Even if the extension of the file is different, the format
   inside it is pure **json**. Its content is divided into two objects :
 
-  - **meta** contains information about the bundle space (limits, center in world)
-    and other global bundle parameters (density, sampling, ...)
-  - **data** contains a list of objects describing the different fibers that form the
-    bundle. Aside of the anchors defining the fiber's centroid are listed information
-    like the radius, radial symmetry and sampling distance along the centroid.
+  - **meta** contains information about the cluster's space (limits, center in world)
+    and other global cluster parameters (density, sampling, ...)
+  - **data** contains a list of objects describing the different bundles that form the
+    cluster. Aside of the anchors defining the bundles' centroids are listed information
+    like their radius, radial symmetry and sampling distance along their centroid.
 
 - The *ffp* file contains all the informations required to modelize the voxel's
   population and to simulate the mri signal. Much can be said on that part, since
@@ -65,7 +63,7 @@ To run a simulation, at least 3 configuration files are required :
   parameters can be found in [FIB_UM]_.
 
 High-level Interfacing
-======================
+----------------------
 
 The parameter files described above are very descriptive and in small quantity could
 be written by hand (believe me, I've done it). However, for complex simulations the
@@ -82,7 +80,7 @@ For more information, the reader is refered to the :doc:`api` section of
 this documentation.
 
 Portability and Cross-Platform
-==============================
+------------------------------
 
 The last goal this projects tackles is portability across platforms and operating
 systems. Since the **API** was created to facilitate the usage of the simulator,

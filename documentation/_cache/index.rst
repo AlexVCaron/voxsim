@@ -5,6 +5,7 @@ This static website contains all the documentation related to **voXSim** and its
 interface in python. A new user should start by looking into the introduction
 material :
 
+* :doc:`install`
 * :doc:`concepts`
 * :doc:`architecture`
 
@@ -26,6 +27,7 @@ API auto-generated documentation
    :maxdepth: 3
    :caption: Contents:
 
+   install
    concepts
    architecture
    api
