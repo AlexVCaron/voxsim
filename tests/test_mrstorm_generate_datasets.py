@@ -1,7 +1,6 @@
 import multiprocessing
 from multiprocessing.pool import ThreadPool
 from asyncio import coroutine
-from enum import Enum
 from unittest import TestCase, mock
 import numpy as np
 import sys
@@ -80,7 +79,7 @@ class TestMrStormGenerate_datasets(TestCase):
         comm_world.isend = mock.MagicMock(return_value=future_mock)
         comm_world.irecv = mock.Mock(return_value=future_mock)
 
-        import test.helpers.geometry_helper as gh
+        import simulator.utils.test_helpers.geometry_helper as gh
         dummy_hash_dict = self.generate_dummy_hash_dict({
             "file_path": "FILEPATH",
             "resolution": params["resolution"],
@@ -410,7 +409,7 @@ class TestMrStormGenerate_datasets(TestCase):
             "args": args
         }
 
-        # Run test
+        # Run tests
         mock_lists = self._run_test(n_instances, args, geo_args, simu_args, tmp_output)
 
         # Validate mocks
@@ -432,7 +431,7 @@ class TestMrStormGenerate_datasets(TestCase):
             "args": args
         }
 
-        # Run test
+        # Run tests
         mock_lists = self._run_test(n_instances, args, geo_args, simu_args)
 
         # Validate mocks
@@ -550,7 +549,7 @@ class TestMrStormGenerate_datasets(TestCase):
             mpi_mock.MPI.COMM_WORLD.bcast = MultithreadBcastMock()
             return mpi_mock
 
-        # Run test
+        # Run tests
         mock_lists = self._run_test(
             n_instances, args, geo_args, simu_args, tmp_output,
             create_instance_output=True, mock_archiving=False,

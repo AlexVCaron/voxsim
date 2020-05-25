@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from scripts.new_geometry_factory_test import run_geometry_factory_test
 from scripts.new_simulation_factory_test import run_simulation_factory_test
 from simulator.runner import SimulationRunner

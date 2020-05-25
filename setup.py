@@ -6,7 +6,7 @@ if __name__ == "__main__":
     setup(
         name='simulation_generator',
         version='1.0.0',
-        packages=find_packages(exclude=("test", "test.*")),
+        packages=find_packages(exclude=("tests", "tests.*")),
         url='',
         license='',
         author='avcaron',

@@ -1,5 +1,7 @@
+#!/usr/bin/env python
+
 from simulator.factory import SimulationFactory
-from test.helpers.geometry_helper import GeometryHelper
+from simulator.utils.test_helpers import GeometryHelper
 from random import uniform
 from numpy.linalg import norm
 from numpy import array
