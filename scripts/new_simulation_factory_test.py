@@ -49,7 +49,7 @@ def run_simulation_factory_test(output_folder, output_naming):
             [500 for i in range(9)] + [1000 for i in range(10)] + [2000 for i in range(10)],
             [normalize([uniform(-1, 1), uniform(-1, 1), uniform(-1, 1)]) for i in range(30)],
             1,
-            SimulationFactory.AcquisitionType.STEJSKAL_TANNER
+            g_type=SimulationFactory.AcquisitionType.STEJSKAL_TANNER
         )
     )
 
