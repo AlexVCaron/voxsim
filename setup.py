@@ -1,6 +1,7 @@
 from setuptools import setup, find_packages
 import glob
 
+from simulator.utils.setup.documentation import DocCommand
 
 if __name__ == "__main__":
     setup(
@@ -13,5 +14,8 @@ if __name__ == "__main__":
         author_email='',
         description='',
         data_files=[('.', ["config.py", "config.json"])],
-        scripts=list(filter(lambda s: "init" not in s, glob.glob("scripts/*.py")))
+        scripts=list(filter(lambda s: "init" not in s, glob.glob("scripts/*.py"))),
+        cmdclass={
+            'documentation': DocCommand
+        }
     )
