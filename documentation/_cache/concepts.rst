@@ -139,7 +139,7 @@ Modeling MRI Signal
 
 There is many approach that can be taken to simulate the magnetization signal obtain from
 the water molecules of the brain tissues. Model-free methods are great in that they contain
-as little assumptions about the studied tissues as possible. However, they are hare to
+as little assumptions about the studied tissues as possible. However, they are hard to
 parametrize and their parameters are often incomprehensible for the human mind except as
 when taken as a whole.
 
@@ -153,6 +153,94 @@ This is henceforth a bad way to take to parametrize the simulator, and to overco
 is the model-based methods. They focus at describing the different tissues by their
 characteristics and design mathematical relations between those and the MRI signal. Using such
 techniques, the simulator can then be parametrized by interpretable and known characteristics.
+
+Molecules under magnetic fields
+_______________________________
+
+The tissues of the human body are primarily composed of water molecules, each composed of two
+hydrogen atoms and one oxygen. Atoms are made of particles - electrons, protons and sometimes
+neutrons - which all have a very interesting property, their **spin**. This represents in a way
+the magnetic field of the particle, like if every each of them came equipped with a tiny bar
+magnet.
+
+From basic high-school physics, we know magnets emit a magnetic field, from north to south pole,
+in the space around them, which influence reduces over distance. We also know that a magnetic
+field will induce another parallel inner magnetic field inside ferromagnetic materials
+under its influence. This phenomenon is called **magnetization**.
+
+It just so happens that it also occurs at the microscopic level, where particles, under a
+magnetic field will tend to align their spin with it over time. A medium formed of those
+particles would then gain magnetization by the induced alignment, which at initial state
+should be near 0.
+
+This magnetization has some mathematical expressions, we'll actually use here an approximation
+of it. For a tissue with a proton density :math:`\rho_j` under a static magnetic field :math:`B_0`,
+the net magnetization :math:`M_j` is given as
+
+.. math:: M_j \approx \rho_j \frac{\gamma h}{2 \pi}^2 \frac{B_0}{4 K_b T}
+
+with the gyromagnetic of the hydrogen atom :math:`\gamma`, :math:`h` the planck's constant,
+boltzman's constant :math:`K_b` and :math:`T` the tissue temperature.
+
+Magnets and coils
+_________________
+
+Interesting behaviors can also be seen when magnets and coils are interacting together. A coil
+is a simple wire that has been shaped like a spring. When current flows through it, a simultaneous
+magnetic field is induced parallel to its centroid. Likewise, when a magnetic field varies along
+the centroid of the coil, a change of current is seen in it. This phenomenon is called
+**Faraday's law of induction**.
+
+.. image:: img/concepts/induction.gif
+   :width: 400
+   :align: center
+
+Using it, we can thus measure the change in magnetization in a tissue under a magnetic field. However,
+some modifications need to be done, since the magnetization is aligned with another magnetic field and
+this would dampen significantly the amplitude of the current transmitted through the coil.
+
+Spin-echo
+_________
+
+To get the spin of the particles in the tissue to change simultaneously, *radio-frequency* pulses are
+used. In an over-simplistic manner, they make the spin of the particles precess in a phenomenon
+called resonance. This allows to flip the magnetization of the tissue away from the :math:`B_0`
+field onto the plane normal to it. It's on this plane that the coils are placed.
+
+However, nature being the way it is, thing tends to want to return to an equilibrium, and it happens
+that being misaligned with a magnetic field is not what particles wants.
+
+Signal models
+_____________
+
+Multiple models have been proposed along the years to interpret the mri signal. From the theories
+on magnetization of dipoles and monopoles and from *nmr*, we know a medium containing water molecules
+will produce a mri signal influenced by its associated relaxation times :math:`T_1` and :math:`T_2`.
+
+.. math:: S_j = M_j e^{-\frac{T_e}{T_{2_j}}}\Bigg(1 - e^{-\frac{T_r}{T_{1_j}}}\Bigg)
+
+Those correspond respectively to how much time it takes for the medium's water molecules to
+regain their initial magnetization after it was flipped in the transverse plane and how fast
+the respective magnetization of each molecules tends to diverge from the mean magnetization
+under perturbations from other water molecules.
+
+.. image:: img/concepts/t1-relax.gif
+   :width: 400
+   :align: center
+
+.. image:: img/concepts/t2-relax.gif
+   :width: 400
+   :align: center
+
+Thus the shorter :math:`T_2`, the shorter will have to be the echo time, since the signal
+will decrease faster from the negative exponential. In contrast, the longer :math:`T_1`,
+the longer the sequence will need to be, since it will be slow to return to the initial
+state for the water molecules. The repetition time will thus need to increase in order to
+avoid contamination from previous sequences.
+
+.. image:: img/concepts/signal_relax.png
+   :width: 400
+   :align: center
 
 References
 __________
