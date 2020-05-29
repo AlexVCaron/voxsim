@@ -5,7 +5,7 @@ from multiprocessing import Process
 from os import path, makedirs, remove
 from os.path import exists, join, basename
 from shutil import copyfile
-from subprocess import PIPE
+from subprocess import PIPE, Popen
 from numpy import sum, ones_like, moveaxis, hstack, vstack
 import nrrd
 import nibabel as nib
@@ -61,20 +61,20 @@ class SimulationRunner:
 
         set_event_loop(self._event_loop)
         async_loop = get_event_loop()
+        log_file = path.join(output_folder, "{}.log".format(self._base_naming))
 
-        with open(path.join(output_folder, "{}.log".format(self._base_naming)), "w+") as log_file:
-            logger.info("Simulating DWI signal")
-            return_code, log = async_loop.run_until_complete(self._launch_command(simulation_command, log_file, "[RUNNING FIBERFOX]"))
-            if not return_code == 0:
-                raise SimulationRunnerException(
-                    "Simulation ended in error",
-                    SimulationRunnerException.ExceptionType.Fiberfox,
-                    return_code, (log,)
-                )
+        logger.info("Simulating DWI signal")
+        return_code, log = async_loop.run_until_complete(self._launch_command(simulation_command, log_file, "[RUNNING FIBERFOX]"))
+        if not return_code == 0:
+            raise SimulationRunnerException(
+                "Simulation ended in error",
+                SimulationRunnerException.ExceptionType.Fiberfox,
+                return_code, (log,)
+            )
 
-            # self._convert_nrrd_to_nifti(simulation_output_folder, remove_nrrd)
-            logger.debug("Simulation {} ended with code {}".format(self._base_naming, return_code))
-            async_loop.close()
+        # self._convert_nrrd_to_nifti(simulation_output_folder, remove_nrrd)
+        logger.debug("Simulation {} ended with code {}".format(self._base_naming, return_code))
+        async_loop.close()
 
     def run_simulation_standalone(self, output_folder, geometry_folder, simulation_infos, test_mode=False, remove_nrrd=False):
         simulation_output_folder = path.join(output_folder, "simulation_outputs")
@@ -99,21 +99,21 @@ class SimulationRunner:
 
         set_event_loop(self._event_loop)
         async_loop = get_event_loop()
+        log_file = path.join(output_folder, "{}.log".format(self._base_naming))
 
-        with open(path.join(output_folder, "{}.log".format(self._base_naming)), "w+") as log_file:
-            self._rename_and_copy_compartments_standalone(simulation_infos, geometry_output_folder, simulation_output_folder)
-            logger.info("Simulating DWI signal")
-            return_code, log = async_loop.run_until_complete(self._launch_command(simulation_command, log_file, "[RUNNING FIBERFOX]"))
-            if not return_code == 0:
-                raise SimulationRunnerException(
-                    "Simulation ended in error",
-                    SimulationRunnerException.ExceptionType.Fiberfox,
-                    return_code, (log,)
-                )
+        self._rename_and_copy_compartments_standalone(simulation_infos, geometry_output_folder, simulation_output_folder)
+        logger.info("Simulating DWI signal")
+        return_code, log = async_loop.run_until_complete(self._launch_command(simulation_command, log_file, "[RUNNING FIBERFOX]"))
+        if not return_code == 0:
+            raise SimulationRunnerException(
+                "Simulation ended in error",
+                SimulationRunnerException.ExceptionType.Fiberfox,
+                return_code, (log,)
+            )
 
-            # self._convert_nrrd_to_nifti(simulation_output_folder, remove_nrrd)
-            logger.debug("Simulation {} ended with code {}".format(self._base_naming, return_code))
-            async_loop.close()
+        # self._convert_nrrd_to_nifti(simulation_output_folder, remove_nrrd)
+        logger.debug("Simulation {} ended with code {}".format(self._base_naming, return_code))
+        async_loop.close()
 
     def _convert_nrrd_to_nifti(self, root, remove_nrrd=False):
         for item in glob.glob1(root, "{}*.nrrd".format(self._base_naming)):
@@ -179,23 +179,23 @@ class SimulationRunner:
 
         set_event_loop(self._event_loop)
         async_loop = get_event_loop()
+        log_file = path.join(output_folder, "{}.log".format(self._base_naming))
 
-        with open(path.join(output_folder, "{}.log".format(self._base_naming)), "w+") as log_file:
-            logger.info("Generating simulation geometry")
-            async_loop.run_until_complete(self._launch_command(geometry_command, log_file, "[RUNNING VOXSIM]"))
-            if self._run_simulation:
-                self._execute_parallel(self._rename_and_copy_compartments, (geometry_output_folder, simulation_output_folder))
-                logger.info("Simulating DWI signal")
-                return_code, log = async_loop.run_until_complete(self._launch_command(simulation_command, log_file, "[RUNNING FIBERFOX]"))
-                if not return_code == 0:
-                    raise SimulationRunnerException(
-                        "Simulation ended in error",
-                        SimulationRunnerException.ExceptionType.Fiberfox,
-                        return_code, (log,)
-                    )
-                # self._convert_nrrd_to_nifti(simulation_output_folder, remove_nrrd)
-                logger.debug("Simulation ended with code {}".format(return_code))
-            async_loop.close()
+        logger.info("Generating simulation geometry")
+        async_loop.run_until_complete(self._launch_command(geometry_command, log_file, "[RUNNING VOXSIM]"))
+        if self._run_simulation:
+            self._execute_parallel(self._rename_and_copy_compartments, (geometry_output_folder, simulation_output_folder))
+            logger.info("Simulating DWI signal")
+            return_code, log = async_loop.run_until_complete(self._launch_command(simulation_command, log_file, "[RUNNING FIBERFOX]"))
+            if not return_code == 0:
+                raise SimulationRunnerException(
+                    "Simulation ended in error",
+                    SimulationRunnerException.ExceptionType.Fiberfox,
+                    return_code, (log,)
+                )
+            # self._convert_nrrd_to_nifti(simulation_output_folder, remove_nrrd)
+            logger.debug("Simulation ended with code {}".format(return_code))
+        async_loop.close()
 
     def _execute_parallel(self, method, args):
         p = Process(target=method, args=args)
@@ -293,7 +293,7 @@ class SimulationRunner:
         )
 
     async def _launch_command(self, command, log_file, log_tag):
-        process = await create_subprocess_shell(command, stdout=PIPE, stderr=PIPE)
+        process = Popen(command.split(" "), stdout=PIPE, stderr=PIPE)
 
         logger = RTLogging(process, log_file, log_tag)
         logger.start()

@@ -21,7 +21,7 @@ class RTLogging:
     def _read_output(self, poll_timer=4, logging_callback=lambda a: None):
         stdout_queue = Queue()
         stderr_queue = Queue()
-        t1 = Thread(target=self._enqueue_thread_output, args=(self._process.stderr, stdout_queue))
+        t1 = Thread(target=self._enqueue_thread_output, args=(self._process.stdout, stdout_queue))
         t1.daemon = True
         t1.start()
         t2 = Thread(target=self._enqueue_thread_output, args=(self._process.stderr, stderr_queue))
