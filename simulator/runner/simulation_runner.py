@@ -12,6 +12,7 @@ import nibabel as nib
 
 from config import get_config
 from simulator.exceptions import SimulationRunnerException
+from simulator.utils.logging import RTLogging
 
 logger = logging.getLogger(basename(__file__).split(".")[0])
 
@@ -63,12 +64,12 @@ class SimulationRunner:
 
         with open(path.join(output_folder, "{}.log".format(self._base_naming)), "w+") as log_file:
             logger.info("Simulating DWI signal")
-            return_code, out, err = async_loop.run_until_complete(self._launch_command(simulation_command, log_file, "[RUNNING FIBERFOX]"))
+            return_code, log = async_loop.run_until_complete(self._launch_command(simulation_command, log_file, "[RUNNING FIBERFOX]"))
             if not return_code == 0:
                 raise SimulationRunnerException(
                     "Simulation ended in error",
                     SimulationRunnerException.ExceptionType.Fiberfox,
-                    return_code, (out, err)
+                    return_code, (log,)
                 )
 
             # self._convert_nrrd_to_nifti(simulation_output_folder, remove_nrrd)
@@ -102,12 +103,12 @@ class SimulationRunner:
         with open(path.join(output_folder, "{}.log".format(self._base_naming)), "w+") as log_file:
             self._rename_and_copy_compartments_standalone(simulation_infos, geometry_output_folder, simulation_output_folder)
             logger.info("Simulating DWI signal")
-            return_code, out, err = async_loop.run_until_complete(self._launch_command(simulation_command, log_file, "[RUNNING FIBERFOX]"))
+            return_code, log = async_loop.run_until_complete(self._launch_command(simulation_command, log_file, "[RUNNING FIBERFOX]"))
             if not return_code == 0:
                 raise SimulationRunnerException(
                     "Simulation ended in error",
                     SimulationRunnerException.ExceptionType.Fiberfox,
-                    return_code, (out, err)
+                    return_code, (log,)
                 )
 
             # self._convert_nrrd_to_nifti(simulation_output_folder, remove_nrrd)
@@ -185,12 +186,12 @@ class SimulationRunner:
             if self._run_simulation:
                 self._execute_parallel(self._rename_and_copy_compartments, (geometry_output_folder, simulation_output_folder))
                 logger.info("Simulating DWI signal")
-                return_code, out, err = async_loop.run_until_complete(self._launch_command(simulation_command, log_file, "[RUNNING FIBERFOX]"))
+                return_code, log = async_loop.run_until_complete(self._launch_command(simulation_command, log_file, "[RUNNING FIBERFOX]"))
                 if not return_code == 0:
                     raise SimulationRunnerException(
                         "Simulation ended in error",
                         SimulationRunnerException.ExceptionType.Fiberfox,
-                        return_code, (out, err)
+                        return_code, (log,)
                     )
                 # self._convert_nrrd_to_nifti(simulation_output_folder, remove_nrrd)
                 logger.debug("Simulation ended with code {}".format(return_code))
@@ -293,28 +294,33 @@ class SimulationRunner:
 
     async def _launch_command(self, command, log_file, log_tag):
         process = await create_subprocess_shell(command, stdout=PIPE, stderr=PIPE)
-        while process.returncode is None:
-            out, err = await process.communicate()
-            logger.debug(
-                "[ERROR OUTPUT FROM SIMULATION RUNNER]{} - {}".format(
-                    log_tag, err.decode("utf-8")
-                ))
-            logger.debug(
-                "[STANDARD OUTPUT FROM SIMULATION RUNNER]{} - {}".format(
-                    log_tag, out.decode("utf-8")
-                ))
-            log_file.write("{} - {}".format(log_tag, out.decode("utf-8")))
-            log_file.write("{} - {}".format(log_tag, err.decode("utf-8")))
-            log_file.flush()
-            await sleep(5)
 
-        out, err = await process.communicate()
-        err_str, out_str = err.decode("utf-8"), out.decode("utf-8")
-        logger.debug("[ERROR OUTPUT FROM SIMULATION RUNNER]{} - {}".format(log_tag, err_str))
-        logger.debug("[STANDARD OUTPUT FROM SIMULATION RUNNER]{} - {}".format(log_tag, out_str))
-        log_file.write("{} - {}".format(log_tag, out_str))
-        log_file.write("{} - {}".format(log_tag, err_str))
-        log_file.write("Process ended with return code {}\n".format(process.returncode))
-        log_file.flush()
+        logger = RTLogging(process, log_file, log_tag)
+        logger.start()
+        logger.join()
 
-        return process.returncode, out_str, err_str
+        # while process.returncode is None:
+        #     out, err = await process.communicate()
+        #     logger.debug(
+        #         "[ERROR OUTPUT FROM SIMULATION RUNNER]{} - {}".format(
+        #             log_tag, err.decode("utf-8")
+        #         ))
+        #     logger.debug(
+        #         "[STANDARD OUTPUT FROM SIMULATION RUNNER]{} - {}".format(
+        #             log_tag, out.decode("utf-8")
+        #         ))
+        #     log_file.write("{} - {}".format(log_tag, out.decode("utf-8")))
+        #     log_file.write("{} - {}".format(log_tag, err.decode("utf-8")))
+        #     log_file.flush()
+        #     await sleep(5)
+        #
+        # out, err = await process.communicate()
+        # err_str, out_str = err.decode("utf-8"), out.decode("utf-8")
+        # logger.debug("[ERROR OUTPUT FROM SIMULATION RUNNER]{} - {}".format(log_tag, err_str))
+        # logger.debug("[STANDARD OUTPUT FROM SIMULATION RUNNER]{} - {}".format(log_tag, out_str))
+        # log_file.write("{} - {}".format(log_tag, out_str))
+        # log_file.write("{} - {}".format(log_tag, err_str))
+        # log_file.write("Process ended with return code {}\n".format(process.returncode))
+        # log_file.flush()
+
+        return process.returncode, log_file

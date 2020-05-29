@@ -11,21 +11,17 @@ class SimulationRunnerException(Exception):
         Default = 5
 
     def __init__(
-            self, message, err_type=ExceptionType.Default, err_code=None, streams=None, str_traceback=False
+            self, message, err_type=ExceptionType.Default, err_code=None, log=None
     ):
         self.message = message
         self.err_type = err_type
         self.err_code = err_code
-        self.streams = streams
-        self.str_tbk = str_traceback
-
-    def get_traceback(self):
-        return "[OUT] : {}\n[ERR] : {}\n".format(*self.streams) if self.streams else ""
+        self.log = log
 
     def __str__(self):
         err_code = "Error code : {} | ".format(self.err_code) \
             if self.err_code else ""
-        traceback = self.get_traceback() if self.str_tbk else ""
+        log_link = "Inspect log for more informations :\n   - {}".format(self.log) if self.log else ""
         return "{} | {}Simulation runner encountered an error\n{}\n{}".format(
-            self.err_type.name, err_code, self.message, traceback
+            self.err_type.name, err_code, self.message, log_link
         )
