@@ -265,7 +265,16 @@ for the signal received by a coil for a tissue :math:`j` :
 A story of diffusion
 ____________________
 
-Under construction ...
+The theories of diffusion of fluids takes its roots quite far in time. We can
+find studies on the seemingly random motion of particles all the way to the Roman
+Empire. However, we'll have to wait the 19\ :sup:`th` century for a real
+mathematical description of the effect by Thorvald N. Thiele in 1880, even if
+its discovery is historically linked to Robert Brown, to which we owe the name
+**Brownian Motion**.
+
+Works by Albert Einstein and Marian Smoluchowski, as well as Jean Baptiste Perrin
+refined and confirmed the theory. It is in Einstein's work, more specifically in
+
 
 References
 __________
