@@ -87,7 +87,6 @@ class TestMrStormGenerate_datasets(TestCase):
             "n_maps": 2,
             "data_path": "DATAPATH",
             "data_package": "PACKAGE.TAR.GZ",
-            "data_path": "DATAPATH",
             "handler": gh.GeometryHelper.get_dummy_geometry_handler()
         }, geo_fmt=params["geo-fmt"])
         comm_world.gather = mock.Mock(return_value=[dummy_hash_dict for i in range(3)])

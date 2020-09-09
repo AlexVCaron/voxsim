@@ -1,6 +1,6 @@
 import logging
 import glob
-from asyncio import sleep, create_subprocess_shell, get_event_loop, new_event_loop, set_event_loop
+from asyncio import get_event_loop, new_event_loop, set_event_loop
 from multiprocessing import Process
 from os import path, makedirs, remove
 from os.path import exists, join, basename

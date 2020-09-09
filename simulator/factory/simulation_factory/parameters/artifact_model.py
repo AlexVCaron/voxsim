@@ -6,12 +6,13 @@ from .xml_tree_element import XmlTreeElement
 
 
 class ArtifactModel(XmlTreeElement):
-    def __init__(self, models_list=[]):
+    def __init__(self, models_list=None):
         self._models = self._generate_default_dictionary()
-        for model in models_list:
-            model = deepcopy(model)
-            model_name = model.pop("descr")
-            self._models[model_name] = model
+        if models_list:
+            for model in models_list:
+                model = deepcopy(model)
+                model_name = model.pop("descr")
+                self._models[model_name] = model
 
     def _generate_default_dictionary(self):
         return {

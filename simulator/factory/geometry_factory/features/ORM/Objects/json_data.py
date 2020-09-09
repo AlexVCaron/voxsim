@@ -1,5 +1,5 @@
 import json
-from abc import abstractclassmethod, ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod
 
 from .orm_exception import ORMException
 
@@ -36,8 +36,9 @@ class JsonData(metaclass=ABCMeta):
     def _append_value(self, key, value):
         self._values[key].append(value)
 
-    @abstractclassmethod
-    def _validate_all_keys(self):
+    @classmethod
+    @abstractmethod
+    def _validate_all_keys(cls):
         pass
 
     def _validate_required(self):

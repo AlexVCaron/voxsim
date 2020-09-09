@@ -5,12 +5,12 @@ from .geometry_infos import GeometryInfos
 
 
 class GeometryHandler:
-    def __init__(self, resolution, spacing, clusters=[], spheres=[]):
+    def __init__(self, resolution, spacing, clusters=None, spheres=None):
         self._parameters_dict = {
             "resolution": resolution,
             "spacing": spacing,
-            "clusters": clusters,
-            "spheres": spheres
+            "clusters": clusters if clusters is not None else [],
+            "spheres": spheres if spheres is not None else []
         }
 
     def as_dict(self):
