@@ -21,7 +21,7 @@ class ArtifactModel(XmlTreeElement):
             },
             "addeddycurrents": {
                 "value": False,
-                "eddyStrength": 0,
+                "eddyStrength": 0.002,
                 "eddyTau": 70
             },
             "addspikes": {
@@ -38,7 +38,8 @@ class ArtifactModel(XmlTreeElement):
                 "kspaceLineOffset": 0
             },
             "addringing": {
-                "value": False
+                "value": False,
+                "zeroringing": 0
             },
             "doAddMotion": {
                 "value": False,
@@ -53,6 +54,10 @@ class ArtifactModel(XmlTreeElement):
             },
             "addnoise": {
                 "value": False,
+            },
+            "doAddDrift": {
+                "value": False,
+                "drift": 0.06
             }
         }
 
@@ -61,9 +66,11 @@ class ArtifactModel(XmlTreeElement):
 
         for artifact, data in self._models.items():
             self._create_text_element(artifacts_element, artifact, str(data.pop("value")).lower())
+            if artifact == "addnoise" and "noisevariance" in data:
+                self._create_text_element(parent_element, "noisevariance", str(data["noisevariance"]))
             for attr, value in data.items():
                 self._create_text_element(artifacts_element, attr, str(value))
 
-        artifacts_element = self._alphabetical_ordering_of_attributes(artifacts_element)
+        self._alphabetical_ordering_of_attributes(artifacts_element)
 
         return parent_element

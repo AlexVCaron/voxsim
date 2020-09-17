@@ -8,20 +8,30 @@ from simulator.factory.simulation_factory.helpers.number_tag_to_placeholder impo
 
 
 class StejskalTannerType(XmlTreeElement):
+    def __init__(self, fast=False):
+        self._fast = fast
+
     def dump_to_xml(self, parent_element):
-        self._create_text_element(parent_element, "acquisitiontype", "1")
+        self._create_text_element(
+            parent_element, "acquisitiontype",
+            "2" if self._fast else "1"
+        )
         return parent_element
 
 
 class TensorValuedByTensorType(XmlTreeElement):
-    def __init__(self, tensor):
+    def __init__(self, tensor, fast=False):
         self._tensor = tensor
+        self._fast = fast
 
     def get_bval(self):
         return self._tensor[0, 0] + self._tensor[1, 1] + self._tensor[2, 2]
 
     def dump_to_xml(self, parent_element):
-        self._create_text_element(parent_element, "acquisitiontype", "2")
+        self._create_text_element(
+            parent_element, "acquisitiontype",
+            "4" if self._fast else "3"
+        )
 
         md_element = SubElement(parent_element, "multidimensional")
         self._create_text_element(md_element, "definition", "3")
@@ -39,14 +49,17 @@ class TensorValuedByTensorType(XmlTreeElement):
 
 
 class TensorValuedByEigsType(XmlTreeElement):
-    def __init__(self, eigenvals):
+    def __init__(self, eigenvals, fast=False):
         self._eigenvals = eigenvals
+        self._fast = fast
 
     def get_bval(self):
         return sum(self._eigenvals)
 
     def dump_to_xml(self, parent_element):
-        self._create_text_element(parent_element, "acquisitiontype", "2")
+        self._create_text_element(
+            parent_element, "acquisitiontype", "4" if self._fast else "3"
+        )
 
         md_element = SubElement(parent_element, "multidimensional")
         self._create_text_element(md_element, "definition", "2")
@@ -61,15 +74,18 @@ class TensorValuedByEigsType(XmlTreeElement):
 
 
 class TensorValuedByParamsType(XmlTreeElement):
-    def __init__(self, b_iso, b_delta):
+    def __init__(self, b_iso, b_delta, fast=False):
         self._b_iso = b_iso
         self._b_delta = b_delta
+        self._fast = fast
 
     def get_bval(self):
         return self._b_iso
 
     def dump_to_xml(self, parent_element):
-        self._create_text_element(parent_element, "acquisitiontype", "2")
+        self._create_text_element(
+            parent_element, "acquisitiontype", "4" if self._fast else "3"
+        )
 
         md_element = SubElement(parent_element, "multidimensional")
         self._create_text_element(md_element, "definition", "1")
@@ -106,7 +122,7 @@ class GradientProfile(XmlTreeElement):
 
         gradients_element = SubElement(parent_element, "gradients")
         for direction in range(len(self._directions)):
-            ith_element = SubElement(gradients_element, NumberTagToPlaceholder.generate_placeholder(direction))
+            ith_element = SubElement(gradients_element, "d{}".format(direction))
             self._dump_xyz(ith_element, self._directions[direction])
 
         self._gtype.dump_to_xml(parent_element)

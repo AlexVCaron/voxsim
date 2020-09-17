@@ -1,7 +1,6 @@
 from lxml.etree import SubElement
 
 from .xml_tree_element import XmlTreeElement
-from simulator.factory.simulation_factory.helpers.number_tag_to_placeholder import NumberTagToPlaceholder
 
 
 class CompartmentModels(XmlTreeElement):
@@ -13,7 +12,7 @@ class CompartmentModels(XmlTreeElement):
 
         compartments = sorted(self._compartments, key=lambda cmp: cmp["ID"])
         for cmp in range(len(compartments)):
-            ith_cmp = SubElement(compartment_element, NumberTagToPlaceholder.generate_placeholder(cmp))
+            ith_cmp = SubElement(compartment_element, "c{}".format(cmp))
             for elem, value in compartments[cmp].items():
                 self._create_text_element(ith_cmp, elem, str(value))
 
