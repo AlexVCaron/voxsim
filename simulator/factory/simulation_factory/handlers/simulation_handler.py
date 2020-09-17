@@ -69,7 +69,7 @@ class SimulationHandler:
 
         CompartmentModels(self._compartments).dump_to_xml(image_element)
 
-        xml_string = NumberTagToPlaceholder.replace_placeholders(tostring(data, pretty_print=True).decode("utf-8"))
+        xml_string = tostring(data, pretty_print=True).decode("utf-8")
 
         with open(path.join(simulation_path, output_naming + ".ffp"), "w+") as f:
             f.write(xml_string)

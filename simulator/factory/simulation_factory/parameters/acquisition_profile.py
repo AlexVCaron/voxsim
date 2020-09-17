@@ -1,7 +1,6 @@
 from lxml.etree import SubElement
 
 from .xml_tree_element import XmlTreeElement
-from simulator.factory.simulation_factory.helpers.number_tag_to_placeholder import NumberTagToPlaceholder
 
 
 class AcquisitionProfile(XmlTreeElement):
@@ -9,6 +8,8 @@ class AcquisitionProfile(XmlTreeElement):
         self._resolution = resolution
         self._spacing = spacing
         self._echo_time = None
+        self._invert_time = 0
+        self._echo_train_length = 8
         self._repetition = None
         self._n_coils = None
         self._dwell = 1
@@ -25,6 +26,13 @@ class AcquisitionProfile(XmlTreeElement):
     def get_echo(self):
         return self._echo_time
 
+    def set_inversion(self, invert_time):
+        self._invert_time = invert_time
+        return self
+
+    def get_inversion(self):
+        return self._invert_time
+
     def set_repetition(self, repetition_time):
         self._repetition = repetition_time
         return self
@@ -38,6 +46,13 @@ class AcquisitionProfile(XmlTreeElement):
 
     def get_inhomogen_time(self):
         return self._inhom
+
+    def set_train_length(self, echo_train_length):
+        self._echo_train_length = echo_train_length
+        return self
+
+    def get_train_length(self):
+        return self._echo_train_length
 
     def set_axon_radius(self, radius):
         self._axon_rad = radius
@@ -94,15 +109,15 @@ class AcquisitionProfile(XmlTreeElement):
         self._dump_xyz(origin_element, [0, 0, 0])
 
         direction_element = SubElement(basic_element, "direction")
-        self._create_text_element(direction_element, NumberTagToPlaceholder.generate_placeholder(1), "1")
-        self._create_text_element(direction_element, NumberTagToPlaceholder.generate_placeholder(2), "0")
-        self._create_text_element(direction_element, NumberTagToPlaceholder.generate_placeholder(3), "0")
-        self._create_text_element(direction_element, NumberTagToPlaceholder.generate_placeholder(4), "0")
-        self._create_text_element(direction_element, NumberTagToPlaceholder.generate_placeholder(5), "1")
-        self._create_text_element(direction_element, NumberTagToPlaceholder.generate_placeholder(6), "0")
-        self._create_text_element(direction_element, NumberTagToPlaceholder.generate_placeholder(7), "0")
-        self._create_text_element(direction_element, NumberTagToPlaceholder.generate_placeholder(8), "0")
-        self._create_text_element(direction_element, NumberTagToPlaceholder.generate_placeholder(9), "1")
+        self._create_text_element(direction_element, "d1", "1")
+        self._create_text_element(direction_element, "d2", "0")
+        self._create_text_element(direction_element, "d3", "0")
+        self._create_text_element(direction_element, "d4", "0")
+        self._create_text_element(direction_element, "d5", "1")
+        self._create_text_element(direction_element, "d6", "0")
+        self._create_text_element(direction_element, "d7", "0")
+        self._create_text_element(direction_element, "d8", "0")
+        self._create_text_element(direction_element, "d9", "1")
 
         self._create_text_element(parent_element, "coilsensitivityprofile", "2")
         self._create_text_element(parent_element, "numberofcoils", str(self._n_coils))
@@ -111,6 +126,8 @@ class AcquisitionProfile(XmlTreeElement):
         self._create_text_element(parent_element, "trep", str(self._repetition))
         self._create_text_element(parent_element, "signalScale", str(self._scale))
         self._create_text_element(parent_element, "tEcho", str(self._echo_time))
+        self._create_text_element(parent_element, "echoTrainLength", str(self._echo_train_length))
+        self._create_text_element(parent_element, "tinv", str(self._invert_time))
         self._create_text_element(parent_element, "tLine", str(self._dwell))
         self._create_text_element(parent_element, "tInhom", str(self._inhom))
         self._create_text_element(parent_element, "simulatekspace", str(True).lower())

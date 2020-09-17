@@ -71,7 +71,9 @@ class SimulationFactory:
             signal_scale=100,
             reverse_phase=False,
             inhomogen_time=50,
-            axon_radius=0
+            axon_radius=0,
+            inversion_time=0,
+            echo_train_length=8
     ):
         """
         Generate the acquisition profile component used to simulate the acquisition sequence
@@ -96,6 +98,10 @@ class SimulationFactory:
             Gradient inhomogeneity time (milliseconds), default : 50
         axon_radius : float, optional
             Radius of the axons of the simulated fiber medium, 0 for auto-determination by Fiberfox, default : 0
+        inversion_time : int, optional
+            Tinv of the sequence (milliseconds)
+        echo_train_length : int, optional
+            Number of echoes per datapoint
 
         Returns
         -------
@@ -111,7 +117,9 @@ class SimulationFactory:
                                              .set_scale(signal_scale)\
                                              .set_reverse_phase(reverse_phase)\
                                              .set_inhomogen_time(inhomogen_time)\
-                                             .set_axon_radius(axon_radius)
+                                             .set_axon_radius(axon_radius)\
+                                             .set_inversion(inversion_time)\
+                                             .set_train_length(echo_train_length)
 
     @staticmethod
     def generate_gradient_vectors(points_per_shell, max_iter=1000):
@@ -328,6 +336,24 @@ class SimulationFactory:
         return {"descr": "addspikes", "spikesnum": number_of_spikes, "spikesscale": scale, "value": True}
 
     @staticmethod
+    def generate_drift_model(drift_factor):
+        """
+        Generates a dictionary describing the drift artifact model of the simulated acquisition
+
+        Parameters
+        ----------
+        drift_factor : float
+            K-space acquisition drift factor
+
+        Returns
+        -------
+        dict
+            A dictionary describing the drift model
+
+        """
+        return {"descr": "doAddDrift", "drift": drift_factor, "value": True}
+
+    @staticmethod
     def generate_aliasing_model(fov_shrink_percent):
         """
         Generates a dictionary describing the aliasing artifact model of the simulated acquisition
@@ -346,7 +372,7 @@ class SimulationFactory:
         return {"descr": "addaliasing", "aliasingfactor": fov_shrink_percent, "value": True}
 
     @staticmethod
-    def generate_gibbs_ringing_model():
+    def generate_gibbs_ringing_model(zero_ringing):
         """
         Generates a dictionary describing the gibbs ringing artifact model of the simulated acquisition
 
@@ -356,7 +382,7 @@ class SimulationFactory:
             A dictionary describing the gibbs ringing model
 
         """
-        return {"descr": "addringing", "value": True}
+        return {"descr": "addringing", "zeroringing": zero_ringing, "value": True}
 
     @staticmethod
     def generate_fiber_stick_compartment(diffusivity, t1, t2, compartment_type):
