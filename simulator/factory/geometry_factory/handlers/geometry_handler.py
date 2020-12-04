@@ -1,3 +1,4 @@
+from copy import deepcopy
 from os import path, makedirs
 
 from simulator.factory.geometry_factory.features.ORM.config_builder import ConfigBuilder
@@ -24,20 +25,20 @@ class GeometryHandler:
 
     def __reduce__(self):
         return (GeometryHandler, (
-            self._parameters_dict["resolution"],
-            self._parameters_dict["spacing"],
-            self._parameters_dict["clusters"],
-            self._parameters_dict["spheres"]
+            deepcopy(self._parameters_dict["resolution"]),
+            deepcopy(self._parameters_dict["spacing"]),
+            deepcopy(self._parameters_dict["clusters"]),
+            deepcopy(self._parameters_dict["spheres"])
         ))
 
     def __getstate__(self):
-        members = self._parameters_dict.copy()
+        members = deepcopy(self._parameters_dict)
         members.pop("clusters")
         members.pop("spheres")
         return members
 
     def __setstate__(self, state):
-        self._parameters_dict.update(state)
+        self._parameters_dict.update(deepcopy(state))
 
     def clear(self):
         self._parameters_dict["clusters"] = []

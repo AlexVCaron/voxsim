@@ -1,5 +1,5 @@
 from enum import Enum
-from numpy import concatenate as cat
+from numpy import concatenate as cat, array
 
 from .parameters import AcquisitionProfile,\
                         ArtifactModel,\
@@ -185,8 +185,8 @@ class SimulationFactory:
 
         """
         return GradientProfile(
-            cat(([0 for i in range(n_b0)], bvals)) if n_b0 > 0 else bvals,
-            cat(([b0_bvec for i in range(n_b0)], bvecs)) if n_b0 > 0 else bvecs,
+            cat(([0 for _ in range(n_b0)], bvals)) if n_b0 > 0 else bvals,
+            cat((array([b0_bvec for _ in range(n_b0)]), bvecs)) if n_b0 > 0 else bvecs,
             g_type.value(*g_type_args, **g_type_kwargs)
         )
 

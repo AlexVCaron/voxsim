@@ -18,9 +18,16 @@ def run_simulation_runner_test():
         "runner_test_simulation"
     )
 
-    runner = SimulationRunner("runner_test", geometry_parameters, simulation_parameters)
+    runner = SimulationRunner("runner_test", geometry_parameters, simulation_parameters, output_nifti=True)
 
     runner.run(output_folder, True)
+
+    simulation_parameters = run_simulation_factory_test(
+        output_folder,
+        "runner_test_simulation_standalone"
+    )
+
+    runner.run_simulation_standalone(output_folder, output_folder, simulation_parameters)
 
 
 if __name__ == "__main__":
