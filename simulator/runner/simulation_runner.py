@@ -1,12 +1,12 @@
 import logging
-import glob
+
 from asyncio import get_event_loop, new_event_loop, set_event_loop
 from multiprocessing import Process
-from os import path, makedirs, remove
-from os.path import exists, join, basename
+from os import path, makedirs
+from os.path import exists, basename
 from shutil import copyfile
 from subprocess import PIPE, Popen
-from numpy import sum, ones_like, moveaxis, hstack, vstack
+from numpy import sum, ones_like
 import nrrd
 import nibabel as nib
 
@@ -33,11 +33,15 @@ class SimulationRunner:
 
         singularity_conf = singularity_conf if singularity_conf else get_config()
         self._singularity = path.join(singularity_conf["singularity_path"], singularity_conf["singularity_name"])
+        self._singularity_exec = singularity_conf["singularity_exec"] if "singularity_exec" in singularity_conf else "singularity"
 
         self._run_simulation = True if simulation_infos else False
         self._event_loop = new_event_loop()
         self._extension = "nii.gz" if output_nifti else "nrrd"
         self._fib_extension_arg = " --nii" if output_nifti else ""
+
+    def change_base_naming(self, name):
+        self._base_naming = name
 
     def set_geometry_base_naming(self, name):
         self._geometry_base_naming = name
@@ -48,7 +52,8 @@ class SimulationRunner:
         if not path.exists(simulation_output_folder):
             makedirs(simulation_output_folder, exist_ok=True)
 
-        simulation_command = "singularity run -B {} --app launch_mitk {} -p {} -i {} -o {} {}".format(
+        simulation_command = "{} run -B {} --app launch_mitk {} -p {} -i {} -o {} {}".format(
+            self._singularity_exec,
             ",".join([simulation_infos["file_path"], simulation_output_folder]),
             self._singularity,
             path.join(simulation_output_folder, "{}_simulation.ffp".format(self._base_naming)),
@@ -78,7 +83,10 @@ class SimulationRunner:
         logger.debug("Simulation {} ended with code {}".format(self._base_naming, return_code))
         async_loop.close()
 
-    def run_simulation_standalone(self, output_folder, geometry_folder, simulation_infos, test_mode=False):
+    def run_simulation_standalone(self, output_folder, geometry_folder, simulation_infos, base_naming=None, test_mode=False):
+        if not base_naming:
+            base_naming = self._base_naming
+
         self._start_loop_if_closed()
         simulation_output_folder = path.join(output_folder, "simulation_outputs")
         geometry_output_folder = path.join(geometry_folder, "geometry_outputs")
@@ -86,25 +94,26 @@ class SimulationRunner:
         if not path.exists(simulation_output_folder):
             makedirs(simulation_output_folder, exist_ok=True)
 
-        simulation_command = "singularity run -B {} --app launch_mitk {} -p {} -i {} -o {} {}".format(
+        simulation_command = "{} run -B {} --app launch_mitk {} -p {} -i {} -o {} {}".format(
+            self._singularity_exec,
             ",".join([geometry_folder, simulation_infos["file_path"], simulation_output_folder]),
             self._singularity,
-            path.join(simulation_output_folder, "{}_simulation.ffp".format(self._base_naming)),
+            path.join(simulation_output_folder, "{}_simulation.ffp".format(base_naming)),
             path.join(geometry_output_folder, self._geometry_base_naming) + "_merged_bundles.fib",
-            path.join(simulation_output_folder, "{}.{}".format(self._base_naming, self._extension)),
+            path.join(simulation_output_folder, "{}.{}".format(base_naming, self._extension)),
             "-v" if test_mode else ""
         )
 
         copyfile(
             path.join(simulation_infos["file_path"], simulation_infos["param_file"]),
-            path.join(simulation_output_folder, "{}_simulation.ffp".format(self._base_naming))
+            path.join(simulation_output_folder, "{}_simulation.ffp".format(base_naming))
         )
 
         set_event_loop(self._event_loop)
         async_loop = get_event_loop()
-        log_file = path.join(output_folder, "{}.log".format(self._base_naming))
+        log_file = path.join(output_folder, "{}.log".format(base_naming))
 
-        self._rename_and_copy_compartments_standalone(simulation_infos, geometry_output_folder, simulation_output_folder)
+        self._rename_and_copy_compartments_standalone(simulation_infos, geometry_output_folder, simulation_output_folder, base_naming)
 
         logger.info("Simulating DWI signal")
         return_code, log = async_loop.run_until_complete(self._launch_command(simulation_command, log_file, "[RUNNING FIBERFOX]"))
@@ -141,7 +150,7 @@ class SimulationRunner:
             "rel" if relative_fiber_compartment else "abs",
             self._fib_extension_arg
         )
-        print(geometry_command)
+
         if self._run_simulation:
             simulation_command = "singularity run -B {} --app launch_mitk {} -p {} -i {} -o {} {}".format(
                 ",".join([self._simulation_path, geometry_output_folder, simulation_output_folder]),
@@ -183,12 +192,12 @@ class SimulationRunner:
         p.start()
         p.join()
 
-    def _rename_and_copy_compartments_standalone(self, simulation_infos, geometry_output_folder, simulation_output_folder):
+    def _rename_and_copy_compartments_standalone(self, simulation_infos, geometry_output_folder, simulation_output_folder, base_naming):
         copyfile(
             path.join(geometry_output_folder, self._geometry_base_naming + "_mergedBundlesMaps.{}".format(self._extension)),
             path.join(
                 simulation_output_folder,
-                "{}_simulation.ffp_VOLUME{}.{}".format(self._base_naming, simulation_infos["compartment_ids"][0], self._extension)
+                "{}_simulation.ffp_VOLUME{}.{}".format(base_naming, simulation_infos["compartment_ids"][0], self._extension)
             )
         )
 
@@ -200,7 +209,7 @@ class SimulationRunner:
                     path.join(geometry_output_folder, self._geometry_base_naming + "_mergedEllipsesMaps.{}".format(self._extension)),
                     path.join(
                         simulation_output_folder,
-                        "{}_simulation.ffp_VOLUME{}.{}".format(self._base_naming, simulation_infos["compartment_ids"][1], self._extension)
+                        "{}_simulation.ffp_VOLUME{}.{}".format(base_naming, simulation_infos["compartment_ids"][1], self._extension)
                     )
                 )
             elif base_map:
@@ -208,7 +217,7 @@ class SimulationRunner:
                     path.join(geometry_output_folder, self._geometry_base_naming + "_ellipsoid1_cmap.{}".format(self._extension)),
                     path.join(
                         simulation_output_folder,
-                        "{}_simulation.ffp_VOLUME{}.{}".format(self._base_naming, simulation_infos["compartment_ids"][1], self._extension)
+                        "{}_simulation.ffp_VOLUME{}.{}".format(base_naming, simulation_infos["compartment_ids"][1], self._extension)
                     )
                 )
             else:
@@ -255,7 +264,10 @@ class SimulationRunner:
             else:
                 raise SimulationRunnerException("3 compartments were supplied, but there is only a map for fibers found. At least one other compartment primitive must be generated by voxsim", SimulationRunnerException.ExceptionType.Parameters)
 
-    def _generate_background_map(self, geometry_output_folder, simulation_output_folder, compartment_id, merged_maps=False, base_map=False):
+    def _generate_background_map(self, geometry_output_folder, simulation_output_folder, compartment_id, merged_maps=False, base_map=False, base_naming=None):
+        if not base_naming:
+            base_naming = self._base_naming
+
         if self._extension == "nrrd":
             maps = [
                 nrrd.read(
@@ -294,7 +306,7 @@ class SimulationRunner:
             nrrd.write(
                 path.join(
                     simulation_output_folder,
-                    "{}_simulation.ffp_VOLUME{}.nrrd".format(self._base_naming, compartment_id)
+                    "{}_simulation.ffp_VOLUME{}.nrrd".format(base_naming, compartment_id)
                 ),
                 extra_map, *header
             )
@@ -303,7 +315,7 @@ class SimulationRunner:
                 nib.Nifti1Image(extra_map, *header),
                 path.join(
                     simulation_output_folder,
-                    "{}_simulation.ffp_VOLUME{}.nii.gz".format(self._base_naming, compartment_id)
+                    "{}_simulation.ffp_VOLUME{}.nii.gz".format(base_naming, compartment_id)
                 )
             )
 
