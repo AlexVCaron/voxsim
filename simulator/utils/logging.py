@@ -36,6 +36,12 @@ class RTLogging:
                 logging_callback(self._log)
                 time.sleep(poll_timer)
 
+            self._dequeue_output(log_file, stdout_queue, "STD")
+            self._dequeue_output(log_file, stderr_queue, "ERR")
+
+            logging_callback(self._log)
+            time.sleep(poll_timer)
+
     def _enqueue_thread_output(self, pipe, queue):
         while self._process.poll() is None:
             ln = pipe.readline()
@@ -43,11 +49,11 @@ class RTLogging:
 
     def _dequeue_output(self, log_file, queue, tag):
         try:
-            t = "".join([self._tag, tag])
             while not queue.empty():
                 ln = queue.get_nowait()
-                log_file.write(
-                    "\n".join(["[{}] {}".format(t, l) for l in ln.decode("ascii").strip().split("\n")]) + "\n")
-                log_file.flush()
+                if ln:
+                    log_file.write(
+                        "\n".join(["{}[{}] {}".format(self._tag, tag, l) for l in ln.decode("ascii").strip().split("\n")]) + "\n")
+                    log_file.flush()
         except:
             pass

@@ -15,16 +15,23 @@ def run_simulation_factory_test(output_folder, output_naming):
         SimulationFactory.CompartmentType.INTRA_AXONAL
     )
 
-    csf_compartment = SimulationFactory.generate_extra_ball_compartment(
-        3.,
+    restricted_fluid_compartment = SimulationFactory.generate_extra_ball_compartment(
+        2.,
         4000,
         2000,
         SimulationFactory.CompartmentType.EXTRA_AXONAL_1
     )
 
+    csf_compartment = SimulationFactory.generate_extra_ball_compartment(
+        3.,
+        4000,
+        2000,
+        SimulationFactory.CompartmentType.EXTRA_AXONAL_2
+    )
+
     simulation_handler = SimulationFactory.get_simulation_handler(
         GeometryHelper.get_dummy_empty_geometry_handler(),
-        [fiber_compartment, csf_compartment]
+        [fiber_compartment, restricted_fluid_compartment, csf_compartment]
     )
 
     simulation_handler.set_acquisition_profile(

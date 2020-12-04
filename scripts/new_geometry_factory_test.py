@@ -17,9 +17,9 @@ sphere_radius = 5
 n_point_per_centroid = 5
 bundle_radius = 4
 bundle_symmetry = 1
-bundle_n_fibers = 1E4
+bundle_n_fibers = 1000
 bundle_limits = [[0, 1], [0, 1], [0, 1]]
-bundle_center = [0, 0, 0]
+bundle_center = [0.5, 0.5, 0.5]
 world_center = [5, 5, 5]
 
 base_anchors = [
@@ -38,8 +38,7 @@ base_anchors = [
     [0.5, 0.9, 0.5],
     [0.5, 1.1, 0.5],
     [0.5, 1.2, 0.5],
-    [0.5, 1.3, 0.5],
-    [0.5, 1.4, 0.5]
+    [0.5, 1.3, 0.5]
 ]
 
 
@@ -72,5 +71,5 @@ def run_geometry_factory_test(output_folder, output_naming):
 if __name__ == "__main__":
     run_geometry_factory_test(
         "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/simu_factory_test",
-        "test_factory"
+        "test_factory_new_naming"
     )
