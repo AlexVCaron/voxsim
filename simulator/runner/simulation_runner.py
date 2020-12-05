@@ -275,7 +275,7 @@ class SimulationRunner:
         return nrrd.read("{}.nrrd".format(name))
 
     def _save_nifti(self, data, header_pack, name):
-        nib.save(nib.Nifti1Image(data, *header_pack), ".nii.gz".format(name))
+        nib.save(nib.Nifti1Image(data, *header_pack), "{}.nii.gz".format(name))
 
     def _save_nrrd(self, data, header, name):
         nrrd.write("{}.nrrd".format(name), data, header)
