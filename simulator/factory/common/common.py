@@ -34,10 +34,11 @@ class AttributeAsDictClass(MutableMapping):
         return "_{}".format(key)
 
     def pop(self, k):
-        return super().pop(k)
+        assert k in self._valid_keys
+        return self.__dict__.pop(self._generate_attr_key(k))
 
     def __str__(self):
-        return str({k: self.__dict__[k] for k in self._valid_keys})
+        return str(self.as_dict())
 
     def as_dict(self):
         return {k: self.__dict__[self._generate_attr_key(k)] for k in self._valid_keys}
