@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 
+import argparse
 from math import pi, sqrt
+from os import makedirs
+from os.path import join
+from tempfile import mkdtemp
+
 from numpy import mean
 
 from simulator.factory import GeometryFactory
@@ -21,6 +26,7 @@ x_anchors = [
 ]
 
 anchors = [[x, sqrt(0.475 ** 2. - (x - 0.5) ** 2.), 0.5] for x in x_anchors]
+n_fibers_per_bundle = 1000
 
 bundle_radius = 8
 cluster_limits = [[0, 1], [0, 1], [0, 1]]
@@ -98,7 +104,7 @@ def get_base_simulation_handler(geometry_handler, add_noise=False):
     return base_simulation_handler
 
 
-def create_simulation_b1000_francois(geometry_handler, output_folder, output_naming):
+def create_simulation_b1000(geometry_handler, output_folder, output_naming):
     base_b1000_simulation_handler = get_base_simulation_handler(geometry_handler)
 
     b1000_dirs = SimulationFactory.generate_gradient_vectors([64])
@@ -117,7 +123,7 @@ def create_simulation_b1000_francois(geometry_handler, output_folder, output_nam
     )
 
 
-def create_simulation_multishell_francois(geometry_handler, output_folder, output_naming):
+def create_simulation_multishell(geometry_handler, output_folder, output_naming):
     base_multishell_simulation_handler = get_base_simulation_handler(geometry_handler)
 
     multishell_dirs = SimulationFactory.generate_gradient_vectors([30, 30, 30])
@@ -138,79 +144,62 @@ def create_simulation_multishell_francois(geometry_handler, output_folder, outpu
 
 
 if __name__ == "__main__":
-    geometry_infos, geometry_handler = create_geometry(
-        "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois",
-        "geometry_1k",
-        1000
+    parser = argparse.ArgumentParser("Wall Effect Example Script")
+    parser.add_argument(
+        "out", type=str, required=False, help="Output directory for the files"
     )
 
-    simulation_b1000_infos = create_simulation_b1000_francois(
-        geometry_handler,
-        "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois",
-        "simulation_b1000_1k"
-    )
+    args = parser.parse_args()
+    if "out" in args:
+        dest = args["out"]
+        makedirs(args["out"], exist_ok=True)
+    else:
+        dest = mkdtemp(prefix="wall_effect")
 
-    SimulationRunner("simulation_b1000_1k", geometry_infos, simulation_b1000_infos).run(
-        "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois/output",
-        relative_fiber_compartment=False
-    )
+    makedirs(join(dest, "runner_outputs"), exist_ok=True)
 
     geometry_infos, geometry_handler = create_geometry(
-        "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois",
-        "geometry_10k",
-        10000
+        dest, "geometry", n_fibers_per_bundle
     )
 
-    simulation_b1000_infos = create_simulation_b1000_francois(
-        geometry_handler,
-        "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois",
-        "simulation_b1000_10k"
+    simulation_b1000_infos = create_simulation_b1000(
+        geometry_handler, dest, "simulation_b1000"
     )
 
-    SimulationRunner("simulation_b1000_10k", geometry_infos, simulation_b1000_infos).run(
-        "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois/output",
-        relative_fiber_compartment=True
+    SimulationRunner(
+        "simulation_b1000", geometry_infos, simulation_b1000_infos
+    ).run(
+        join(dest, "runner_outputs"), relative_fiber_compartment=False
     )
 
-    # geometry_infos, geometry_handler = create_split_geometry(
-    #     "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois",
-    #     "geometry_split_b1"
-    # )
-    #
-    # simulation_b1000_infos = create_simulation_b1000_francois(
-    #     geometry_handler,
-    #     "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois",
-    #     "simulation_split_b1_b1000"
-    # )
-    #
-    # SimulationRunner("simulation_split_b1_b1000", geometry_infos, simulation_b1000_infos).run(
-    #     "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois/output"
-    # )
-    #
-    # geometry_infos, geometry_handler = create_split_geometry(
-    #     "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois",
-    #     "geometry_split_b2",
-    #     pi
-    # )
-    #
-    # simulation_b1000_infos = create_simulation_b1000_francois(
-    #     geometry_handler,
-    #     "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois",
-    #     "simulation_split_b2_b1000"
-    # )
-    #
-    # SimulationRunner("simulation_split_b2_b1000", geometry_infos, simulation_b1000_infos).run(
-    #     "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois/output"
-    # )
+    geometry_infos, geometry_handler = create_split_geometry(
+        dest, "geometry_split_b1"
+    )
 
-    # simulation_multishell_infos = create_simulation_multishell_francois(
-    #     geometry_handler,
-    #     "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois",
-    #     "simulation_multishell"
-    # )
-    #
-    # SimulationRunner("simulation_multishell", geometry_infos, simulation_b1000_infos).run(
-    #     "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/geometry_francois/output"
-    # )
+    simulation_b1000_infos = create_simulation_b1000(
+        geometry_handler, dest, "simulation_split_b1_b1000"
+    )
 
+    SimulationRunner(
+        "simulation_split_b1_b1000", geometry_infos, simulation_b1000_infos
+    ).run(join(dest, "runner_outputs"))
 
+    geometry_infos, geometry_handler = create_split_geometry(
+        dest, "geometry_split_b2", pi
+    )
+
+    simulation_b1000_infos = create_simulation_b1000(
+        geometry_handler, dest, "simulation_split_b2_b1000"
+    )
+
+    SimulationRunner(
+        "simulation_split_b2_b1000", geometry_infos, simulation_b1000_infos
+    ).run(join(dest, "runner_outputs"))
+
+    simulation_multishell_infos = create_simulation_multishell(
+        geometry_handler, dest, "simulation_multishell"
+    )
+
+    SimulationRunner(
+        "simulation_multishell", geometry_infos, simulation_b1000_infos
+    ).run(join(dest, "runner_outputs"))
