@@ -3,6 +3,7 @@ import glob
 
 from simulator.utils.setup.documentation import DocCommand
 
+
 if __name__ == "__main__":
     setup(
         name='simulation_generator',

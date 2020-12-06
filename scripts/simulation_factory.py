@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+import argparse
+from os import makedirs
+from tempfile import mkdtemp
+
 from simulator.factory import SimulationFactory
 from simulator.utils.test_helpers import GeometryHelper
 from random import uniform
@@ -7,7 +11,7 @@ from numpy.linalg import norm
 from numpy import array
 
 
-def run_simulation_factory_test(output_folder, output_naming):
+def get_simulation_parameters(output_folder, output_naming):
     fiber_compartment = SimulationFactory.generate_fiber_stick_compartment(
         0.007,
         900,
@@ -67,7 +71,16 @@ def run_simulation_factory_test(output_folder, output_naming):
 
 
 if __name__ == "__main__":
-    run_simulation_factory_test(
-        "/media/vala2004/b1f812ac-9843-4a1f-877a-f1f3bd303399/data/simu_factory_test",
-        "fiberfox_test_params"
+    parser = argparse.ArgumentParser("Simulation Factory Example Script")
+    parser.add_argument(
+        "out", type=str, required=False, help="Output directory for the files"
     )
+
+    args = parser.parse_args()
+    if "out" in args:
+        dest = args["out"]
+        makedirs(args["out"], exist_ok=True)
+    else:
+        dest = mkdtemp(prefix="sim_factory")
+
+    get_simulation_parameters(dest, "simulation")
