@@ -68,7 +68,7 @@ class SimulationFactory:
             n_channels,
             dwell_time=1,
             partial_fourier=1,
-            signal_scale=100,
+            signal_scale=4000,
             reverse_phase=False,
             inhomogen_time=50,
             axon_radius=0,
