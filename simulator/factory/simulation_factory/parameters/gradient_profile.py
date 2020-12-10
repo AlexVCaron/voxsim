@@ -66,9 +66,15 @@ class TensorValuedByEigsType(XmlTreeElement):
         self._create_text_element(md_element, "bdelta", "0")
 
         tensor_element = SubElement(parent_element, "btensor")
-        self._create_text_element(tensor_element, "eig1", self._eigenvals[0])
-        self._create_text_element(tensor_element, "eig2", self._eigenvals[1])
-        self._create_text_element(tensor_element, "eig3", self._eigenvals[2])
+        self._create_text_element(
+            tensor_element, "eig1", str(self._eigenvals[0])
+        )
+        self._create_text_element(
+            tensor_element, "eig2", str(self._eigenvals[1])
+        )
+        self._create_text_element(
+            tensor_element, "eig3", str(self._eigenvals[2])
+        )
 
         return parent_element
 
