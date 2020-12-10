@@ -74,13 +74,13 @@ def get_geometry_parameters(output_folder, output_naming):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Geometry Factory Example Script")
     parser.add_argument(
-        "out", type=str, required=False, help="Output directory for the files"
+        "-out", type=str, required=False, help="Output directory for the files"
     )
 
     args = parser.parse_args()
     if "out" in args:
-        dest = args["out"]
-        makedirs(args["out"], exist_ok=True)
+        dest = args.out
+        makedirs(args.out, exist_ok=True)
     else:
         dest = mkdtemp(prefix="geo_factory")
 
