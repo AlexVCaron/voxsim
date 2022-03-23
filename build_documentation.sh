@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
-cd documentation
+if [ ! -d documentation ]
+then
+  cd .cache
+  ./generate_documentation.sh
+  cd ..
+fi
 
+cd documentation
 make html
