@@ -11,6 +11,7 @@ Prerequisites
 -------------
 
 - Singularity **3** or **greater**
+  - The singularity image for voXSim can be pulled with `singularity pull library://avcaron/voxsim_singularity`
 - MPI libraries
   - On Ubuntu, install `openmpi-bin`
 - A good multi-core CPU

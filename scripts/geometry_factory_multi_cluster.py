@@ -83,14 +83,15 @@ def run_multi_clusters(output_folder, output_naming):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Geometry Multi Clusters Example Script")
     parser.add_argument(
-        "-out", type=str, required=False, help="Output directory for the files"
+        "--out", type=str, required=False, help="Output directory for the files"
     )
 
     args = parser.parse_args()
-    if "out" in args:
+    if "out" in args and args.out:
         dest = args.out
         makedirs(args.out, exist_ok=True)
     else:
-        dest = mkdtemp(prefix="geo_mc")
+        dest = mkdtemp(prefix="geo_factory_mc")
 
+    print("Script execution results are in : {}".format(dest))
     run_multi_clusters(dest, "multi_clusters")

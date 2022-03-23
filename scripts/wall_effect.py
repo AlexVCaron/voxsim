@@ -146,16 +146,17 @@ def create_simulation_multishell(geometry_handler, output_folder, output_naming)
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Wall Effect Example Script")
     parser.add_argument(
-        "-out", type=str, required=False, help="Output directory for the files"
+        "--out", type=str, required=False, help="Output directory for the files"
     )
 
     args = parser.parse_args()
-    if "out" in args:
+    if "out" in args and args.out:
         dest = args.out
         makedirs(args.out, exist_ok=True)
     else:
         dest = mkdtemp(prefix="wall_effect")
 
+    print("Script execution results are in : {}".format(dest))
     makedirs(join(dest, "runner_outputs"), exist_ok=True)
 
     geometry_infos, geometry_handler = create_geometry(

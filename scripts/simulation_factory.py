@@ -73,14 +73,15 @@ def get_simulation_parameters(output_folder, output_naming):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Simulation Factory Example Script")
     parser.add_argument(
-        "-out", type=str, required=False, help="Output directory for the files"
+        "--out", type=str, required=False, help="Output directory for the files"
     )
 
     args = parser.parse_args()
-    if "out" in args:
+    if "out" in args and args.out:
         dest = args.out
         makedirs(args.out, exist_ok=True)
     else:
         dest = mkdtemp(prefix="sim_factory")
 
+    print("Script execution results are in : {}".format(dest))
     get_simulation_parameters(dest, "simulation")

@@ -1,5 +1,5 @@
 {
-    "singularity_path": "/vagrant",
-    "singularity_name": "geo_simu_singularity_mitk_utd_3.5.simg"
+    "singularity_path": ".",
+    "singularity_name": "voxsim_singularity_latest.sif"
 }
 
