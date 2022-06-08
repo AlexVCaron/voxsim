@@ -5,8 +5,8 @@
 ##########################################################################
 
 import numpy as np
-from simulator.factory.simulation_factory import utils as utils
-from external.qspace_sampler.bases import utils as sh
+from external.qspace_sampler.bases import utils
+from external.qspace_sampler.bases import sh
 from scipy.special import gamma, legendre
 from scipy.special.orthogonal import genlaguerre
 from scipy.special import factorial

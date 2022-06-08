@@ -5,8 +5,7 @@
 ##########################################################################
 
 import numpy as np
-from scipy.special import lpmv, gamma, hyp1f1, legendre
-from scipy.special.orthogonal import genlaguerre
+from scipy.special import lpmv, legendre
 from scipy.special import factorial
 
 
@@ -167,7 +166,7 @@ def L(rank=_default_rank):
         The truncation rank of the SH basis.
     """
 
-    dim_sh = dimension(rank)
+    dimSH = dimension(rank)
     L = np.zeros((dimSH, dimSH))
     for j in range(dimSH):
         l =  index_l(j)

@@ -8,8 +8,8 @@ import numpy as np
 from scipy.special import hyp1f1
 from scipy.special import factorial
 import external.qspace_sampler.bases.spf as spf
-from simulator.factory.simulation_factory import utils as utils
-from external.qspace_sampler.bases import utils as sh
+from external.qspace_sampler.bases import utils as utils
+from external.qspace_sampler.bases import sh
 
 # default parameters values
 _default_radial_order = spf._default_radial_order
