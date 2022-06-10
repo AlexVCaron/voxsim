@@ -7,7 +7,7 @@ from tempfile import mkdtemp
 
 from scripts.geometry_factory import get_geometry_parameters
 from scripts.simulation_factory import get_simulation_parameters
-from simulator.runner import SimulationRunner
+from simulator.runner.legacy import SimulationRunner
 
 
 def run_simulation(output_folder):

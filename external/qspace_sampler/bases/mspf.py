@@ -8,7 +8,8 @@ import numpy as np
 from scipy.special import gamma
 from scipy.special.orthogonal import genlaguerre
 from scipy.special import factorial
-import external.qspace_sampler.bases.sh as sh, external.qspace_sampler.bases.spf as spf
+import external.qspace_sampler.bases.sh as sh
+import external.qspace_sampler.bases.spf as spf
 
 
 # default parameters values

@@ -10,7 +10,7 @@ from numpy import mean
 
 from simulator.factory import GeometryFactory
 from simulator.factory import SimulationFactory
-from simulator.runner import SimulationRunner
+from simulator.runner.legacy import SimulationRunner
 from simulator.factory import Plane
 
 resolution = [40, 40, 40]
