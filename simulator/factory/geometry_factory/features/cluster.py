@@ -1,12 +1,11 @@
 import json
 
-from .ORM.Objects import JsonData, ORMException
-from .cluster_meta import ClusterMeta
 from .bundle import Bundle
+from .cluster_meta import ClusterMeta
+from .ORM.Objects import JsonData, ORMException
 
 
 class Cluster(JsonData):
-
     def _get_base_object(self):
         return Cluster
 

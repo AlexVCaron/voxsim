@@ -1,5 +1,5 @@
-from os.path import join, dirname, realpath
 import json
+from os.path import dirname, join, realpath
 
 
 def get_config(path=dirname(realpath(__file__))):

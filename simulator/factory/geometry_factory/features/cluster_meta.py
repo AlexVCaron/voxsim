@@ -4,7 +4,6 @@ from .ORM.Objects import JsonData, ORMException
 
 
 class ClusterMeta(JsonData):
-
     def _get_base_object(self):
         return ClusterMeta
 
@@ -25,7 +24,9 @@ class ClusterMeta(JsonData):
         return self
 
     def set_limits(self, limits):
-        self._set_value("limits", ".".join([str(lim) for lim in limits]).replace(" ", ""))
+        self._set_value(
+            "limits", ".".join([str(lim) for lim in limits]).replace(" ", "")
+        )
         return self
 
     def get_limits(self):

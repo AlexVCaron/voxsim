@@ -120,19 +120,39 @@ class AcquisitionProfile(XmlTreeElement):
         self._create_text_element(direction_element, "d9", "1")
 
         self._create_text_element(parent_element, "coilsensitivityprofile", "2")
-        self._create_text_element(parent_element, "numberofcoils", str(self._n_coils))
-        self._create_text_element(parent_element, "reversephase", str(self._reverse).lower())
-        self._create_text_element(parent_element, "partialfourier", str(self._partial))
+        self._create_text_element(
+            parent_element, "numberofcoils", str(self._n_coils)
+        )
+        self._create_text_element(
+            parent_element, "reversephase", str(self._reverse).lower()
+        )
+        self._create_text_element(
+            parent_element, "partialfourier", str(self._partial)
+        )
         self._create_text_element(parent_element, "trep", str(self._repetition))
-        self._create_text_element(parent_element, "signalScale", str(self._scale))
+        self._create_text_element(
+            parent_element, "signalScale", str(self._scale)
+        )
         self._create_text_element(parent_element, "tEcho", str(self._echo_time))
-        self._create_text_element(parent_element, "echoTrainLength", str(self._echo_train_length))
-        self._create_text_element(parent_element, "tinv", str(self._invert_time))
+        self._create_text_element(
+            parent_element, "echoTrainLength", str(self._echo_train_length)
+        )
+        self._create_text_element(
+            parent_element, "tinv", str(self._invert_time)
+        )
         self._create_text_element(parent_element, "tLine", str(self._dwell))
         self._create_text_element(parent_element, "tInhom", str(self._inhom))
-        self._create_text_element(parent_element, "simulatekspace", str(True).lower())
-        self._create_text_element(parent_element, "axonRadius", str(self._axon_rad))
-        self._create_text_element(parent_element, "doSimulateRelaxation", str(True).lower())
-        self._create_text_element(parent_element, "doDisablePartialVolume", str(False).lower())
+        self._create_text_element(
+            parent_element, "simulatekspace", str(True).lower()
+        )
+        self._create_text_element(
+            parent_element, "axonRadius", str(self._axon_rad)
+        )
+        self._create_text_element(
+            parent_element, "doSimulateRelaxation", str(True).lower()
+        )
+        self._create_text_element(
+            parent_element, "doDisablePartialVolume", str(False).lower()
+        )
 
         return parent_element

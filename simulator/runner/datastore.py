@@ -1,7 +1,6 @@
-from tempfile import TemporaryDirectory
-from os import path
-from os.path import exists, basename
+from os.path import basename, exists, join
 from shutil import copyfile
+from tempfile import TemporaryDirectory
 
 import nibabel as nib
 import numpy as np
@@ -15,7 +14,7 @@ class Datastore:
         simulation_path,
         fibers,
         compartment_ids,
-        inter_axonal_fraction=None
+        inter_axonal_fraction=None,
     ):
         self.fibers = fibers
         self.compartments = []
@@ -35,9 +34,9 @@ class Datastore:
 
     def load_compartments(self, input_folder, run_name, use_nifti=True):
         extension = "nii.gz" if use_nifti else "nrrd"
-        fiber_fraction = path.join(
+        fiber_fraction = join(
             input_folder,
-            "{}_phantom_mergedBundlesMaps.{}".format(run_name, extension)
+            "{}_phantom_mergedBundlesMaps.{}".format(run_name, extension),
         )
 
         inter_id = SimulationFactory.CompartmentType.INTER_AXONAL.value
@@ -51,9 +50,9 @@ class Datastore:
             self.add_compartment(fiber_fraction)
 
         if extra1_id in self.ids or extra2_id in self.ids:
-            ellipses = path.join(
+            ellipses = join(
                 input_folder,
-                "{}_mergedEllipsesMaps.{}".format(run_name, extension)
+                "{}_mergedEllipsesMaps.{}".format(run_name, extension),
             )
             if exists(ellipses):
                 self.add_compartment(ellipses)
@@ -62,9 +61,10 @@ class Datastore:
             else:
                 self.add_compartment("generate")
 
-            assert len(list(filter(
-                lambda c: c == "generate", self.compartments
-            ))) <=1
+            assert (
+                len(list(filter(lambda c: c == "generate", self.compartments)))
+                <= 1
+            )
 
             if "generate" in self.compartments:
                 self.generate_extra_axonal_fraction(run_name)
@@ -74,15 +74,15 @@ class Datastore:
 
     def stage_compartments(self, run_name):
         extension = ".".join(basename(self.compartments[0]).split(".")[1:])
-        for map, cmp_id in zip(self.compartments, self.ids):
+        for m, cmp_id in zip(self.compartments, self.ids):
             copyfile(
-                map,
-                path.join(
+                m,
+                join(
                     self.stage_path,
                     "{}_simulation.ffp_VOLUME{}.{}".format(
                         run_name, cmp_id, extension
-                    )
-                )
+                    ),
+                ),
             )
 
     def generate_inter_axonal_fraction(self, run_name, fiber_fraction):
@@ -93,44 +93,42 @@ class Datastore:
 
         nib.save(
             nib.Nifti1Image(inter_fraction, img.affine, img.header),
-            path.join(self._get_temp(), "{}_inter.nii.gz".format(run_name))
+            join(self._get_temp(), "{}_inter.nii.gz".format(run_name)),
         )
         nib.save(
             nib.Nifti1Image(intra_fraction, img.affine, img.header),
-            path.join(self._get_temp(), "{}_intra.nii.gz".format(run_name))
+            join(self._get_temp(), "{}_intra.nii.gz".format(run_name)),
         )
 
         self.add_compartment(
-            path.join(self._get_temp(), "{}_intra.nii.gz".format(run_name))
+            join(self._get_temp(), "{}_intra.nii.gz".format(run_name))
         )
         self.add_compartment(
-            path.join(self._get_temp(), "{}_inter.nii.gz".format(run_name))
+            join(self._get_temp(), "{}_inter.nii.gz".format(run_name))
         )
 
     def generate_extra_axonal_fraction(self, run_name):
-        other_fractions = list(filter(
-            lambda c: c != "generate", self.compartments
-        ))
+        other_fractions = list(
+            filter(lambda c: c != "generate", self.compartments)
+        )
 
         ref = nib.load(other_fractions[0])
         data = np.concatenate(
-            [
-                ref[..., None]] + [nib.load(f).get_fdata()[..., None]
-                for f in other_fractions[1:]
-            ],
-            axis=-1
+            [ref[..., None]]
+            + [nib.load(f).get_fdata()[..., None] for f in other_fractions[1:]],
+            axis=-1,
         )
         extra = np.ones(ref.shape) - np.sum(data, axis=-1)
 
         nib.save(
             nib.Nifti1Image(extra, ref.affine, ref.header),
-            path.join(self._get_temp(), "{}_extra.nii.gz".format(run_name))
+            join(self._get_temp(), "{}_extra.nii.gz".format(run_name)),
         )
 
         self.add_compartment(
-            path.join(self._get_temp(), "{}_extra.nii.gz".format(run_name))
+            join(self._get_temp(), "{}_extra.nii.gz".format(run_name))
         )
-    
+
     def _get_temp(self):
         assert self._temp is not None
         return self._temp

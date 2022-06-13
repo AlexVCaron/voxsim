@@ -1,9 +1,8 @@
-from .structure import Structure
 from .orm_exception import ORMException
+from .structure import Structure
 
 
 class Cluster(Structure):
-
     def _get_base_object(self):
         return Cluster
 
@@ -53,4 +52,6 @@ class Cluster(Structure):
             raise ORMException("Fiber with no names")
         if not len(self._get_key("names")) == len(self._get_key("scalings")):
             print(self._get_key("names"), self._get_key("scalings"))
-            raise ORMException("Inconsistent size between 'names' and 'scalings' lists")
+            raise ORMException(
+                "Inconsistent size between 'names' and 'scalings' lists"
+            )

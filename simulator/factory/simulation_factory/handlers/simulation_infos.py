@@ -1,8 +1,7 @@
-from simulator.factory.common import AttributeAsDictClass
+from ...common import AttributeAsDictClass
 
 
 class SimulationInfos(AttributeAsDictClass):
-
     def __init__(self, file_path, simulation_file_name, ids):
         super().__init__()
         self.generate_new_key("file_path", file_path)
