@@ -31,32 +31,32 @@ class SphericalHarmonics:
         while True:
             dim_sh = dimension(rank)
             if len(coefficients) == dim_sh:
-                self.rank = rank
-                self.coefficients = coefficients
+                self._rank = rank
+                self._coefficients = coefficients
                 return
             elif len(coefficients) < dim_sh:
                 raise ValueError("Invalid dimension for SH coefficients.")
             rank += 2
 
-    def get_rank(self):
+    @property
+    def rank(self):
         return self._rank
 
+    @rank.setter
     def set_rank(self, value):
         if value % 2 != 0:
             raise ValueError("'rank' only accepts even values.")
         self._rank = value
 
-    rank = property(get_rank, set_rank)
-
-    def get_coefficients(self):
+    @property
+    def coefficients(self):
         return self._coefficients
 
-    def set_coefficients(self, value):
+    @coefficients.setter
+    def coefficients(self, value):
         if value.shape[0] != dimension(self.rank):
             raise ValueError("Coefficients shape and rank mismatch.")
         self._coefficients = value
-
-    coefficients = property(get_coefficients, set_coefficients)
 
     def angular_function(self, theta, phi):
         """Computes the function at angles theta, phi.
@@ -117,7 +117,7 @@ def dimension(rank):
     """Returns the dimension of the spherical harmonics basis for a given
     rank.
     """
-    return (rank + 1) * (rank + 2) / 2
+    return (rank + 1) * (rank + 2) // 2
 
 
 def index_j(l, m):

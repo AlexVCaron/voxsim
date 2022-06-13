@@ -74,15 +74,15 @@ class SphericalPolarFourier:
                 ) * radial_function(r, n, self.zeta)
         return result
 
-    def get_angular_rank(self):
-        return self.angular_rank
+    @property
+    def angular_rank(self):
+        return self._angular_rank
 
-    def set_angular_rank(self, value):
+    @angular_rank.setter
+    def angular_rank(self, value):
         if value % 2 != 0:
             raise ValueError("'angular_rank' only accepts even values.")
-        self.angular_rank = value
-
-    angular_rank = property(get_angular_rank, set_angular_rank)
+        self._angular_rank = value
 
     def odf_tuch(self):
         """Computes the Tuch ODF from the q-space signal attenuation expressed

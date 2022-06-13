@@ -37,21 +37,21 @@ class DualSphericalPolarFourier:
         zeta=_default_zeta,
     ):
         self.radial_order = radial_order
-        self.angular_rank = angular_rank
+        self._angular_rank = angular_rank
         self.zeta = zeta
         self.coefficients = np.zeros(
             (self.radial_order, sh.dimension(self.angular_rank))
         )
 
-    def get_angular_rank(self):
-        return self.angular_rank
+    @property
+    def angular_rank(self):
+        return self._angular_rank
 
-    def set_angular_rank(self, value):
+    @angular_rank.setter
+    def angular_rank(self, value):
         if value % 2 != 0:
             raise ValueError("'angular_rank' only accepts even values.")
-        self.angular_rank = value
-
-    angular_rank = property(get_angular_rank, set_angular_rank)
+        self._angular_rank = value
 
     def spherical_function(self, r, theta, phi):
         """The 3d function represented by the DualSphericalPolarFourier object.
