@@ -1,9 +1,10 @@
 import numpy as np
-from external import qspace_sampler as sphere
+
+from . import sphere
 
 
 def to_cartesian(r, theta, phi):
-    """Returns points on the unit sphere provided their polar and azimuthal 
+    """Returns points on the unit sphere provided their polar and azimuthal
     coordinates.
 
     Parameters
@@ -29,13 +30,13 @@ def to_cartesian(r, theta, phi):
 
 
 def to_spherical(points):
-    """Returns points on the unit sphere provided their polar and azimuthal 
+    """Returns points on the unit sphere provided their polar and azimuthal
     coordinates.
 
     Parameters
     ----------
     points : array-like, shape (K, 3)
-    
+
     Returns
     -------
     r : array-like, shape (K, )
@@ -50,6 +51,3 @@ def to_spherical(points):
     unit_vectors[r == 0] = 0
     theta, phi = sphere.to_spherical(unit_vectors)
     return r, theta, phi
-
-
-

@@ -1,5 +1,4 @@
 from copy import deepcopy
-
 from lxml.etree import SubElement
 
 from .xml_tree_element import XmlTreeElement
@@ -16,31 +15,16 @@ class ArtifactModel(XmlTreeElement):
 
     def _generate_default_dictionary(self):
         return {
-            "doAddDistortions": {
-                "value": False
-            },
+            "doAddDistortions": {"value": False},
             "addeddycurrents": {
                 "value": False,
                 "eddyStrength": 0.002,
-                "eddyTau": 70
+                "eddyTau": 70,
             },
-            "addspikes": {
-                "value": False,
-                "spikesnum": 0,
-                "spikesscale": 1
-            },
-            "addaliasing": {
-                "value": False,
-                "aliasingfactor": 1
-            },
-            "addghosts": {
-                "value": False,
-                "kspaceLineOffset": 0
-            },
-            "addringing": {
-                "value": False,
-                "zeroringing": 0
-            },
+            "addspikes": {"value": False, "spikesnum": 0, "spikesscale": 1},
+            "addaliasing": {"value": False, "aliasingfactor": 1},
+            "addghosts": {"value": False, "kspaceLineOffset": 0},
+            "addringing": {"value": False, "zeroringing": 0},
             "doAddMotion": {
                 "value": False,
                 "randomMotion": True,
@@ -55,19 +39,20 @@ class ArtifactModel(XmlTreeElement):
             "addnoise": {
                 "value": False,
             },
-            "doAddDrift": {
-                "value": False,
-                "drift": 0.06
-            }
+            "doAddDrift": {"value": False, "drift": 0.06},
         }
 
     def dump_to_xml(self, parent_element):
         artifacts_element = SubElement(parent_element, "artifacts")
 
         for artifact, data in self._models.items():
-            self._create_text_element(artifacts_element, artifact, str(data.pop("value")).lower())
+            self._create_text_element(
+                artifacts_element, artifact, str(data.pop("value")).lower()
+            )
             if artifact == "addnoise" and "noisevariance" in data:
-                self._create_text_element(parent_element, "noisevariance", str(data["noisevariance"]))
+                self._create_text_element(
+                    parent_element, "noisevariance", str(data["noisevariance"])
+                )
             for attr, value in data.items():
                 self._create_text_element(artifacts_element, attr, str(value))
 

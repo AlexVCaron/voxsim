@@ -2,7 +2,6 @@ from .ORM.Objects import JsonData, ORMException
 
 
 class Bundle(JsonData):
-
     def _get_base_object(self):
         return Bundle
 

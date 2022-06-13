@@ -1,14 +1,14 @@
-import json
 from abc import ABCMeta, abstractmethod
+import json
+from json import encoder
 
 from .orm_exception import ORMException
 
-from json import encoder
-encoder.FLOAT_REPR = lambda o: format(o, '.10f')
+
+encoder.FLOAT_REPR = lambda o: format(o, ".10f")
 
 
 class JsonData(metaclass=ABCMeta):
-
     def __init__(self, init_values=None):
         self._values = {}
         if init_values:
@@ -36,9 +36,8 @@ class JsonData(metaclass=ABCMeta):
     def _append_value(self, key, value):
         self._values[key].append(value)
 
-    @classmethod
     @abstractmethod
-    def _validate_all_keys(cls):
+    def _validate_all_keys(self):
         pass
 
     def _validate_required(self):
@@ -46,9 +45,19 @@ class JsonData(metaclass=ABCMeta):
             try:
                 self._get_key(required)
             except KeyError:
-                raise ORMException("Class {0} requires field {1}".format(self._type(), required))
+                raise ORMException(
+                    "Class {0} requires field {1}".format(
+                        self._type(), required
+                    )
+                )
 
     def serialize(self, encoder=json.JSONEncoder, indent=4):
         self._validate_required()
         self._validate_all_keys()
-        return json.dumps(self._values, sort_keys=True, indent=indent, separators=(',', ': '), cls=encoder)
+        return json.dumps(
+            self._values,
+            sort_keys=True,
+            indent=indent,
+            separators=(",", ": "),
+            cls=encoder,
+        )

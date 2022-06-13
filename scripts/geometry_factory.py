@@ -5,16 +5,13 @@ from math import pi
 from os import makedirs
 from tempfile import mkdtemp
 
-from simulator.factory import GeometryFactory
-from simulator.factory import Plane
+from simulator.factory import GeometryFactory, Plane
+
 
 resolution = [10, 10, 10]
 spacing = [2, 2, 2]
 
-spheres_center = [
-    [-2, 7, 10],
-    [2, -1, 11]
-]
+spheres_center = [[-2, 7, 10], [2, -1, 11]]
 sphere_radius = 5
 
 n_point_per_centroid = 5
@@ -41,20 +38,26 @@ base_anchors = [
     [0.5, 0.9, 0.5],
     [0.5, 1.1, 0.5],
     [0.5, 1.2, 0.5],
-    [0.5, 1.3, 0.5]
+    [0.5, 1.3, 0.5],
 ]
 
 
 def get_geometry_parameters(output_folder, output_naming):
     geometry_handler = GeometryFactory.get_geometry_handler(resolution, spacing)
 
-    bundle1 = GeometryFactory.create_bundle(bundle_radius, bundle_symmetry, n_point_per_centroid, base_anchors)
-    _, bundle2 = GeometryFactory.rotate_bundle(bundle1, [0.5, 0.5, 0.5], pi / 6., Plane.YZ)
+    bundle1 = GeometryFactory.create_bundle(
+        bundle_radius, bundle_symmetry, n_point_per_centroid, base_anchors
+    )
+    _, bundle2 = GeometryFactory.rotate_bundle(
+        bundle1, [0.5, 0.5, 0.5], pi / 6.0, Plane.YZ
+    )
 
     cluster = GeometryFactory.create_cluster(
-        GeometryFactory.create_cluster_meta(3, bundle_n_fibers, 1, bundle_center, bundle_limits),
+        GeometryFactory.create_cluster_meta(
+            3, bundle_n_fibers, 1, bundle_center, bundle_limits
+        ),
         [bundle1, bundle2],
-        world_center
+        world_center,
     )
 
     geometry_handler.add_cluster(cluster)
@@ -66,8 +69,7 @@ def get_geometry_parameters(output_folder, output_naming):
     geometry_handler.add_sphere(sphere_2)
 
     return geometry_handler.generate_json_configuration_files(
-        output_naming,
-        output_folder
+        output_naming, output_folder
     )
 
 

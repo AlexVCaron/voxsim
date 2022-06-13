@@ -4,7 +4,9 @@ from collections.abc import MutableMapping
 class AttributeAsDictClass(MutableMapping):
     def __init__(self, **kwargs):
         self._valid_keys = list(kwargs.keys())
-        self.__dict__.update({self._generate_attr_key(k): v for k, v in kwargs.items()})
+        self.__dict__.update(
+            {self._generate_attr_key(k): v for k, v in kwargs.items()}
+        )
 
     def generate_new_key(self, key, value):
         self._valid_keys.append(key)
@@ -14,11 +16,15 @@ class AttributeAsDictClass(MutableMapping):
         if self._generate_attr_key(key) in self.__dict__:
             self.__dict__[self._generate_attr_key(key)] = value
         else:
-            raise KeyError("To field is absent from simulation infos object {}".format(key))
+            raise KeyError(
+                "To field is absent from simulation infos object {}".format(key)
+            )
 
     def __delitem__(self, key):
         if self._generate_attr_key(key) in self.__dict__:
-            self._valid_keys = list(filter(lambda k: not k == key, self._valid_keys))
+            self._valid_keys = list(
+                filter(lambda k: not k == key, self._valid_keys)
+            )
             self.__dict__.pop(self._generate_attr_key(key))
 
     def __getitem__(self, key):
@@ -33,12 +39,15 @@ class AttributeAsDictClass(MutableMapping):
     def _generate_attr_key(self, key):
         return "_{}".format(key)
 
-    def pop(self, k):
-        assert k in self._valid_keys
-        return self.__dict__.pop(self._generate_attr_key(k))
+    def pop(self, key, default=""):
+        assert key in self._valid_keys
+        return self.__dict__.pop(self._generate_attr_key(key))
 
     def __str__(self):
         return str(self.as_dict())
 
     def as_dict(self):
-        return {k: self.__dict__[self._generate_attr_key(k)] for k in self._valid_keys}
+        return {
+            k: self.__dict__[self._generate_attr_key(k)]
+            for k in self._valid_keys
+        }
