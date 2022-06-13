@@ -9,12 +9,12 @@ from scipy.special import lpmv, legendre
 from scipy.special import factorial
 
 
-_default_rank = 4
+default_rank = 4
 
 
 class SphericalHarmonics:
-    """This class describes a real, antipodally symmetric spherical function by 
-    its spherical harmonics coefficients. It also contains a set of static 
+    """This class describes a real, antipodally symmetric spherical function by
+    its spherical harmonics coefficients. It also contains a set of static
     methods related to the definition and manipulation of spherical harmonics.
 
     Parameters
@@ -22,11 +22,10 @@ class SphericalHarmonics:
     coefficients : array-like, shape (R, )
         A 1d array of coefficients representing the function.
     """
-    
+
     def __init__(self, coefficients):
         self._create_from_coefficients(coefficients)
 
-    
     def _create_from_coefficients(self, coefficients):
         rank = 2
         while True:
@@ -39,7 +38,6 @@ class SphericalHarmonics:
                 raise ValueError("Invalid dimension for SH coefficients.")
             rank += 2
 
-
     def get_rank(self):
         return self._rank
 
@@ -50,7 +48,6 @@ class SphericalHarmonics:
 
     rank = property(get_rank, set_rank)
 
-
     def get_coefficients(self):
         return self._coefficients
 
@@ -60,7 +57,6 @@ class SphericalHarmonics:
         self._coefficients = value
 
     coefficients = property(get_coefficients, set_coefficients)
-
 
     def angular_function(self, theta, phi):
         """Computes the function at angles theta, phi.
@@ -75,31 +71,50 @@ class SphericalHarmonics:
         coefs = self.coefficients
         result = 0
         rank = self.rank
-        for l in range(0, rank+1, 2):
-            for m in range(-l, l+1):
+        for l in range(0, rank + 1, 2):
+            for m in range(-l, l + 1):
                 j = index_j(l, m)
                 if coefs[j] != 0.0:
                     if m < 0:
-                        result += coefs[j] * np.sqrt(2)         \
-                        * np.sqrt((2*l + 1) * factorial(l + m)  \
-                        / (4 * np.pi * factorial(l - m)))       \
-                        * (-1) ** (-m)                       \
-                        * lpmv(-m, l, np.cos(theta)) * np.cos(m * phi)  
+                        result += (
+                            coefs[j]
+                            * np.sqrt(2)
+                            * np.sqrt(
+                                (2 * l + 1)
+                                * factorial(l + m)
+                                / (4 * np.pi * factorial(l - m))
+                            )
+                            * (-1) ** (-m)
+                            * lpmv(-m, l, np.cos(theta))
+                            * np.cos(m * phi)
+                        )
                     if m == 0:
-                        result += coefs[j]                   \
-                        * np.sqrt((2*l + 1) * factorial(l - m)  \
-                        / (4 * np.pi * factorial(l + m)))       \
-                        * lpmv(m, l, np.cos(theta))
+                        result += (
+                            coefs[j]
+                            * np.sqrt(
+                                (2 * l + 1)
+                                * factorial(l - m)
+                                / (4 * np.pi * factorial(l + m))
+                            )
+                            * lpmv(m, l, np.cos(theta))
+                        )
                     if m > 0:
-                        result += coefs[j] * np.sqrt(2)         \
-                        * np.sqrt((2*l + 1) * factorial(l - m)  \
-                        / (4 * np.pi * factorial(l + m)))       \
-                        * lpmv(m, l, np.cos(theta)) * np.sin(m * phi)
+                        result += (
+                            coefs[j]
+                            * np.sqrt(2)
+                            * np.sqrt(
+                                (2 * l + 1)
+                                * factorial(l - m)
+                                / (4 * np.pi * factorial(l + m))
+                            )
+                            * lpmv(m, l, np.cos(theta))
+                            * np.sin(m * phi)
+                        )
         return result
 
 
 def dimension(rank):
-    """Returns the dimension of the spherical harmonics basis for a given 
+    """Returns the dimension of the spherical harmonics basis for a given
     rank.
     """
     return (rank + 1) * (rank + 2) / 2
@@ -109,7 +124,7 @@ def index_j(l, m):
     "Returns the flattened index j of spherical harmonics."
     # l is between 0 and rankSH, m is btw -l and l
     if np.abs(m) > l:
-        raise NameError('SphericalHarmonics.j: m must lie in [-l, l]')
+        raise NameError("SphericalHarmonics.j: m must lie in [-l, l]")
     return int(l + m + (2 * np.array(range(0, l, 2)) + 1).sum())
 
 
@@ -127,7 +142,7 @@ def index_m(j):
     return j - dimension(l) + l + 1
 
 
-def matrix(theta, phi, rank=_default_rank):
+def matrix(theta, phi, rank=default_rank):
     """Returns the spherical harmonics observation matrix for a given set
     of directions represented by their polar and azimuthal angles.
 
@@ -139,7 +154,7 @@ def matrix(theta, phi, rank=_default_rank):
         Azimuthal angles of the direction set.
     rank : int
         The truncation rank of the SH basis.
-    
+
     Returns
     -------
     H : array-like, shape (K, R)
@@ -157,7 +172,7 @@ def matrix(theta, phi, rank=_default_rank):
     return H
 
 
-def L(rank=_default_rank):
+def L(rank=default_rank):
     """Returns Laplace-Beltrami regularization matrix.
 
     Parameters
@@ -169,16 +184,16 @@ def L(rank=_default_rank):
     dimSH = dimension(rank)
     L = np.zeros((dimSH, dimSH))
     for j in range(dimSH):
-        l =  index_l(j)
-        L[j, j] = - (l * (l + 1))
+        l = index_l(j)
+        L[j, j] = -(l * (l + 1))
     return L
 
 
-def P(rank=_default_rank):
+def P(rank=default_rank):
     "returns the Funk-Radon operator matrix"
     dim_sh = dimension(rank)
     P = np.zeros((dim_sh, dim_sh))
     for j in range(dim_sh):
-        l =  index_l(j)
+        l = index_l(j)
         P[j, j] = 2 * np.pi * legendre(l)(0)
     return P

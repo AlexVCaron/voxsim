@@ -12,27 +12,31 @@ from simulator.runner.legacy import SimulationRunner
 
 def run_simulation(output_folder):
     geometry_parameters = get_geometry_parameters(
-        output_folder,
-        "runner_test_geometry"
+        output_folder, "runner_test_geometry"
     )
 
     simulation_parameters = get_simulation_parameters(
-        output_folder,
-        "runner_test_simulation"
+        output_folder, "runner_test_simulation"
     )
 
-    runner = SimulationRunner("runner_test", geometry_parameters, simulation_parameters, output_nifti=True)
+    runner = SimulationRunner(
+        "runner_test",
+        geometry_parameters,
+        simulation_parameters,
+        output_nifti=True,
+    )
 
     runner.run(output_folder, True)
 
     simulation_parameters = get_simulation_parameters(
-        output_folder,
-        "runner_test_simulation_standalone"
+        output_folder, "runner_test_simulation_standalone"
     )
 
     standalone_output = join(output_folder, "standalone_test")
 
-    runner.run_simulation_standalone(standalone_output, output_folder, simulation_parameters, "standalone")
+    runner.run_simulation_standalone(
+        standalone_output, output_folder, simulation_parameters, "standalone"
+    )
 
 
 if __name__ == "__main__":

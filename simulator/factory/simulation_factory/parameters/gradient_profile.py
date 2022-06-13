@@ -1,10 +1,10 @@
 from lxml.etree import SubElement
 from math import sqrt
+
 from numpy.linalg import norm
-from numpy import isclose, array
+from numpy import array, isclose
 
 from .xml_tree_element import XmlTreeElement
-from simulator.factory.simulation_factory.helpers.number_tag_to_placeholder import NumberTagToPlaceholder
 
 
 class StejskalTannerType(XmlTreeElement):
@@ -13,8 +13,7 @@ class StejskalTannerType(XmlTreeElement):
 
     def dump_to_xml(self, parent_element):
         self._create_text_element(
-            parent_element, "acquisitiontype",
-            "2" if self._fast else "1"
+            parent_element, "acquisitiontype", "2" if self._fast else "1"
         )
         return parent_element
 
@@ -29,8 +28,7 @@ class TensorValuedByTensorType(XmlTreeElement):
 
     def dump_to_xml(self, parent_element):
         self._create_text_element(
-            parent_element, "acquisitiontype",
-            "4" if self._fast else "3"
+            parent_element, "acquisitiontype", "4" if self._fast else "3"
         )
 
         md_element = SubElement(parent_element, "multidimensional")
@@ -102,8 +100,11 @@ class TensorValuedByParamsType(XmlTreeElement):
 
 class GradientProfile(XmlTreeElement):
     def __init__(self, bvals, bvecs, g_type):
-        self._nominal_bval = max(bvals) if type(g_type) is StejskalTannerType \
-                        else g_type.get_bval()
+        self._nominal_bval = (
+            max(bvals)
+            if type(g_type) is StejskalTannerType
+            else g_type.get_bval()
+        )
         self._directions = self._scale_gradients(bvecs, bvals)
         self._num_gradients = self._get_number_of_gradients(self._directions)
         self._gtype = g_type
@@ -114,17 +115,24 @@ class GradientProfile(XmlTreeElement):
                 (sqrt(bval / self._nominal_bval) * array(bvec))
                 if not (isclose(norm(bvec), 0) or isclose(bval, 0))
                 else array(bvec)
-            ).tolist() for bvec, bval, in zip(bvecs, bvals)
+            ).tolist()
+            for bvec, bval, in zip(bvecs, bvals)
         ]
 
     def _get_number_of_gradients(self, directions):
-        return len(list(filter(lambda d: not isclose(norm(d), 0.), directions)))
+        return len(
+            list(filter(lambda d: not isclose(norm(d), 0.0), directions))
+        )
 
     def dump_to_xml(self, parent_element):
-        self._create_text_element(parent_element, "bvalue", str(self._nominal_bval))
+        self._create_text_element(
+            parent_element, "bvalue", str(self._nominal_bval)
+        )
 
         basic_element = parent_element.find("basic")
-        self._create_text_element(basic_element, "numgradients", str(self._num_gradients))
+        self._create_text_element(
+            basic_element, "numgradients", str(self._num_gradients)
+        )
 
         gradients_element = SubElement(parent_element, "gradients")
         for direction in range(len(self._directions)):

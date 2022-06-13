@@ -1,10 +1,13 @@
 import numpy as np
-import numpy.testing as npt
-from qspace.bases import spf, mspf
-from qspace.sampling import sphere, space
-from numpy.testing import (assert_, assert_equal, assert_almost_equal,
-                           assert_array_almost_equal, run_module_suite,
-                           assert_array_equal)
+from numpy.testing import (
+    assert_equal,
+    assert_almost_equal,
+    assert_array_almost_equal,
+    run_module_suite,
+)
+
+from ...bases import spf, mspf
+from ...sampling import sphere, space
 
 
 def test_modified_spherical_polar_fourier():
@@ -12,7 +15,8 @@ def test_modified_spherical_polar_fourier():
     angular_rank = 4
     zeta = 60.0
     modified_spherical_polar_fourier = mspf.ModifiedSphericalPolarFourier(
-        radial_order, angular_rank, zeta)
+        radial_order, angular_rank, zeta
+    )
     assert_equal(modified_spherical_polar_fourier.radial_order, radial_order)
     assert_equal(modified_spherical_polar_fourier.angular_rank, angular_rank)
     assert_equal(modified_spherical_polar_fourier.zeta, zeta)
@@ -21,7 +25,8 @@ def test_modified_spherical_polar_fourier():
     theta = np.pi * np.random.rand(1)
     phi = 2 * np.pi * np.random.rand(1)
     assert_array_almost_equal(
-         modified_spherical_polar_fourier.spherical_function(r, theta, phi), 0)
+        modified_spherical_polar_fourier.spherical_function(r, theta, phi), 0
+    )
 
 
 def test_dimension():
@@ -41,13 +46,12 @@ def test_indices():
         m = mspf.index_m(i, radial_order, angular_rank)
         assert_equal(i, mspf.index_i(n, l, m, radial_order, angular_rank))
         assert_equal(l % 2, 0)
-        assert_(np.abs(m) <= l)
-        assert_(n < radial_order - 1)
+        assert np.abs(m) <= l
+        assert n < radial_order - 1
 
 
 def test_matrices():
     shell_radii = [1.0, 2.0, 3.0, 4.0, 5.0]
-    nb_shells = len(shell_radii)
     K_s = 64
     shell = sphere.jones(K_s)
     points = np.vstack([radius * shell for radius in shell_radii])
@@ -58,7 +62,7 @@ def test_matrices():
     zeta = 1.0
     H = mspf.matrix(r, theta, phi, radial_order, angular_rank, zeta)
 
-    y = np.exp(-r**2 / 2) * points[:, 2]**2
+    y = np.exp(-(r**2) / 2) * points[:, 2] ** 2
     x = np.dot(np.linalg.pinv(H), y)
     dim_mspf = mspf.dimension(radial_order, angular_rank)
     for i in range(dim_mspf):
@@ -75,6 +79,5 @@ def test_matrices():
     assert_array_almost_equal(x_spf, np.dot(transition_matrix, x))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run_module_suite()
-

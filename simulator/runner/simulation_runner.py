@@ -1,13 +1,13 @@
 import logging
 
 from asyncio import get_event_loop, new_event_loop, set_event_loop
-from os import path, makedirs
+from os import makedirs, path
 from os.path import basename
 from subprocess import PIPE, Popen
 
 from config import get_config
 from .datastore import Datastore
-from simulator.utils.logging import RTLogging
+from ..utils.logging import RTLogging
 
 
 logger = logging.getLogger(basename(__file__).split(".")[0])
@@ -32,7 +32,6 @@ class AsyncRunner:
         )
         async_loop.close()
 
-
     def _start_loop_if_closed(self):
         if self._event_loop.is_closed():
             self._event_loop = new_event_loop()
@@ -48,20 +47,18 @@ class AsyncRunner:
 
 
 class SimulationRunner(AsyncRunner):
-    _apps = {
-        "phantom": "launch_voxsim",
-        "diffusion mri": "launch_mitk"
-    }
+    _apps = {"phantom": "launch_voxsim", "diffusion mri": "launch_mitk"}
 
     def __init__(self, singularity_conf=get_config()):
-            self._singularity = path.join(
-                singularity_conf["singularity_path"],
-                singularity_conf["singularity_name"]
-            )
+        self._singularity = path.join(
+            singularity_conf["singularity_path"],
+            singularity_conf["singularity_name"],
+        )
+        super().__init__()
 
-            self._singularity_exec = "singularity"
-            if "singularity_exec" in singularity_conf:
-                self._singularity_exec = singularity_conf["singularity_exec"]
+        self._singularity_exec = "singularity"
+        if "singularity_exec" in singularity_conf:
+            self._singularity_exec = singularity_conf["singularity_exec"]
 
     def _bind_singularity(self, step, paths, arguments):
         return "{} run -B {} --app {} {} {}".format(
@@ -69,7 +66,7 @@ class SimulationRunner(AsyncRunner):
             paths,
             self._apps[step],
             self._singularity,
-            arguments
+            arguments,
         )
 
     def _create_outputs(self, path):
@@ -86,7 +83,7 @@ class SimulationRunner(AsyncRunner):
         output_folder,
         output_nifti=True,
         relative_fiber_fraction=True,
-        inter_axonal_fraction=None
+        inter_axonal_fraction=None,
     ):
         self.start()
 
@@ -96,7 +93,7 @@ class SimulationRunner(AsyncRunner):
             output_folder,
             relative_fiber_fraction,
             output_nifti,
-            loop_managed=True
+            loop_managed=True,
         )
 
         datastore = Datastore(
@@ -104,10 +101,10 @@ class SimulationRunner(AsyncRunner):
             path.join(
                 output_folder,
                 "phantom",
-                "{}_phantom_merged_bundles.fib".format(run_name)
+                "{}_phantom_merged_bundles.fib".format(run_name),
             ),
             simulation_infos["compartment_ids"],
-            inter_axonal_fraction
+            inter_axonal_fraction,
         )
 
         datastore.load_compartments(
@@ -124,7 +121,7 @@ class SimulationRunner(AsyncRunner):
             datastore.get_bind_paths(False),
             output_nifti,
             loop_managed=True,
-            compartments_staged=True
+            compartments_staged=True,
         )
 
         self.stop()
@@ -136,7 +133,7 @@ class SimulationRunner(AsyncRunner):
         output_folder,
         relative_fiber_fraction=True,
         output_nifti=True,
-        loop_managed=False
+        loop_managed=False,
     ):
 
         loop_managed or self.start()
@@ -154,15 +151,11 @@ class SimulationRunner(AsyncRunner):
         spacing = ",".join([str(s) for s in phantom_infos["spacing"]])
         fiber_fraction = "rel" if relative_fiber_fraction else "abs"
         out_name = path.join(
-            output_folder, "phantom, ""{}_phantom".format(run_name)
+            output_folder, "phantom, " "{}_phantom".format(run_name)
         )
 
         arguments = "-f {} -r {} -s {} -o {} --comp-map {} --quiet".format(
-            phantom_def,
-            resolution,
-            spacing,
-            out_name,
-            fiber_fraction
+            phantom_def, resolution, spacing, out_name, fiber_fraction
         )
 
         if output_nifti:
@@ -185,7 +178,7 @@ class SimulationRunner(AsyncRunner):
         bind_paths=None,
         output_nifti=True,
         loop_managed=False,
-        compartments_staged=True
+        compartments_staged=True,
     ):
         loop_managed or self.start()
 
@@ -210,14 +203,12 @@ class SimulationRunner(AsyncRunner):
                 output_folder,
                 fibers_file,
                 simulation_infos["compartment_ids"],
-                None
+                None,
             )
             datastore.compartments = compartment_maps
             datastore.stage_compartments(run_name)
 
-        arguments = "-p {} -i {} -o {}".format(
-            ffp_file, fibers_file, out_name
-        )
+        arguments = "-p {} -i {} -o {}".format(ffp_file, fibers_file, out_name)
 
         command = self._bind_singularity("diffusion mri", bind_paths, arguments)
         log_file = path.join(base_output_folder, "{}.log".format(run_name))

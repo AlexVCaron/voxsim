@@ -10,9 +10,15 @@ class DefaultProfile(XmlTreeElement):
         self._create_text_element(fibers_element, "variance", str(0.1))
         self._create_text_element(fibers_element, "density", str(100))
         self._create_text_element(fibers_element, "realtime", str(True).lower())
-        self._create_text_element(fibers_element, "showadvanced", str(False).lower())
-        self._create_text_element(fibers_element, "constantradius", str(False).lower())
-        self._create_text_element(fibers_element, "includeFiducials", str(True).lower())
+        self._create_text_element(
+            fibers_element, "showadvanced", str(False).lower()
+        )
+        self._create_text_element(
+            fibers_element, "constantradius", str(False).lower()
+        )
+        self._create_text_element(
+            fibers_element, "includeFiducials", str(True).lower()
+        )
 
         spline_element = SubElement(fibers_element, "spline")
         self._create_text_element(spline_element, "sampling", str(1))
@@ -30,10 +36,18 @@ class DefaultProfile(XmlTreeElement):
         self._dump_xyz(scale_element, [1, 1, 1])
 
         image_element = parent_element.find("image")
-        self._create_text_element(image_element, "outputvolumefractions", str(True).lower())
-        self._create_text_element(image_element, "showadvanced", str(False).lower())
-        self._create_text_element(image_element, "signalmodelstring", "simulation_done_via_voxsim")
-        self._create_text_element(image_element, "artifactmodelstring", "_artifacts_unkown")
+        self._create_text_element(
+            image_element, "outputvolumefractions", str(True).lower()
+        )
+        self._create_text_element(
+            image_element, "showadvanced", str(False).lower()
+        )
+        self._create_text_element(
+            image_element, "signalmodelstring", "simulation_done_via_voxsim"
+        )
+        self._create_text_element(
+            image_element, "artifactmodelstring", "_artifacts_unkown"
+        )
 
         SubElement(image_element, "outpath")
 

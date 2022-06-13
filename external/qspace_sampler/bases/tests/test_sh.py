@@ -1,10 +1,13 @@
 import numpy as np
-import numpy.testing as npt
-from qspace.bases import sh
-from qspace.sampling import sphere
-from numpy.testing import (assert_, assert_equal, assert_almost_equal,
-                           assert_array_almost_equal, run_module_suite,
-                           assert_array_equal)
+from numpy.testing import (
+    assert_equal,
+    assert_almost_equal,
+    assert_array_almost_equal,
+    run_module_suite,
+)
+
+from ...bases import sh
+from ...sampling import sphere
 
 
 def test_spherical_harmonics():
@@ -31,7 +34,7 @@ def test_indices():
         m = sh.index_m(j)
         assert_equal(j, sh.index_j(l, m))
         assert_equal(l % 2, 0)
-        assert_(np.abs(m) <= l)
+        assert np.abs(m) <= l
 
 
 def test_matrix():
@@ -41,16 +44,15 @@ def test_matrix():
     points = sphere.jones(K)
     theta, phi = sphere.to_spherical(points)
     H = sh.matrix(theta, phi, rank)
-    y = points[:, 2]**2
+    y = points[:, 2] ** 2
     x = np.dot(np.linalg.pinv(H), y)
     for j in range(dim_sh):
-        l =sh.index_l(j)
+        l = sh.index_l(j)
         m = sh.index_m(j)
         if m != 0 or l > 2:
             assert_almost_equal(x[j], 0)
     assert_array_almost_equal(y, np.dot(H, x))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run_module_suite()
-

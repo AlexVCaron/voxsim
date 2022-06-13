@@ -1,9 +1,8 @@
 from numpy import array
 
-from .features import Cluster, ClusterMeta, Bundle, Sphere
-from .utils import Plane
+from .features import Bundle, Cluster, ClusterMeta, Sphere
 from .handlers import GeometryHandler
-from .utils import rotate_bundle, Rotation, translate_bundle
+from .utils import Plane, rotate_bundle, Rotation, translate_bundle
 
 
 class GeometryFactory:
@@ -12,8 +11,8 @@ class GeometryFactory:
     @staticmethod
     def get_geometry_handler(resolution, spacing):
         """
-        Returns the handler in which all the primitives must be put in order to generate the
-        json configuration file for voXSim.
+        Returns the handler in which all the primitives must be put in
+        order to generate the json configuration file for voXSim.
 
         Parameters
         ----------
@@ -31,10 +30,13 @@ class GeometryFactory:
         return GeometryHandler(resolution, spacing)
 
     @staticmethod
-    def create_cluster_meta(dimensions, fibers_per_bundle, sampling_distance, center, limits):
+    def create_cluster_meta(
+        dimensions, fibers_per_bundle, sampling_distance, center, limits
+    ):
         """
-        Creates a meta definition for a cluster. It represents the cluster space and contains the
-        global parameters that will be applied to each of its underlying bundles.
+        Creates a meta definition for a cluster. It represents the cluster
+        space and contains the global parameters that will be applied to
+        each of its underlying bundles.
 
         Parameters
         ----------
@@ -56,11 +58,9 @@ class GeometryFactory:
 
         """
         cluster_meta = ClusterMeta()
-        cluster_meta.set_dimensions(dimensions)\
-                    .set_center(center)\
-                    .set_limits(limits)\
-                    .set_density(fibers_per_bundle)\
-                    .set_sampling(sampling_distance)
+        cluster_meta.set_dimensions(dimensions).set_center(center).set_limits(
+            limits
+        ).set_density(fibers_per_bundle).set_sampling(sampling_distance)
 
         return cluster_meta
 
@@ -76,8 +76,8 @@ class GeometryFactory:
          bundles : list, optional
             A list of bundles composing the cluster, default : []
          world_center : list(float) or None, optional
-            A center for the cluster's space in the world space. If None, will use the
-            center defined in the meta definition, default : None
+            A center for the cluster's space in the world space. If None, will
+            use the center defined in the meta definition, default : None
 
         Returns
         -------
@@ -86,9 +86,9 @@ class GeometryFactory:
 
         """
         cluster = Cluster()
-        cluster.set_cluster_meta(meta)\
-               .set_bundles(bundles)\
-               .set_world_center(world_center if world_center else meta.get_center())
+        cluster.set_cluster_meta(meta).set_bundles(bundles).set_world_center(
+            world_center if world_center else meta.get_center()
+        )
 
         return cluster
 
@@ -102,11 +102,14 @@ class GeometryFactory:
         radius : float
             Radius of the bundle
         symmetry : float
-            A float, from -1 to 1, defining the elliptical shape of the bundle cross-section
+            A float, from -1 to 1, defining the elliptical shape
+            of the bundle cross-section
         n_point_per_centroid : int
-            Number of points sampling points along the spline representing the centroid
+            Number of points sampling points along the
+            spline representing the centroid
         anchors : list(list(int)) or list, optional
-            List of anchor points defining the centroid of the bundle, default : []
+            List of anchor points defining the centroid
+            of the bundle, default : []
 
         Returns
         -------
@@ -115,15 +118,16 @@ class GeometryFactory:
 
         """
         bundle = Bundle()
-        bundle.set_radius(radius)\
-              .set_symmetry(symmetry)\
-              .set_n_point_per_centroid(n_point_per_centroid)\
-              .set_anchors(anchors)
+        bundle.set_radius(radius).set_symmetry(
+            symmetry
+        ).set_n_point_per_centroid(n_point_per_centroid).set_anchors(anchors)
 
         return bundle
 
     @staticmethod
-    def rotate_bundle(bundle, center, angle, plane=Plane.XY, bbox=None, bbox_center=None):
+    def rotate_bundle(
+        bundle, center, angle, plane=Plane.XY, bbox=None, bbox_center=None
+    ):
         """
         Rotates a bundle (and its bounding box if supplied) of an angle along
         an axis perpendicular to a plane.
@@ -133,13 +137,16 @@ class GeometryFactory:
         bundle : Bundle
             A bundle primitive
         center : list(float)
-            Center to consider for the bundle (will be subtracted before rotation, then added)
+            Center to consider for the bundle (will be subtracted
+            before rotation, then added)
         angle : float
             A rotation angle in radian
         plane : Plane, optional
-            A plane against which the rotation will be done (see then Plane enum), default : Plane.XY
+            A plane against which the rotation will be done
+            (see then Plane enum), default : Plane.XY
         bbox : list(list(float) or None, optional
-            A bounding box around the bundle to transform as well, default : None
+            A bounding box around the bundle to transform
+            as well, default : None
         bbox_center : list(float) or None, optional
             Center of the bounding box, default : None
 
@@ -151,12 +158,14 @@ class GeometryFactory:
             The transformed bundle
 
         """
-        bbox, anchors = rotate_bundle(bundle, Rotation(plane).generate(angle), center, bbox, bbox_center)
+        bbox, anchors = rotate_bundle(
+            bundle, Rotation(plane).generate(angle), center, bbox, bbox_center
+        )
         return bbox, GeometryFactory.create_bundle(
             bundle.get_radius(),
             bundle.get_symmetry(),
             bundle.get_n_point_per_centroid(),
-            anchors
+            anchors,
         )
 
     @staticmethod
@@ -171,7 +180,8 @@ class GeometryFactory:
         translation : list(float)
             Translation vector
         bbox : list(list(float) or None, optional
-            A bounding box around the bundle to transform as well, default : None
+            A bounding box around the bundle
+            to transform as well, default : None
 
         Returns
         -------
@@ -186,7 +196,7 @@ class GeometryFactory:
             bundle.get_radius(),
             bundle.get_symmetry(),
             bundle.get_n_point_per_centroid(),
-            anchors
+            anchors,
         )
 
     @staticmethod
@@ -226,9 +236,11 @@ class GeometryFactory:
         sphere : Sphere
             A bundle primitive
         center : list(float)
-            Center to consider for the sphere (will be subtracted before rotation, then added)
+            Center to consider for the sphere (will be subtracted
+            before rotation, then added)
         plane : Plane
-            A plane against which the rotation will be done (see then Plane enum)
+            A plane against which the rotation will
+            be done (see then Plane enum)
         angle : float
             A rotation angle in radian
 
@@ -242,8 +254,8 @@ class GeometryFactory:
         rotation = Rotation(plane).generate(angle)
         new_center = (rotation @ (array(sphere.get_center()) - center)) + center
 
-        new_sphere.set_radius(sphere.get_radius())\
-                  .set_center(new_center.tolist())\
-                  .set_scaling(sphere.get_scaling())
+        new_sphere.set_radius(sphere.get_radius()).set_center(
+            new_center.tolist()
+        ).set_scaling(sphere.get_scaling())
 
         return new_sphere
