@@ -22,6 +22,6 @@ jobs:
 
       - uses: yesolutions/mirror-action@master
         with:
-          REMOTE: "ssh://git@gitlab.com/spyoungtech/mirror-action.git"
-          GIT_SSH_PRIVATE_KEY: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
-          GIT_SSH_KNOWN_HOSTS: ${{ secrets.GIT_SSH_KNOWN_HOSTS }}
+          REMOTE: "${{ secrets.VOXSIM_REMOTE }}"
+          GIT_SSH_PRIVATE_KEY: ${{ secrets.VOXSIM_SSH_PRIVATE_KEY }}
+          GIT_SSH_KNOWN_HOSTS: ${{ secrets.VOXSIM_SSH_KNOWN_HOSTS }}
