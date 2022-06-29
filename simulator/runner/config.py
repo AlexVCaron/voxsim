@@ -7,3 +7,4 @@ import simulator.default as default
 class SingularityConfig:
     singularity_path: str = default.SINGULARITY_PATH
     singularity_name: str = default.SINGULARITY_NAME
+    singularity_exec: str = default.SINGULARITY_EXEC
