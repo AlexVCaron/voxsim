@@ -14,7 +14,6 @@ if __name__ == "__main__":
         author="avcaron",
         author_email="",
         description="",
-        data_files=[(".", ["config.py", "config.json"])],
         scripts=list(
             filter(lambda s: "init" not in s, glob.glob("scripts/*.py"))
         ),
