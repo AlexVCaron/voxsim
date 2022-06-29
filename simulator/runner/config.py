@@ -1,10 +1,10 @@
 import dataclasses
+import pathlib
 
 import simulator.default as default
 
 
 @dataclasses.dataclass
 class SingularityConfig:
-    singularity_path: str = default.SINGULARITY_PATH
-    singularity_name: str = default.SINGULARITY_NAME
+    singularity: pathlib.PurePath = default.SINGULARITY
     singularity_exec: str = default.SINGULARITY_EXEC
