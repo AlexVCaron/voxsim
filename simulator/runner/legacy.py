@@ -14,11 +14,11 @@ from config import get_config
 from ..exceptions import SimulationRunnerException
 from ..utils.logging import RTLogging
 
-
 logger = logging.getLogger(basename(__file__).split(".")[0])
 
 
 class SimulationRunner:
+
     def __init__(
         self,
         base_naming,
