@@ -10,7 +10,7 @@ import nibabel as nib
 from numpy import ones_like, sum
 import nrrd
 
-from config import get_config
+from .config import SingularityConfig
 from ..exceptions import SimulationRunnerException
 from ..utils.logging import RTLogging
 
@@ -24,7 +24,7 @@ class SimulationRunner:
         base_naming,
         geometry_infos,
         simulation_infos=None,
-        singularity_conf=get_config(),
+        singularity_conf=SingularityConfig(),
         output_nifti=False,
     ):
         self._geometry_path = geometry_infos["file_path"]
@@ -40,7 +40,7 @@ class SimulationRunner:
             self._compartment_ids = simulation_infos["compartment_ids"]
 
         singularity_conf = (
-            singularity_conf if singularity_conf else get_config()
+            singularity_conf if singularity_conf else SingularityConfig()
         )
         self._singularity = path.join(
             singularity_conf["singularity_path"],
