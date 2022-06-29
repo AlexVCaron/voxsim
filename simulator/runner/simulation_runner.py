@@ -9,11 +9,11 @@ from config import get_config
 from .datastore import Datastore
 from ..utils.logging import RTLogging
 
-
 logger = logging.getLogger(basename(__file__).split(".")[0])
 
 
 class AsyncRunner:
+
     def __init__(self):
         self._event_loop = new_event_loop()
 
