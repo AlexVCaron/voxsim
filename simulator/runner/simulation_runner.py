@@ -5,7 +5,7 @@ from os import makedirs, path
 from os.path import basename
 from subprocess import PIPE, Popen
 
-from config import get_config
+from .config import SingularityConfig
 from .datastore import Datastore
 from ..utils.logging import RTLogging
 
@@ -49,16 +49,11 @@ class AsyncRunner:
 class SimulationRunner(AsyncRunner):
     _apps = {"phantom": "launch_voxsim", "diffusion mri": "launch_mitk"}
 
-    def __init__(self, singularity_conf=get_config()):
-        self._singularity = path.join(
-            singularity_conf["singularity_path"],
-            singularity_conf["singularity_name"],
-        )
+    def __init__(self, singularity_conf=SingularityConfig()):
+        self._singularity = singularity_conf.singularity
         super().__init__()
 
-        self._singularity_exec = "singularity"
-        if "singularity_exec" in singularity_conf:
-            self._singularity_exec = singularity_conf["singularity_exec"]
+        self._singularity_exec = singularity_conf.singularity_exec
 
     def _bind_singularity(self, step, paths, arguments):
         return "{} run -B {} --app {} {} {}".format(
