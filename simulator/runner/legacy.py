@@ -42,15 +42,8 @@ class SimulationRunner:
         singularity_conf = (
             singularity_conf if singularity_conf else SingularityConfig()
         )
-        self._singularity = path.join(
-            singularity_conf["singularity_path"],
-            singularity_conf["singularity_name"],
-        )
-        self._singularity_exec = (
-            singularity_conf["singularity_exec"]
-            if "singularity_exec" in singularity_conf
-            else "singularity"
-        )
+        self._singularity = singularity_conf.singularity
+        self._singularity_exec = singularity_conf.singularity_exec
 
         self._run_simulation = True if simulation_infos else False
         self._extension = "nii.gz" if output_nifti else "nrrd"
