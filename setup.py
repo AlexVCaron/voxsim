@@ -6,7 +6,7 @@ from simulator.utils.setup.documentation import DocCommand
 if __name__ == "__main__":
     setup(
         name="simulation_generator",
-        version="1.0.1",
+        version="1.0.2",
         packages=find_packages(exclude=("tests", "tests.*")),
         url="",
         license="",
