@@ -3,14 +3,14 @@ import logging
 from asyncio import get_event_loop, new_event_loop, set_event_loop
 from os import makedirs
 from os import path
-from os.path import basename
+import os.path
 from subprocess import PIPE, Popen
 
 from .config import SingularityConfig
 from .datastore import Datastore
 from ..utils.logging import RTLogging
 
-logger = logging.getLogger(basename(__file__).split(".")[0])
+logger = logging.getLogger(os.path.basename(__file__).split(".")[0])
 
 
 class AsyncRunner:
