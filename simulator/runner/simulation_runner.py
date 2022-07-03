@@ -1,7 +1,8 @@
 import logging
 
 from asyncio import get_event_loop, new_event_loop, set_event_loop
-from os import makedirs, path
+from os import makedirs
+from os import path
 from os.path import basename
 from subprocess import PIPE, Popen
 
