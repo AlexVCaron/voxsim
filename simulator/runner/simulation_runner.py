@@ -64,7 +64,8 @@ class SimulationRunner(AsyncRunner):
             arguments,
         )
 
-    def _create_outputs(self, path):
+    @staticmethod
+    def _create_outputs(path):
         if not os.path.exists(path):
             makedirs(path, exist_ok=True)
 
