@@ -1,19 +1,19 @@
 import logging
 
 from asyncio import get_event_loop, new_event_loop, set_event_loop
-from os import makedirs, path
-from os.path import basename
+from os import makedirs
+import os
 from subprocess import PIPE, Popen
 
-from config import get_config
+from .config import SingularityConfig
 from .datastore import Datastore
 from ..utils.logging import RTLogging
 
-
-logger = logging.getLogger(basename(__file__).split(".")[0])
+logger = logging.getLogger(os.path.basename(__file__).split(".")[0])
 
 
 class AsyncRunner:
+
     def __init__(self):
         self._event_loop = new_event_loop()
 
@@ -49,16 +49,11 @@ class AsyncRunner:
 class SimulationRunner(AsyncRunner):
     _apps = {"phantom": "launch_voxsim", "diffusion mri": "launch_mitk"}
 
-    def __init__(self, singularity_conf=get_config()):
-        self._singularity = path.join(
-            singularity_conf["singularity_path"],
-            singularity_conf["singularity_name"],
-        )
+    def __init__(self, singularity_conf=SingularityConfig()):
+        self._singularity = singularity_conf.singularity
         super().__init__()
 
-        self._singularity_exec = "singularity"
-        if "singularity_exec" in singularity_conf:
-            self._singularity_exec = singularity_conf["singularity_exec"]
+        self._singularity_exec = singularity_conf.singularity_exec
 
     def _bind_singularity(self, step, paths, arguments):
         return "{} run -B {} --app {} {} {}".format(
@@ -69,8 +64,9 @@ class SimulationRunner(AsyncRunner):
             arguments,
         )
 
-    def _create_outputs(self, path):
-        if not path.exists(path):
+    @staticmethod
+    def _create_outputs(path):
+        if not os.path.exists(path):
             makedirs(path, exist_ok=True)
 
         return path
@@ -97,8 +93,8 @@ class SimulationRunner(AsyncRunner):
         )
 
         datastore = Datastore(
-            path.join(output_folder, "simulation"),
-            path.join(
+            os.path.join(output_folder, "simulation"),
+            os.path.join(
                 output_folder,
                 "phantom",
                 "{}_phantom_merged_bundles.fib".format(run_name),
@@ -108,7 +104,7 @@ class SimulationRunner(AsyncRunner):
         )
 
         datastore.load_compartments(
-            path.join(output_folder, "phantom"), run_name, output_nifti
+            os.path.join(output_folder, "phantom"), run_name, output_nifti
         )
         datastore.stage_compartments(run_name)
 
@@ -140,17 +136,17 @@ class SimulationRunner(AsyncRunner):
 
         base_output_folder = output_folder
         output_folder = self._create_outputs(
-            path.join(output_folder, "phantom")
+            os.path.join(output_folder, "phantom")
         )
 
-        phantom_def = path.join(
+        phantom_def = os.path.join(
             phantom_infos["file_path"], phantom_infos["base_file"]
         )
 
         resolution = ",".join([str(r) for r in phantom_infos["resolution"]])
         spacing = ",".join([str(s) for s in phantom_infos["spacing"]])
         fiber_fraction = "rel" if relative_fiber_fraction else "abs"
-        out_name = path.join(
+        out_name = os.path.join(
             output_folder, "phantom, " "{}_phantom".format(run_name)
         )
 
@@ -163,7 +159,7 @@ class SimulationRunner(AsyncRunner):
 
         bind_paths = ",".join([phantom_infos["file_path"], output_folder])
         command = self._bind_singularity("phantom", bind_paths, arguments)
-        log_file = path.join(base_output_folder, "{}.log".format(run_name))
+        log_file = os.path.join(base_output_folder, "{}.log".format(run_name))
         self._run_command(command, log_file, "[PHANTOM]")
 
         loop_managed or self.stop()
@@ -185,18 +181,18 @@ class SimulationRunner(AsyncRunner):
         bind_paths = [] if bind_paths is None else bind_paths
         base_output_folder = output_folder
         output_folder = self._create_outputs(
-            path.join(output_folder, "simulation")
+            os.path.join(output_folder, "simulation")
         )
 
         name = "{}_simulation".format(run_name)
 
         bind_paths += [simulation_infos["file_path"], output_folder]
         bind_paths = ",".join(bind_paths)
-        ffp_file = path.join(
+        ffp_file = os.path.join(
             simulation_infos["file_path"], simulation_infos["param_file"]
         )
         extension = "nii.gz" if output_nifti else "nrrd"
-        out_name = path.join(output_folder, "{}.{}".format(name, extension))
+        out_name = os.path.join(output_folder, "{}.{}".format(name, extension))
 
         if not compartments_staged and compartment_maps is not None:
             datastore = Datastore(
@@ -211,7 +207,7 @@ class SimulationRunner(AsyncRunner):
         arguments = "-p {} -i {} -o {}".format(ffp_file, fibers_file, out_name)
 
         command = self._bind_singularity("diffusion mri", bind_paths, arguments)
-        log_file = path.join(base_output_folder, "{}.log".format(run_name))
+        log_file = os.path.join(base_output_folder, "{}.log".format(run_name))
         self._run_command(command, log_file, "[DIFFUSION MRI]")
 
         loop_managed or self.stop()
