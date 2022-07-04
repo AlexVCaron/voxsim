@@ -14,7 +14,7 @@ from .config import SingularityConfig
 from ..exceptions import SimulationRunnerException
 from ..utils.logging import RTLogging
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class SimulationRunner:
@@ -103,7 +103,7 @@ class SimulationRunner:
         async_loop = get_event_loop()
         log_file = path.join(output_folder, "{}.log".format(self._base_naming))
 
-        logger.info("Simulating DWI signal")
+        _logger.info("Simulating DWI signal")
         return_code, log = async_loop.run_until_complete(
             self._launch_command(
                 simulation_command, log_file, "[RUNNING FIBERFOX]"
@@ -117,7 +117,7 @@ class SimulationRunner:
                 (log,),
             )
 
-        logger.debug(
+        _logger.debug(
             "Simulation {} ended with code {}".format(
                 self._base_naming, return_code
             )
@@ -190,7 +190,7 @@ class SimulationRunner:
             base_naming,
         )
 
-        logger.info("Simulating DWI signal")
+        _logger.info("Simulating DWI signal")
         return_code, log = async_loop.run_until_complete(
             self._launch_command(
                 simulation_command, log_file, "[RUNNING FIBERFOX]"
@@ -204,7 +204,7 @@ class SimulationRunner:
                 (log,),
             )
 
-        logger.debug(
+        _logger.debug(
             "Simulation {} ended with code {}".format(
                 self._base_naming, return_code
             )
@@ -282,7 +282,7 @@ class SimulationRunner:
         async_loop = get_event_loop()
         log_file = path.join(output_folder, "{}.log".format(self._base_naming))
 
-        logger.info("Generating simulation geometry")
+        _logger.info("Generating simulation geometry")
         async_loop.run_until_complete(
             self._launch_command(geometry_command, log_file, "[RUNNING VOXSIM]")
         )
@@ -290,7 +290,7 @@ class SimulationRunner:
             self._rename_and_copy_compartments(
                 geometry_output_folder, simulation_output_folder
             )
-            logger.info("Simulating DWI signal")
+            _logger.info("Simulating DWI signal")
             if self._run_simulation:
                 return_code, log = async_loop.run_until_complete(
                     self._launch_command(
@@ -305,7 +305,7 @@ class SimulationRunner:
                         (log,),
                     )
 
-            logger.debug("Simulation ended with code {}".format(return_code))
+            _logger.debug("Simulation ended with code {}".format(return_code))
         async_loop.close()
 
     def _execute_parallel(self, method, args):
@@ -578,8 +578,8 @@ class SimulationRunner:
     async def _launch_command(self, command, log_file, log_tag):
         process = Popen(command.split(" "), stdout=PIPE, stderr=PIPE)
 
-        logger = RTLogging(process, log_file, log_tag)
-        logger.start()
-        logger.join()
+        _logger = RTLogging(process, log_file, log_tag)
+        _logger.start()
+        _logger.join()
 
         return process.returncode, log_file

@@ -9,7 +9,7 @@ from .config import SingularityConfig
 from .datastore import Datastore
 from ..utils.logging import RTLogging
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 class AsyncRunner:
@@ -39,9 +39,9 @@ class AsyncRunner:
     async def _run_async(self, command, log_file, log_tag):
         process = Popen(command.split(" "), stdout=PIPE, stderr=PIPE)
 
-        logger = RTLogging(process, log_file, log_tag)
-        logger.start()
-        logger.join()
+        _logger = RTLogging(process, log_file, log_tag)
+        _logger.start()
+        _logger.join()
 
         return process.returncode, log_file
 
