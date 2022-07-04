@@ -1,5 +1,5 @@
 from copy import deepcopy
-from os import makedirs, path
+import pathlib
 
 from ..features.ORM.config_builder import ConfigBuilder
 from .geometry_infos import GeometryInfos
@@ -74,15 +74,13 @@ class GeometryHandler:
         return len(self._parameters_dict["clusters"])
 
     def generate_json_configuration_files(
-        self, output_naming, simulation_path=""
+            self, output_naming, simulation_path: pathlib.Path = pathlib.Path()
     ):
-        if not path.exists(simulation_path):
-            makedirs(simulation_path, exist_ok=True)
+        simulation_path.mkdir(parents=True, exist_ok=True)
 
         with open(
-            path.join(simulation_path, output_naming + "_base.json"), "w+"
+                simulation_path / output_naming / "_base.json", "w+"
         ) as base_file:
-
             world = ConfigBuilder.create_world(
                 len(self.get_resolution()), self.get_resolution()
             )
@@ -110,11 +108,8 @@ class GeometryHandler:
 
         for cluster_idx in range(len(self._parameters_dict["clusters"])):
             with open(
-                path.join(
-                    simulation_path,
-                    output_naming + "_f_{}.vspl".format(cluster_idx),
-                ),
-                "w+",
+                    simulation_path / (output_naming + "_f_{}.vspl".format(cluster_idx)),
+                    "w+",
             ) as f:
                 f.write(
                     self._parameters_dict["clusters"][cluster_idx].serialize()
