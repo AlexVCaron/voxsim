@@ -1,5 +1,6 @@
 from asyncio import get_event_loop, new_event_loop, set_event_loop
 import logging
+import pathlib
 from multiprocessing import Process
 from os import makedirs, path
 from os.path import basename, exists
@@ -27,23 +28,23 @@ class SimulationRunner:
             singularity_conf=SingularityConfig(),
             output_nifti=False,
     ):
-        self._geometry_path = geometry_infos["file_path"]
-        self._geometry_base_file = geometry_infos["base_file"]
+        self._geometry_path: pathlib.Path = geometry_infos["file_path"]
+        self._geometry_base_file: str = geometry_infos["base_file"]
         self._geometry_resolution = geometry_infos["resolution"]
         self._geometry_spacing = geometry_infos["spacing"]
-        self._base_naming = base_naming
-        self._geometry_base_naming = base_naming
+        self._base_naming: str = base_naming
+        self._geometry_base_naming: str = base_naming
         if simulation_infos:
             self._number_of_maps = len(simulation_infos["compartment_ids"])
-            self._simulation_path = simulation_infos["file_path"]
-            self._simulation_parameters = simulation_infos["param_file"]
+            self._simulation_path: pathlib.Path = simulation_infos["file_path"]
+            self._simulation_parameters: str = simulation_infos["param_file"]
             self._compartment_ids = simulation_infos["compartment_ids"]
 
         singularity_conf = (
             singularity_conf if singularity_conf else SingularityConfig()
         )
-        self._singularity = singularity_conf.singularity
-        self._singularity_exec = singularity_conf.singularity_exec
+        self._singularity: pathlib.Path = singularity_conf.singularity
+        self._singularity_exec: str = singularity_conf.singularity_exec
 
         self._run_simulation = True if simulation_infos else False
         self._extension = "nii.gz" if output_nifti else "nrrd"
@@ -53,21 +54,19 @@ class SimulationRunner:
         self._save_image = self._save_nifti if output_nifti else self._save_nrrd
         self._event_loop = new_event_loop()
 
-    def change_base_naming(self, name):
+    def change_base_naming(self, name: str):
         self._base_naming = name
 
-    def set_geometry_base_naming(self, name):
+    def set_geometry_base_naming(self, name: str):
         self._geometry_base_naming = name
 
     def run_simulation_dwimage(
-            self, output_folder, image_file, simulation_infos, test_mode=False
+            self, output_folder: pathlib.Path, image_file: pathlib.Path, simulation_infos, test_mode=False
     ):
         self._start_loop_if_closed()
-        simulation_output_folder = path.join(
-            output_folder, "simulation_outputs"
-        )
-        if not path.exists(simulation_output_folder):
-            makedirs(simulation_output_folder, exist_ok=True)
+
+        simulation_output_folder: pathlib.Path = output_folder / "simulation_outputs"
+        simulation_output_folder.mkdir(parents=True, exist_ok=True)
 
         simulation_command = (
             "{} run -B {} --app launch_mitk {} -p {} -i {} -o {} {}".format(
@@ -76,32 +75,21 @@ class SimulationRunner:
                     [str(simulation_infos["file_path"]), str(simulation_output_folder)]
                 ),
                 self._singularity,
-                path.join(
-                    simulation_output_folder,
-                    "{}_simulation.ffp".format(self._base_naming),
-                ),
+                simulation_output_folder / "{}_simulation.ffp".format(self._base_naming),
                 image_file,
-                path.join(
-                    simulation_output_folder,
-                    "{}.{}".format(self._base_naming, self._extension),
-                ),
+                simulation_output_folder / "{}.{}".format(self._base_naming, self._extension),
                 "-v" if test_mode else "",
             )
         )
 
         copyfile(
-            path.join(
-                simulation_infos["file_path"], simulation_infos["param_file"]
-            ),
-            path.join(
-                simulation_output_folder,
-                "{}_simulation.ffp".format(self._base_naming),
-            ),
+            simulation_infos["file_path"] / simulation_infos["param_file"],
+            simulation_output_folder / "{}_simulation.ffp".format(self._base_naming),
         )
 
         set_event_loop(self._event_loop)
         async_loop = get_event_loop()
-        log_file = path.join(output_folder, "{}.log".format(self._base_naming))
+        log_file: pathlib.Path = output_folder / "{}.log".format(self._base_naming)
 
         _logger.info("Simulating DWI signal")
         return_code, log = async_loop.run_until_complete(
@@ -126,8 +114,8 @@ class SimulationRunner:
 
     def run_simulation_standalone(
             self,
-            output_folder,
-            geometry_folder,
+            output_folder: pathlib.Path,
+            geometry_folder: pathlib.Path,
             simulation_infos,
             base_naming=None,
             test_mode=False,
@@ -136,13 +124,10 @@ class SimulationRunner:
             base_naming = self._base_naming
 
         self._start_loop_if_closed()
-        simulation_output_folder = path.join(
-            output_folder, "simulation_outputs"
-        )
-        geometry_output_folder = path.join(geometry_folder, "geometry_outputs")
 
-        if not path.exists(simulation_output_folder):
-            makedirs(simulation_output_folder, exist_ok=True)
+        simulation_output_folder = output_folder / "simulation_outputs"
+        geometry_output_folder = geometry_folder / "geometry_outputs"
+        simulation_output_folder.mkdir(parents=True, exist_ok=True)
 
         simulation_command = (
             "{} run -B {} --app launch_mitk {} -p {} -i {} -o {} {}".format(
@@ -155,33 +140,21 @@ class SimulationRunner:
                     ]
                 ),
                 self._singularity,
-                path.join(
-                    simulation_output_folder,
-                    "{}_simulation.ffp".format(base_naming),
-                ),
-                path.join(geometry_output_folder, self._geometry_base_naming)
-                + "_merged_bundles.fib",
-                path.join(
-                    simulation_output_folder,
-                    "{}.{}".format(base_naming, self._extension),
-                ),
+                simulation_output_folder / "{}_simulation.ffp".format(base_naming),
+                geometry_output_folder / (self._geometry_base_naming + "_merged_bundles.fib"),
+                simulation_output_folder / "{}.{}".format(base_naming, self._extension),
                 "-v" if test_mode else "",
             )
         )
 
         copyfile(
-            path.join(
-                simulation_infos["file_path"], simulation_infos["param_file"]
-            ),
-            path.join(
-                simulation_output_folder,
-                "{}_simulation.ffp".format(base_naming),
-            ),
+            simulation_infos["file_path"] / simulation_infos["param_file"],
+            simulation_output_folder / "{}_simulation.ffp".format(base_naming),
         )
 
         set_event_loop(self._event_loop)
         async_loop = get_event_loop()
-        log_file = path.join(output_folder, "{}.log".format(base_naming))
+        log_file: pathlib.Path = output_folder / "{}.log".format(base_naming)
 
         self._rename_and_copy_compartments_standalone(
             simulation_infos,
@@ -212,31 +185,25 @@ class SimulationRunner:
         async_loop.close()
 
     def run(
-            self, output_folder, test_mode=False, relative_fiber_compartment=True
+            self, output_folder: pathlib.Path, test_mode=False, relative_fiber_compartment=True
     ):
 
-        geometry_output_folder = path.join(output_folder, "geometry_outputs")
-
-        if not path.exists(geometry_output_folder):
-            makedirs(geometry_output_folder, exist_ok=True)
+        geometry_output_folder: pathlib.Path = output_folder / "geometry_outputs"
+        geometry_output_folder.mkdir(parents=True, exist_ok=True)
 
         if self._run_simulation:
-            simulation_output_folder = path.join(
-                output_folder, "simulation_outputs"
-            )
-
-            if not path.exists(simulation_output_folder):
-                makedirs(simulation_output_folder, exist_ok=True)
+            simulation_output_folder: pathlib.Path = output_folder / "simulation_outputs"
+            simulation_output_folder.mkdir(parents=True, exist_ok=True)
 
         geometry_command = (
             "singularity run -B {} --app launch_voxsim {} -f {} -r {} "
             "-s {} -o {} --comp-map {} --quiet{}".format(
                 ",".join([str(self._geometry_path), str(geometry_output_folder)]),
                 self._singularity,
-                path.join(self._geometry_path, self._geometry_base_file),
+                self._geometry_path / self._geometry_base_file,
                 ",".join([str(r) for r in self._geometry_resolution]),
                 ",".join([str(s) for s in self._geometry_spacing]),
-                path.join(geometry_output_folder, self._geometry_base_naming),
+                geometry_output_folder / self._geometry_base_naming,
                 "rel" if relative_fiber_compartment else "abs",
                 self._fib_extension_arg,
             )
@@ -254,33 +221,21 @@ class SimulationRunner:
                         ]
                     ),
                     self._singularity,
-                    path.join(
-                        simulation_output_folder,
-                        "{}_simulation.ffp".format(self._base_naming),
-                    ),
-                    path.join(
-                        geometry_output_folder, self._geometry_base_naming
-                    )
-                    + "_merged_bundles.fib",
-                    path.join(
-                        simulation_output_folder,
-                        "{}.{}".format(self._base_naming, self._extension),
-                    ),
+                    simulation_output_folder / "{}_simulation.ffp".format(self._base_naming),
+                    geometry_output_folder / (self._geometry_base_naming + "_merged_bundles.fib"),
+                    simulation_output_folder / "{}.{}".format(self._base_naming, self._extension),
                     "-v" if test_mode else "",
                 )
             )
 
             copyfile(
-                path.join(self._simulation_path, self._simulation_parameters),
-                path.join(
-                    simulation_output_folder,
-                    "{}_simulation.ffp".format(self._base_naming),
-                ),
+                self._simulation_path / self._simulation_parameters,
+                simulation_output_folder / "{}_simulation.ffp".format(self._base_naming),
             )
 
         set_event_loop(self._event_loop)
         async_loop = get_event_loop()
-        log_file = path.join(output_folder, "{}.log".format(self._base_naming))
+        log_file = output_folder / "{}.log".format(self._base_naming)
 
         _logger.info("Generating simulation geometry")
         async_loop.run_until_complete(
@@ -316,8 +271,8 @@ class SimulationRunner:
     def _rename_and_copy_compartments_standalone(
             self,
             simulation_infos,
-            geometry_output_folder,
-            simulation_output_folder,
+            geometry_output_folder: pathlib.Path,
+            simulation_output_folder: pathlib.Path,
             base_naming,
     ):
         copyfile(
@@ -527,33 +482,20 @@ class SimulationRunner:
             base_naming = self._base_naming
 
         img, header = self._load_image(
-            path.join(
-                geometry_output_folder,
-                "{}_mergedBundlesMaps".format(self._geometry_base_naming),
-            )
+            geometry_output_folder / "{}_mergedBundlesMaps".format(self._geometry_base_naming)
         )
         maps = [img]
 
         if merged_maps:
             maps.append(
                 self._load_image(
-                    path.join(
-                        geometry_output_folder,
-                        "{}{}".format(
-                            self._geometry_base_naming, "_mergedEllipsesMaps"
-                        ),
-                    )
+                    geometry_output_folder / "{}{}".format(self._geometry_base_naming, "_mergedEllipsesMaps")
                 )[0]
             )
         elif base_map:
             maps.append(
                 self._load_image(
-                    path.join(
-                        geometry_output_folder,
-                        "{}{}".format(
-                            self._geometry_base_naming, "_ellipsoid1_cmap"
-                        ),
-                    )
+                    geometry_output_folder / "{}{}".format(self._geometry_base_naming, "_ellipsoid1_cmap")
                 )[0]
             )
 
@@ -563,19 +505,14 @@ class SimulationRunner:
         self._save_image(
             extra_map,
             header,
-            path.join(
-                simulation_output_folder,
-                "{}_simulation.ffp_VOLUME{}".format(
-                    base_naming, compartment_id
-                ),
-            ),
+            simulation_output_folder / "{}_simulation.ffp_VOLUME{}".format(base_naming, compartment_id),
         )
 
     def _start_loop_if_closed(self):
         if self._event_loop.is_closed():
             self._event_loop = new_event_loop()
 
-    async def _launch_command(self, command, log_file, log_tag):
+    async def _launch_command(self, command, log_file: pathlib.Path, log_tag):
         process = Popen(command.split(" "), stdout=PIPE, stderr=PIPE)
 
         _logger = RTLogging(process, log_file, log_tag)
