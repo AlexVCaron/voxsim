@@ -9,7 +9,7 @@ from .config import SingularityConfig
 from .datastore import Datastore
 from ..utils.logging import RTLogging
 
-logger = logging.getLogger(os.path.basename(__file__).split(".")[0])
+logger = logging.getLogger(__name__)
 
 
 class AsyncRunner:

@@ -14,7 +14,7 @@ from .config import SingularityConfig
 from ..exceptions import SimulationRunnerException
 from ..utils.logging import RTLogging
 
-logger = logging.getLogger(basename(__file__).split(".")[0])
+logger = logging.getLogger(__name__)
 
 
 class SimulationRunner:
