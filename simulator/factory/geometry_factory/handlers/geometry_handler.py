@@ -1,8 +1,12 @@
-from copy import deepcopy
+import logging
 import pathlib
+
+from copy import deepcopy
 
 from ..features.ORM.config_builder import ConfigBuilder
 from .geometry_infos import GeometryInfos
+
+_logger = logging.getLogger(__name__)
 
 
 class GeometryHandler:
@@ -77,7 +81,14 @@ class GeometryHandler:
             self, output_naming: str, simulation_path: pathlib.Path = pathlib.Path()
     ) -> GeometryInfos:
         simulation_path.mkdir(parents=True, exist_ok=True)
-        simulation_path = simulation_path.resolve(strict=True)
+
+        try:
+            simulation_path = simulation_path.resolve(strict=True)
+        except FileNotFoundError as exc:
+            _logger.exception(
+                f"simulation_path does not exist, even after the creation of its directories: {simulation_path}",
+                exc_info=exc)
+            raise exc
 
         with open(
                 simulation_path / output_naming / "_base.json", "w+"
