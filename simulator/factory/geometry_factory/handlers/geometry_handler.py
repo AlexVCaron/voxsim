@@ -74,8 +74,8 @@ class GeometryHandler:
         return len(self._parameters_dict["clusters"])
 
     def generate_json_configuration_files(
-            self, output_naming, simulation_path: pathlib.Path = pathlib.Path()
-    ):
+            self, output_naming: str, simulation_path: pathlib.Path = pathlib.Path()
+    ) -> GeometryInfos:
         simulation_path.mkdir(parents=True, exist_ok=True)
 
         with open(
