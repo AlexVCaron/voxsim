@@ -3,7 +3,7 @@ import pathlib
 
 
 class SimulationInfos(AttributeAsDictClass):
-    def __init__(self, file_path: pathlib.Path, simulation_file_name: pathlib.Path, ids):
+    def __init__(self, file_path: pathlib.Path, simulation_file_name: str, ids):
         super().__init__()
         self.generate_new_key("file_path", file_path)
         self.generate_new_key("param_file", simulation_file_name)
@@ -15,10 +15,10 @@ class SimulationInfos(AttributeAsDictClass):
     def set_file_path(self, file_path: pathlib.Path):
         self._file_path = file_path
 
-    def get_simulation_file_name(self) -> pathlib.Path:
+    def get_simulation_file_name(self) -> str:
         return self._param_file
 
-    def set_simulation_file_name(self, name: pathlib.Path):
+    def set_simulation_file_name(self, name: str):
         self._param_file = name
 
     @classmethod
