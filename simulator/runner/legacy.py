@@ -10,21 +10,21 @@ import nibabel as nib
 from numpy import ones_like, sum
 import nrrd
 
-from config import get_config
+from .config import SingularityConfig
 from ..exceptions import SimulationRunnerException
 from ..utils.logging import RTLogging
-
 
 logger = logging.getLogger(basename(__file__).split(".")[0])
 
 
 class SimulationRunner:
+
     def __init__(
         self,
         base_naming,
         geometry_infos,
         simulation_infos=None,
-        singularity_conf=get_config(),
+        singularity_conf=SingularityConfig(),
         output_nifti=False,
     ):
         self._geometry_path = geometry_infos["file_path"]
@@ -40,17 +40,10 @@ class SimulationRunner:
             self._compartment_ids = simulation_infos["compartment_ids"]
 
         singularity_conf = (
-            singularity_conf if singularity_conf else get_config()
+            singularity_conf if singularity_conf else SingularityConfig()
         )
-        self._singularity = path.join(
-            singularity_conf["singularity_path"],
-            singularity_conf["singularity_name"],
-        )
-        self._singularity_exec = (
-            singularity_conf["singularity_exec"]
-            if "singularity_exec" in singularity_conf
-            else "singularity"
-        )
+        self._singularity = singularity_conf.singularity
+        self._singularity_exec = singularity_conf.singularity_exec
 
         self._run_simulation = True if simulation_infos else False
         self._extension = "nii.gz" if output_nifti else "nrrd"
@@ -80,7 +73,7 @@ class SimulationRunner:
             "{} run -B {} --app launch_mitk {} -p {} -i {} -o {} {}".format(
                 self._singularity_exec,
                 ",".join(
-                    [simulation_infos["file_path"], simulation_output_folder]
+                    [str(simulation_infos["file_path"]), str(simulation_output_folder)]
                 ),
                 self._singularity,
                 path.join(
@@ -156,9 +149,9 @@ class SimulationRunner:
                 self._singularity_exec,
                 ",".join(
                     [
-                        geometry_folder,
-                        simulation_infos["file_path"],
-                        simulation_output_folder,
+                        str(geometry_folder),
+                        str(simulation_infos["file_path"]),
+                        str(simulation_output_folder),
                     ]
                 ),
                 self._singularity,
@@ -238,7 +231,7 @@ class SimulationRunner:
         geometry_command = (
             "singularity run -B {} --app launch_voxsim {} -f {} -r {} "
             "-s {} -o {} --comp-map {} --quiet{}".format(
-                ",".join([self._geometry_path, geometry_output_folder]),
+                ",".join([str(self._geometry_path), str(geometry_output_folder)]),
                 self._singularity,
                 path.join(self._geometry_path, self._geometry_base_file),
                 ",".join([str(r) for r in self._geometry_resolution]),
@@ -255,9 +248,9 @@ class SimulationRunner:
                 "-p {} -i {} -o {} {}".format(
                     ",".join(
                         [
-                            self._simulation_path,
-                            geometry_output_folder,
-                            simulation_output_folder,
+                            str(self._simulation_path),
+                            str(geometry_output_folder),
+                            str(simulation_output_folder),
                         ]
                     ),
                     self._singularity,
