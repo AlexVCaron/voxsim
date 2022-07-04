@@ -157,7 +157,7 @@ class SimulationRunner(AsyncRunner):
         if output_nifti:
             arguments += " --nii"
 
-        bind_paths = ",".join([phantom_infos["file_path"], output_folder])
+        bind_paths = ",".join([str(phantom_infos["file_path"]), str(output_folder)])
         command = self._bind_singularity("phantom", bind_paths, arguments)
         log_file = os.path.join(base_output_folder, "{}.log".format(run_name))
         self._run_command(command, log_file, "[PHANTOM]")
@@ -186,7 +186,7 @@ class SimulationRunner(AsyncRunner):
 
         name = "{}_simulation".format(run_name)
 
-        bind_paths += [simulation_infos["file_path"], output_folder]
+        bind_paths += [str(simulation_infos["file_path"]), str(output_folder)]
         bind_paths = ",".join(bind_paths)
         ffp_file = os.path.join(
             simulation_infos["file_path"], simulation_infos["param_file"]
