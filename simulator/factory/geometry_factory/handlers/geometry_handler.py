@@ -77,6 +77,7 @@ class GeometryHandler:
             self, output_naming: str, simulation_path: pathlib.Path = pathlib.Path()
     ) -> GeometryInfos:
         simulation_path.mkdir(parents=True, exist_ok=True)
+        simulation_path = simulation_path.resolve(strict=True)
 
         with open(
                 simulation_path / output_naming / "_base.json", "w+"
