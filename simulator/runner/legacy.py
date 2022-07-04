@@ -73,7 +73,7 @@ class SimulationRunner:
             "{} run -B {} --app launch_mitk {} -p {} -i {} -o {} {}".format(
                 self._singularity_exec,
                 ",".join(
-                    [simulation_infos["file_path"], simulation_output_folder]
+                    [str(simulation_infos["file_path"]), str(simulation_output_folder)]
                 ),
                 self._singularity,
                 path.join(
@@ -149,9 +149,9 @@ class SimulationRunner:
                 self._singularity_exec,
                 ",".join(
                     [
-                        geometry_folder,
-                        simulation_infos["file_path"],
-                        simulation_output_folder,
+                        str(geometry_folder),
+                        str(simulation_infos["file_path"]),
+                        str(simulation_output_folder),
                     ]
                 ),
                 self._singularity,
@@ -231,7 +231,7 @@ class SimulationRunner:
         geometry_command = (
             "singularity run -B {} --app launch_voxsim {} -f {} -r {} "
             "-s {} -o {} --comp-map {} --quiet{}".format(
-                ",".join([self._geometry_path, geometry_output_folder]),
+                ",".join([str(self._geometry_path), str(geometry_output_folder)]),
                 self._singularity,
                 path.join(self._geometry_path, self._geometry_base_file),
                 ",".join([str(r) for r in self._geometry_resolution]),
@@ -248,9 +248,9 @@ class SimulationRunner:
                 "-p {} -i {} -o {} {}".format(
                     ",".join(
                         [
-                            self._simulation_path,
-                            geometry_output_folder,
-                            simulation_output_folder,
+                            str(self._simulation_path),
+                            str(geometry_output_folder),
+                            str(simulation_output_folder),
                         ]
                     ),
                     self._singularity,
