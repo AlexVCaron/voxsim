@@ -6,6 +6,7 @@ from .geometry_infos import GeometryInfos
 
 
 class GeometryHandler:
+
     def __init__(self, resolution, spacing, clusters=None, spheres=None):
         self._parameters_dict = {
             "resolution": resolution,
