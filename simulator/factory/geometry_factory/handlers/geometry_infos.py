@@ -4,21 +4,26 @@ import pathlib
 
 class GeometryInfos(AttributeAsDictClass):
     def __init__(
-            self, file: pathlib.Path, resolution, spacing, n_maps, **kwargs
+            self, file_path: pathlib.Path, base_file: pathlib.Path, resolution, spacing, n_maps, **kwargs
     ):
         super().__init__(**kwargs)
-        self.generate_new_key("file", file)
+        self.generate_new_key("file_path", file_path)
+        self.generate_new_key("base_file", base_file)
         self.generate_new_key("resolution", resolution)
         self.generate_new_key("spacing", spacing)
         self.generate_new_key("n_maps", n_maps)
 
-    @property
-    def file(self) -> pathlib.Path:
-        return self._file
+    def get_file_path(self) -> pathlib.Path:
+        return self._file_path
 
-    @file.setter
-    def file(self, file: pathlib.Path):
-        self._file = file
+    def set_file_path(self, path: pathlib.Path):
+        self._file_path = path
+
+    def get_base_file_name(self) -> pathlib.Path:
+        return self._base_file
+
+    def set_base_file_name(self, name: pathlib.Path):
+        self._base_file = name
 
     def get_resolution(self):
         return self._resolution
