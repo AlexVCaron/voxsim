@@ -20,12 +20,12 @@ _logger = logging.getLogger(__name__)
 class SimulationRunner:
 
     def __init__(
-        self,
-        base_naming,
-        geometry_infos,
-        simulation_infos=None,
-        singularity_conf=SingularityConfig(),
-        output_nifti=False,
+            self,
+            base_naming,
+            geometry_infos,
+            simulation_infos=None,
+            singularity_conf=SingularityConfig(),
+            output_nifti=False,
     ):
         self._geometry_path = geometry_infos["file_path"]
         self._geometry_base_file = geometry_infos["base_file"]
@@ -60,7 +60,7 @@ class SimulationRunner:
         self._geometry_base_naming = name
 
     def run_simulation_dwimage(
-        self, output_folder, image_file, simulation_infos, test_mode=False
+            self, output_folder, image_file, simulation_infos, test_mode=False
     ):
         self._start_loop_if_closed()
         simulation_output_folder = path.join(
@@ -125,12 +125,12 @@ class SimulationRunner:
         async_loop.close()
 
     def run_simulation_standalone(
-        self,
-        output_folder,
-        geometry_folder,
-        simulation_infos,
-        base_naming=None,
-        test_mode=False,
+            self,
+            output_folder,
+            geometry_folder,
+            simulation_infos,
+            base_naming=None,
+            test_mode=False,
     ):
         if not base_naming:
             base_naming = self._base_naming
@@ -212,7 +212,7 @@ class SimulationRunner:
         async_loop.close()
 
     def run(
-        self, output_folder, test_mode=False, relative_fiber_compartment=True
+            self, output_folder, test_mode=False, relative_fiber_compartment=True
     ):
 
         geometry_output_folder = path.join(output_folder, "geometry_outputs")
@@ -314,11 +314,11 @@ class SimulationRunner:
         p.join()
 
     def _rename_and_copy_compartments_standalone(
-        self,
-        simulation_infos,
-        geometry_output_folder,
-        simulation_output_folder,
-        base_naming,
+            self,
+            simulation_infos,
+            geometry_output_folder,
+            simulation_output_folder,
+            base_naming,
     ):
         copyfile(
             path.join(
@@ -394,7 +394,7 @@ class SimulationRunner:
                 )
 
             if len(simulation_infos["compartment_ids"]) > 2 and (
-                merged_maps or base_map
+                    merged_maps or base_map
             ):
                 self._generate_background_map(
                     geometry_output_folder,
@@ -413,7 +413,7 @@ class SimulationRunner:
                 )
 
     def _rename_and_copy_compartments(
-        self, geometry_output_folder, simulation_output_folder
+            self, geometry_output_folder, simulation_output_folder
     ):
         copyfile(
             path.join(
@@ -515,13 +515,13 @@ class SimulationRunner:
         nrrd.write("{}.nrrd".format(name), data, header)
 
     def _generate_background_map(
-        self,
-        geometry_output_folder,
-        simulation_output_folder,
-        compartment_id,
-        merged_maps=False,
-        base_map=False,
-        base_naming=None,
+            self,
+            geometry_output_folder,
+            simulation_output_folder,
+            compartment_id,
+            merged_maps=False,
+            base_map=False,
+            base_naming=None,
     ):
         if not base_naming:
             base_naming = self._base_naming
