@@ -42,7 +42,7 @@ def run_simulation(output_folder):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Simulation Runner Example Script")
     parser.add_argument(
-        "--out", type=str, required=False, help="Output directory for the files"
+        "--out", type=str, help="Output directory for the files"
     )
 
     args = parser.parse_args()
