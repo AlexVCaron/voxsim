@@ -43,7 +43,7 @@ class SimulationRunner:
         singularity_conf = (
             singularity_conf if singularity_conf else SingularityConfig()
         )
-        self._singularity: pathlib.Path = singularity_conf.singularity
+        self._singularity: pathlib.Path = singularity_conf.singularity.resolve(strict=True)
         self._singularity_exec: str = singularity_conf.singularity_exec
 
         self._run_simulation = True if simulation_infos else False
@@ -71,6 +71,7 @@ class SimulationRunner:
 
         simulation_output_folder: pathlib.Path = output_folder / "simulation_outputs"
         simulation_output_folder.mkdir(parents=True, exist_ok=True)
+        simulation_output_folder = simulation_output_folder.resolve(strict=True)
 
         simulation_command = (
             "{} run -B {} --app launch_mitk {} -p {} -i {} -o {} {}".format(
@@ -130,8 +131,11 @@ class SimulationRunner:
         self._start_loop_if_closed()
 
         simulation_output_folder = output_folder / "simulation_outputs"
-        geometry_output_folder = geometry_folder / "geometry_outputs"
         simulation_output_folder.mkdir(parents=True, exist_ok=True)
+        simulation_output_folder = simulation_output_folder.resolve(strict=True)
+
+        geometry_output_folder = geometry_folder / "geometry_outputs"
+        geometry_output_folder = geometry_output_folder.resolve(strict=True)
 
         simulation_command = (
             "{} run -B {} --app launch_mitk {} -p {} -i {} -o {} {}".format(
@@ -194,10 +198,12 @@ class SimulationRunner:
 
         geometry_output_folder: pathlib.Path = output_folder / "geometry_outputs"
         geometry_output_folder.mkdir(parents=True, exist_ok=True)
+        geometry_output_folder = geometry_output_folder.resolve(strict=True)
 
         if self._run_simulation:
             simulation_output_folder: pathlib.Path = output_folder / "simulation_outputs"
             simulation_output_folder.mkdir(parents=True, exist_ok=True)
+            simulation_output_folder = simulation_output_folder.resolve(strict=True)
 
         geometry_command = (
             "singularity run -B {} --app launch_voxsim {} -f {} -r {} "
@@ -433,8 +439,8 @@ class SimulationRunner:
 
     def _generate_background_map(
             self,
-            geometry_output_folder,
-            simulation_output_folder,
+            geometry_output_folder: pathlib.Path,
+            simulation_output_folder: pathlib.Path,
             compartment_id,
             merged_maps=False,
             base_map=False,

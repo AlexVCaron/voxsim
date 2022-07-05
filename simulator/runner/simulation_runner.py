@@ -51,7 +51,7 @@ class SimulationRunner(AsyncRunner):
     _apps = {"phantom": "launch_voxsim", "diffusion mri": "launch_mitk"}
 
     def __init__(self, singularity_conf=SingularityConfig()):
-        self._singularity = singularity_conf.singularity
+        self._singularity = singularity_conf.singularity.resolve(strict=True)
         super().__init__()
 
         self._singularity_exec = singularity_conf.singularity_exec
@@ -81,6 +81,8 @@ class SimulationRunner(AsyncRunner):
             inter_axonal_fraction=None,
     ):
         self.start()
+
+        output_folder = output_folder.resolve(strict=True)
 
         self.generate_phantom(
             run_name,
@@ -127,10 +129,8 @@ class SimulationRunner(AsyncRunner):
 
         loop_managed or self.start()
 
-        base_output_folder: pathlib.Path = output_folder
-        output_folder: pathlib.Path = self._create_outputs(
-            output_folder / "phantom"
-        )
+        base_output_folder: pathlib.Path = self._create_outputs(output_folder)
+        output_folder: pathlib.Path = self._create_outputs(output_folder / "phantom")
 
         phantom_def: pathlib.Path = phantom_infos["file_path"] / phantom_infos["base_file"]
 
@@ -168,10 +168,9 @@ class SimulationRunner(AsyncRunner):
         loop_managed or self.start()
 
         bind_paths = [] if bind_paths is None else bind_paths
-        base_output_folder: pathlib.Path = output_folder
-        output_folder: pathlib.Path = self._create_outputs(
-            output_folder / "simulation"
-        )
+        fibers_file = fibers_file.resolve(strict=True)
+        base_output_folder: pathlib.Path = self._create_outputs(output_folder)
+        output_folder: pathlib.Path = self._create_outputs(output_folder / "simulation")
 
         name = "{}_simulation".format(run_name)
 
