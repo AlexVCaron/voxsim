@@ -11,15 +11,15 @@ from simulator.factory import SimulationFactory
 class Datastore:
     def __init__(
             self,
-            simulation_path,
-            fibers,
+            simulation_path: pathlib.Path,
+            fibers: pathlib.Path,
             compartment_ids,
             inter_axonal_fraction=None,
     ):
-        self.fibers = fibers
+        self.fibers: pathlib.Path = fibers
         self.compartments = []
         self.ids = compartment_ids
-        self.stage_path = simulation_path
+        self.stage_path: pathlib.Path = simulation_path
         self.iaf = inter_axonal_fraction
         self._temp = TemporaryDirectory()
 

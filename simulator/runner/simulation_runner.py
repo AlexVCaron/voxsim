@@ -70,10 +70,10 @@ class SimulationRunner(AsyncRunner):
 
     def run(
             self,
-            run_name,
+            run_name: str,
             phantom_infos,
             simulation_infos,
-            output_folder,
+            output_folder: pathlib.Path,
             output_nifti=True,
             relative_fiber_fraction=True,
             inter_axonal_fraction=None,
@@ -115,9 +115,9 @@ class SimulationRunner(AsyncRunner):
 
     def generate_phantom(
             self,
-            run_name,
+            run_name: str,
             phantom_infos,
-            output_folder,
+            output_folder: pathlib.Path,
             relative_fiber_fraction=True,
             output_nifti=True,
             loop_managed=False,
@@ -125,17 +125,17 @@ class SimulationRunner(AsyncRunner):
 
         loop_managed or self.start()
 
-        base_output_folder = output_folder
-        output_folder = self._create_outputs(
+        base_output_folder: pathlib.Path = output_folder
+        output_folder: pathlib.Path = self._create_outputs(
             output_folder / "phantom"
         )
 
-        phantom_def = phantom_infos["file_path"] / phantom_infos["base_file"]
+        phantom_def: pathlib.Path = phantom_infos["file_path"] / phantom_infos["base_file"]
 
         resolution = ",".join([str(r) for r in phantom_infos["resolution"]])
         spacing = ",".join([str(s) for s in phantom_infos["spacing"]])
         fiber_fraction = "rel" if relative_fiber_fraction else "abs"
-        out_name = output_folder / "phantom, " / "{}_phantom".format(run_name)
+        out_name: pathlib.Path = output_folder / "phantom, " / "{}_phantom".format(run_name)
 
         arguments = "-f {} -r {} -s {} -o {} --comp-map {} --quiet".format(
             phantom_def, resolution, spacing, out_name, fiber_fraction
@@ -146,17 +146,17 @@ class SimulationRunner(AsyncRunner):
 
         bind_paths = ",".join([str(phantom_infos["file_path"]), str(output_folder)])
         command = self._bind_singularity("phantom", bind_paths, arguments)
-        log_file = base_output_folder / "{}.log".format(run_name)
+        log_file: pathlib.Path = base_output_folder / "{}.log".format(run_name)
         self._run_command(command, log_file, "[PHANTOM]")
 
         loop_managed or self.stop()
 
     def simulate_diffusion_mri(
             self,
-            run_name,
+            run_name: str,
             simulation_infos,
-            output_folder,
-            fibers_file,
+            output_folder: pathlib.Path,
+            fibers_file: pathlib.Path,
             compartment_maps=None,
             bind_paths=None,
             output_nifti=True,
@@ -166,8 +166,8 @@ class SimulationRunner(AsyncRunner):
         loop_managed or self.start()
 
         bind_paths = [] if bind_paths is None else bind_paths
-        base_output_folder = output_folder
-        output_folder = self._create_outputs(
+        base_output_folder: pathlib.Path = output_folder
+        output_folder: pathlib.Path = self._create_outputs(
             output_folder / "simulation"
         )
 
@@ -193,7 +193,7 @@ class SimulationRunner(AsyncRunner):
         arguments = "-p {} -i {} -o {}".format(ffp_file, fibers_file, out_name)
 
         command = self._bind_singularity("diffusion mri", bind_paths, arguments)
-        log_file = base_output_folder / "{}.log".format(run_name)
+        log_file: pathlib.Path = base_output_folder / "{}.log".format(run_name)
         self._run_command(command, log_file, "[DIFFUSION MRI]")
 
         loop_managed or self.stop()
