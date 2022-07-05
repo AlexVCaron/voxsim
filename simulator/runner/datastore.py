@@ -10,11 +10,11 @@ from simulator.factory import SimulationFactory
 
 class Datastore:
     def __init__(
-        self,
-        simulation_path,
-        fibers,
-        compartment_ids,
-        inter_axonal_fraction=None,
+            self,
+            simulation_path,
+            fibers,
+            compartment_ids,
+            inter_axonal_fraction=None,
     ):
         self.fibers = fibers
         self.compartments = []
@@ -62,8 +62,8 @@ class Datastore:
                 self.add_compartment("generate")
 
             assert (
-                len(list(filter(lambda c: c == "generate", self.compartments)))
-                <= 1
+                    len(list(filter(lambda c: c == "generate", self.compartments)))
+                    <= 1
             )
 
             if "generate" in self.compartments:
