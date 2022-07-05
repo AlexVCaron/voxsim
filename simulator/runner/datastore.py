@@ -1,4 +1,5 @@
 from os.path import basename, exists, join
+import pathlib
 from shutil import copyfile
 from tempfile import TemporaryDirectory
 
@@ -101,10 +102,10 @@ class Datastore:
         )
 
         self.add_compartment(
-            join(self._get_temp(), "{}_intra.nii.gz".format(run_name))
+            join(self._get_temp_path(), "{}_intra.nii.gz".format(run_name))
         )
         self.add_compartment(
-            join(self._get_temp(), "{}_inter.nii.gz".format(run_name))
+            join(self._get_temp_path(), "{}_inter.nii.gz".format(run_name))
         )
 
     def generate_extra_axonal_fraction(self, run_name):
@@ -122,13 +123,16 @@ class Datastore:
 
         nib.save(
             nib.Nifti1Image(extra, ref.affine, ref.header),
-            join(self._get_temp(), "{}_extra.nii.gz".format(run_name)),
+            join(self._get_temp_path(), "{}_extra.nii.gz".format(run_name)),
         )
 
         self.add_compartment(
-            join(self._get_temp(), "{}_extra.nii.gz".format(run_name))
+            join(self._get_temp_path(), "{}_extra.nii.gz".format(run_name))
         )
 
     def _get_temp(self):
         assert self._temp is not None
         return self._temp
+
+    def _get_temp_path(self) -> pathlib.Path:
+        return pathlib.Path(self._get_temp().name)
