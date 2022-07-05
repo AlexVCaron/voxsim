@@ -80,7 +80,7 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    if "out" in args and args.out:
+    if args.out:
         dest = args.out
         makedirs(args.out, exist_ok=True)
     else:
