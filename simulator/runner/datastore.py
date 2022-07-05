@@ -1,4 +1,3 @@
-from os.path import basename, exists, join
 import pathlib
 from shutil import copyfile
 from tempfile import TemporaryDirectory
@@ -33,12 +32,9 @@ class Datastore:
             self.compartments if bind_compartments else list()
         )
 
-    def load_compartments(self, input_folder, run_name, use_nifti=True):
+    def load_compartments(self, input_folder: pathlib.Path, run_name, use_nifti=True):
         extension = "nii.gz" if use_nifti else "nrrd"
-        fiber_fraction = join(
-            input_folder,
-            "{}_phantom_mergedBundlesMaps.{}".format(run_name, extension),
-        )
+        fiber_fraction = input_folder / "{}_phantom_mergedBundlesMaps.{}".format(run_name, extension)
 
         inter_id = SimulationFactory.CompartmentType.INTER_AXONAL.value
         extra1_id = SimulationFactory.CompartmentType.EXTRA_AXONAL_1.value
@@ -51,11 +47,8 @@ class Datastore:
             self.add_compartment(fiber_fraction)
 
         if extra1_id in self.ids or extra2_id in self.ids:
-            ellipses = join(
-                input_folder,
-                "{}_mergedEllipsesMaps.{}".format(run_name, extension),
-            )
-            if exists(ellipses):
+            ellipses: pathlib.Path = input_folder / "{}_mergedEllipsesMaps.{}".format(run_name, extension)
+            if ellipses.exists():
                 self.add_compartment(ellipses)
                 if extra1_id in self.ids and extra2_id in self.ids:
                     self.add_compartment("generate")
@@ -74,19 +67,18 @@ class Datastore:
         self.compartments.append(filepath)
 
     def stage_compartments(self, run_name):
-        extension = ".".join(basename(self.compartments[0]).split(".")[1:])
+        extension = pathlib.Path() / (
+            pathlib.PurePath("").joinpath(
+                *pathlib.PurePath(self.compartments[0]).name.split(".")[1:]
+            )
+        )
         for m, cmp_id in zip(self.compartments, self.ids):
             copyfile(
                 m,
-                join(
-                    self.stage_path,
-                    "{}_simulation.ffp_VOLUME{}.{}".format(
-                        run_name, cmp_id, extension
-                    ),
-                ),
+                self.stage_path / "{}_simulation.ffp_VOLUME{}.{}".format(run_name, cmp_id, extension),
             )
 
-    def generate_inter_axonal_fraction(self, run_name, fiber_fraction):
+    def generate_inter_axonal_fraction(self, run_name, fiber_fraction: pathlib.Path):
         img = nib.load(fiber_fraction)
         fraction = img.get_fdata()
         inter_fraction = self.iaf * fraction
@@ -94,19 +86,15 @@ class Datastore:
 
         nib.save(
             nib.Nifti1Image(inter_fraction, img.affine, img.header),
-            join(self._get_temp(), "{}_inter.nii.gz".format(run_name)),
+            self._get_temp_path() / "{}_inter.nii.gz".format(run_name),
         )
         nib.save(
             nib.Nifti1Image(intra_fraction, img.affine, img.header),
-            join(self._get_temp(), "{}_intra.nii.gz".format(run_name)),
+            self._get_temp_path() / "{}_intra.nii.gz".format(run_name),
         )
 
-        self.add_compartment(
-            join(self._get_temp_path(), "{}_intra.nii.gz".format(run_name))
-        )
-        self.add_compartment(
-            join(self._get_temp_path(), "{}_inter.nii.gz".format(run_name))
-        )
+        self.add_compartment(self._get_temp_path() / "{}_intra.nii.gz".format(run_name))
+        self.add_compartment(self._get_temp_path() / "{}_inter.nii.gz".format(run_name))
 
     def generate_extra_axonal_fraction(self, run_name):
         other_fractions = list(
@@ -123,11 +111,11 @@ class Datastore:
 
         nib.save(
             nib.Nifti1Image(extra, ref.affine, ref.header),
-            join(self._get_temp_path(), "{}_extra.nii.gz".format(run_name)),
+            self._get_temp_path() / "{}_extra.nii.gz".format(run_name),
         )
 
         self.add_compartment(
-            join(self._get_temp_path(), "{}_extra.nii.gz".format(run_name))
+            self._get_temp_path() / "{}_extra.nii.gz".format(run_name)
         )
 
     def _get_temp(self):

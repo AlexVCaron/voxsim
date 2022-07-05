@@ -96,9 +96,7 @@ class SimulationRunner(AsyncRunner):
             inter_axonal_fraction,
         )
 
-        datastore.load_compartments(
-            output_folder / "phantom", run_name, output_nifti
-        )
+        datastore.load_compartments(output_folder / "phantom", run_name, output_nifti)
         datastore.stage_compartments(run_name)
 
         self.simulate_diffusion_mri(
