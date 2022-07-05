@@ -137,7 +137,7 @@ class SimulationRunner(AsyncRunner):
         resolution = ",".join([str(r) for r in phantom_infos["resolution"]])
         spacing = ",".join([str(s) for s in phantom_infos["spacing"]])
         fiber_fraction = "rel" if relative_fiber_fraction else "abs"
-        out_name: pathlib.Path = output_folder / "phantom, " / "{}_phantom".format(run_name)
+        out_name: pathlib.Path = output_folder / "{}_phantom".format(run_name)
 
         arguments = "-f {} -r {} -s {} -o {} --comp-map {} --quiet".format(
             phantom_def, resolution, spacing, out_name, fiber_fraction
