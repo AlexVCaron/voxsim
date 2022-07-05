@@ -1,8 +1,7 @@
 import logging
+import pathlib
 
 from asyncio import get_event_loop, new_event_loop, set_event_loop
-from os import makedirs
-import os
 from subprocess import PIPE, Popen
 
 from .config import SingularityConfig
@@ -65,11 +64,9 @@ class SimulationRunner(AsyncRunner):
         )
 
     @staticmethod
-    def _create_outputs(path):
-        if not os.path.exists(path):
-            makedirs(path, exist_ok=True)
-
-        return path
+    def _create_outputs(path: pathlib.Path):
+        path.mkdir(parents=True, exist_ok=True)
+        return path.resolve(strict=True)
 
     def run(
             self,
