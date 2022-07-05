@@ -91,7 +91,7 @@ class GeometryHandler:
             raise exc
 
         with open(
-                simulation_path / output_naming / "_base.json", "w+"
+                simulation_path / (output_naming + "_base.json"), "w+"
         ) as base_file:
             world = ConfigBuilder.create_world(
                 len(self.get_resolution()), self.get_resolution()
