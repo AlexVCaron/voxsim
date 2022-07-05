@@ -1,12 +1,13 @@
 from queue import Queue
 from threading import Thread
+import pathlib
 import time
 
 
 class RTLogging:
-    def __init__(self, process, log_file_path, log_tag=""):
+    def __init__(self, process, log_file_path: pathlib.Path, log_tag=""):
         self._process = process
-        self._log = log_file_path
+        self._log: pathlib.Path = log_file_path
         self._tag = log_tag
         self._thread = None
 
