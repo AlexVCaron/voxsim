@@ -2,7 +2,6 @@ from asyncio import get_event_loop, new_event_loop, set_event_loop
 import logging
 import pathlib
 from multiprocessing import Process
-from os.path import basename, exists
 from shutil import copyfile
 from subprocess import PIPE, Popen
 
@@ -285,14 +284,14 @@ class SimulationRunner:
         )
 
         if len(simulation_infos["compartment_ids"]) > 1:
-            merged_maps = exists(
-                geometry_output_folder / (self._geometry_base_naming + "_mergedEllipsesMaps.{}".format(self._extension))
-            )
-            base_map = (not merged_maps) and exists(
-                geometry_output_folder / (
-                        self._geometry_base_naming + "_ellipsoid{}_cmap.{}".format(0, self._extension)
-                )
-            )
+            merged_maps = (
+                    geometry_output_folder / (
+                    self._geometry_base_naming + "_mergedEllipsesMaps.{}".format(self._extension))
+            ).exists()
+            base_map = (not merged_maps) and (
+                    geometry_output_folder / (
+                    self._geometry_base_naming + "_ellipsoid{}_cmap.{}".format(0, self._extension))
+            ).exists()
             if merged_maps:
                 copyfile(
                     geometry_output_folder / (
@@ -356,12 +355,14 @@ class SimulationRunner:
         )
 
         if self._number_of_maps > 1:
-            merged_maps = exists(
-                geometry_output_folder / (self._geometry_base_naming + "_mergedEllipsesMaps.{}".format(self._extension))
-            )
-            base_map = (not merged_maps) and exists(
-                geometry_output_folder / (self._geometry_base_naming + "_ellipsoid1_cmap.{}".format(self._extension))
-            )
+            merged_maps = (
+                    geometry_output_folder / (
+                    self._geometry_base_naming + "_mergedEllipsesMaps.{}".format(self._extension))
+            ).exists()
+            base_map = (not merged_maps) and (
+                    geometry_output_folder / (
+                    self._geometry_base_naming + "_ellipsoid1_cmap.{}".format(self._extension))
+            ).exists()
             if merged_maps:
                 copyfile(
                     geometry_output_folder / (
