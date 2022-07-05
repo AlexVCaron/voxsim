@@ -7,6 +7,8 @@ from subprocess import PIPE, Popen
 from .config import SingularityConfig
 from .datastore import Datastore
 from ..utils.logging import RTLogging
+from ..factory.geometry_factory.handlers import GeometryInfos
+from ..factory.simulation_factory.handlers import SimulationInfos
 
 _logger = logging.getLogger(__name__)
 
@@ -71,8 +73,8 @@ class SimulationRunner(AsyncRunner):
     def run(
             self,
             run_name: str,
-            phantom_infos,
-            simulation_infos,
+            phantom_infos: GeometryInfos,
+            simulation_infos: SimulationInfos,
             output_folder: pathlib.Path,
             output_nifti=True,
             relative_fiber_fraction=True,
@@ -116,7 +118,7 @@ class SimulationRunner(AsyncRunner):
     def generate_phantom(
             self,
             run_name: str,
-            phantom_infos,
+            phantom_infos: GeometryInfos,
             output_folder: pathlib.Path,
             relative_fiber_fraction=True,
             output_nifti=True,
@@ -154,7 +156,7 @@ class SimulationRunner(AsyncRunner):
     def simulate_diffusion_mri(
             self,
             run_name: str,
-            simulation_infos,
+            simulation_infos: SimulationInfos,
             output_folder: pathlib.Path,
             fibers_file: pathlib.Path,
             compartment_maps=None,

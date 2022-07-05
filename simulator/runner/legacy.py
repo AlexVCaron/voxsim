@@ -12,6 +12,8 @@ import nrrd
 from .config import SingularityConfig
 from ..exceptions import SimulationRunnerException
 from ..utils.logging import RTLogging
+from ..factory.geometry_factory.handlers import GeometryInfos
+from ..factory.simulation_factory.handlers import SimulationInfos
 
 _logger = logging.getLogger(__name__)
 
@@ -21,8 +23,8 @@ class SimulationRunner:
     def __init__(
             self,
             base_naming,
-            geometry_infos,
-            simulation_infos=None,
+            geometry_infos: GeometryInfos,
+            simulation_infos: SimulationInfos = None,
             singularity_conf=SingularityConfig(),
             output_nifti=False,
     ):
@@ -59,7 +61,11 @@ class SimulationRunner:
         self._geometry_base_naming = name
 
     def run_simulation_dwimage(
-            self, output_folder: pathlib.Path, image_file: pathlib.Path, simulation_infos, test_mode=False
+            self,
+            output_folder: pathlib.Path,
+            image_file: pathlib.Path,
+            simulation_infos: SimulationInfos,
+            test_mode=False
     ):
         self._start_loop_if_closed()
 
@@ -114,7 +120,7 @@ class SimulationRunner:
             self,
             output_folder: pathlib.Path,
             geometry_folder: pathlib.Path,
-            simulation_infos,
+            simulation_infos: SimulationInfos,
             base_naming=None,
             test_mode=False,
     ):
