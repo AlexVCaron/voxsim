@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 
 import argparse
+import pathlib
 from math import pi
-from os import makedirs
 from tempfile import mkdtemp
 
 from simulator.factory import GeometryFactory, Plane
-
 
 resolution = [10, 10, 10]
 spacing = [2, 2, 2]
@@ -42,7 +41,7 @@ base_anchors = [
 ]
 
 
-def get_geometry_parameters(output_folder, output_naming):
+def get_geometry_parameters(output_folder: pathlib.Path, output_naming: str):
     geometry_handler = GeometryFactory.get_geometry_handler(resolution, spacing)
 
     bundle1 = GeometryFactory.create_bundle(
@@ -76,15 +75,15 @@ def get_geometry_parameters(output_folder, output_naming):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Geometry Factory Example Script")
     parser.add_argument(
-        "--out", type=str, help="Output directory for the files"
+        "--out", type=pathlib.Path, help="Output directory for the files"
     )
 
     args = parser.parse_args()
     if args.out:
-        dest = args.out
-        makedirs(args.out, exist_ok=True)
+        dest: pathlib.Path = args.out
+        dest.mkdir(parents=True, exist_ok=True)
     else:
-        dest = mkdtemp(prefix="geo_factory")
+        dest = pathlib.Path(mkdtemp(prefix="geo_factory"))
 
     print("Script execution results are in : {}".format(dest))
     get_geometry_parameters(dest, "geometry")
