@@ -87,7 +87,7 @@ class SimulationHandler:
         xml_string = tostring(data, pretty_print=True).decode("utf-8")
 
         with open(
-            path.join(simulation_path, output_naming + ".ffp"), "w+"
+            simulation_path / (output_naming + ".ffp"), "w+"
         ) as f:
             f.write(xml_string)
 

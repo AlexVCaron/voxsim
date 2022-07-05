@@ -2,7 +2,6 @@ from asyncio import get_event_loop, new_event_loop, set_event_loop
 import logging
 import pathlib
 from multiprocessing import Process
-from os import makedirs, path
 from os.path import basename, exists
 from shutil import copyfile
 from subprocess import PIPE, Popen
@@ -276,66 +275,46 @@ class SimulationRunner:
             base_naming,
     ):
         copyfile(
-            path.join(
-                geometry_output_folder,
-                self._geometry_base_naming
-                + "_mergedBundlesMaps.{}".format(self._extension),
-            ),
-            path.join(
-                simulation_output_folder,
-                "{}_simulation.ffp_VOLUME{}.{}".format(
-                    base_naming,
-                    simulation_infos["compartment_ids"][0],
-                    self._extension,
-                ),
+            geometry_output_folder / (self._geometry_base_naming + "_mergedBundlesMaps.{}".format(self._extension)),
+            simulation_output_folder /
+            "{}_simulation.ffp_VOLUME{}.{}".format(
+                base_naming,
+                simulation_infos["compartment_ids"][0],
+                self._extension,
             ),
         )
 
         if len(simulation_infos["compartment_ids"]) > 1:
             merged_maps = exists(
-                path.join(
-                    geometry_output_folder,
-                    self._geometry_base_naming
-                    + "_mergedEllipsesMaps.{}".format(self._extension),
-                )
+                geometry_output_folder / (self._geometry_base_naming + "_mergedEllipsesMaps.{}".format(self._extension))
             )
             base_map = (not merged_maps) and exists(
-                path.join(
-                    geometry_output_folder,
-                    self._geometry_base_naming
-                    + "_ellipsoid{}_cmap.{}".format(0, self._extension),
+                geometry_output_folder / (
+                        self._geometry_base_naming + "_ellipsoid{}_cmap.{}".format(0, self._extension)
                 )
             )
             if merged_maps:
                 copyfile(
-                    path.join(
-                        geometry_output_folder,
-                        self._geometry_base_naming
-                        + "_mergedEllipsesMaps.{}".format(self._extension),
+                    geometry_output_folder / (
+                            self._geometry_base_naming + "_mergedEllipsesMaps.{}".format(self._extension)
                     ),
-                    path.join(
-                        simulation_output_folder,
-                        "{}_simulation.ffp_VOLUME{}.{}".format(
-                            base_naming,
-                            simulation_infos["compartment_ids"][1],
-                            self._extension,
-                        ),
+                    simulation_output_folder /
+                    "{}_simulation.ffp_VOLUME{}.{}".format(
+                        base_naming,
+                        simulation_infos["compartment_ids"][1],
+                        self._extension,
                     ),
                 )
             elif base_map:
                 copyfile(
-                    path.join(
-                        geometry_output_folder,
-                        self._geometry_base_naming
-                        + "_ellipsoid1_cmap.{}".format(self._extension),
+                    geometry_output_folder / (
+                            self._geometry_base_naming + "_ellipsoid1_cmap.{}".format(self._extension)
                     ),
-                    path.join(
-                        simulation_output_folder,
-                        "{}_simulation.ffp_VOLUME{}.{}".format(
-                            base_naming,
-                            simulation_infos["compartment_ids"][1],
-                            self._extension,
-                        ),
+                    simulation_output_folder /
+                    "{}_simulation.ffp_VOLUME{}.{}".format(
+                        base_naming,
+                        simulation_infos["compartment_ids"][1],
+                        self._extension,
                     ),
                 )
             else:
@@ -371,64 +350,40 @@ class SimulationRunner:
             self, geometry_output_folder, simulation_output_folder
     ):
         copyfile(
-            path.join(
-                geometry_output_folder,
-                self._geometry_base_naming
-                + "_mergedBundlesMaps.{}".format(self._extension),
-            ),
-            path.join(
-                simulation_output_folder,
-                "{}_simulation.ffp_VOLUME{}.{}".format(
-                    self._base_naming, self._compartment_ids[0], self._extension
-                ),
-            ),
+            geometry_output_folder / (self._geometry_base_naming + "_mergedBundlesMaps.{}".format(self._extension)),
+            simulation_output_folder /
+            "{}_simulation.ffp_VOLUME{}.{}".format(self._base_naming, self._compartment_ids[0], self._extension),
         )
 
         if self._number_of_maps > 1:
             merged_maps = exists(
-                path.join(
-                    geometry_output_folder,
-                    self._geometry_base_naming
-                    + "_mergedEllipsesMaps.{}".format(self._extension),
-                )
+                geometry_output_folder / (self._geometry_base_naming + "_mergedEllipsesMaps.{}".format(self._extension))
             )
             base_map = (not merged_maps) and exists(
-                path.join(
-                    geometry_output_folder,
-                    self._geometry_base_naming
-                    + "_ellipsoid1_cmap.{}".format(self._extension),
-                )
+                geometry_output_folder / (self._geometry_base_naming + "_ellipsoid1_cmap.{}".format(self._extension))
             )
             if merged_maps:
                 copyfile(
-                    path.join(
-                        geometry_output_folder,
-                        self._geometry_base_naming
-                        + "_mergedEllipsesMaps.{}".format(self._extension),
+                    geometry_output_folder / (
+                            self._geometry_base_naming + "_mergedEllipsesMaps.{}".format(self._extension)
                     ),
-                    path.join(
-                        simulation_output_folder,
-                        "{}_simulation.ffp_VOLUME{}.{}".format(
-                            self._base_naming,
-                            self._compartment_ids[1],
-                            self._extension,
-                        ),
+                    simulation_output_folder /
+                    "{}_simulation.ffp_VOLUME{}.{}".format(
+                        self._base_naming,
+                        self._compartment_ids[1],
+                        self._extension,
                     ),
                 )
             elif base_map:
                 copyfile(
-                    path.join(
-                        geometry_output_folder,
-                        self._geometry_base_naming
-                        + "_ellipsoid0_cmap.{}".format(self._extension),
+                    geometry_output_folder / (
+                            self._geometry_base_naming + "_ellipsoid0_cmap.{}".format(self._extension)
                     ),
-                    path.join(
-                        simulation_output_folder,
-                        "{}_simulation.ffp_VOLUME{}.{}".format(
-                            self._base_naming,
-                            self._compartment_ids[1],
-                            self._extension,
-                        ),
+                    simulation_output_folder /
+                    "{}_simulation.ffp_VOLUME{}.{}".format(
+                        self._base_naming,
+                        self._compartment_ids[1],
+                        self._extension,
                     ),
                 )
             else:

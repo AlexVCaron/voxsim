@@ -135,16 +135,12 @@ class SimulationRunner(AsyncRunner):
             output_folder / "phantom"
         )
 
-        phantom_def = os.path.join(
-            phantom_infos["file_path"], phantom_infos["base_file"]
-        )
+        phantom_def = phantom_infos["file_path"] / phantom_infos["base_file"]
 
         resolution = ",".join([str(r) for r in phantom_infos["resolution"]])
         spacing = ",".join([str(s) for s in phantom_infos["spacing"]])
         fiber_fraction = "rel" if relative_fiber_fraction else "abs"
-        out_name = os.path.join(
-            output_folder, "phantom, " "{}_phantom".format(run_name)
-        )
+        out_name = output_folder / "phantom, " / "{}_phantom".format(run_name)
 
         arguments = "-f {} -r {} -s {} -o {} --comp-map {} --quiet".format(
             phantom_def, resolution, spacing, out_name, fiber_fraction
@@ -184,11 +180,10 @@ class SimulationRunner(AsyncRunner):
 
         bind_paths += [str(simulation_infos["file_path"]), str(output_folder)]
         bind_paths = ",".join(bind_paths)
-        ffp_file = os.path.join(
-            simulation_infos["file_path"], simulation_infos["param_file"]
-        )
+        ffp_file = simulation_infos["file_path"] / simulation_infos["param_file"]
+
         extension = "nii.gz" if output_nifti else "nrrd"
-        out_name = os.path.join(output_folder, "{}.{}".format(name, extension))
+        out_name = output_folder / "{}.{}".format(name, extension)
 
         if not compartments_staged and compartment_maps is not None:
             datastore = Datastore(
