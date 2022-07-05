@@ -93,18 +93,14 @@ class SimulationRunner(AsyncRunner):
         )
 
         datastore = Datastore(
-            os.path.join(output_folder, "simulation"),
-            os.path.join(
-                output_folder,
-                "phantom",
-                "{}_phantom_merged_bundles.fib".format(run_name),
-            ),
+            output_folder / "simulation",
+            output_folder / "phantom" / "{}_phantom_merged_bundles.fib".format(run_name),
             simulation_infos["compartment_ids"],
             inter_axonal_fraction,
         )
 
         datastore.load_compartments(
-            os.path.join(output_folder, "phantom"), run_name, output_nifti
+            output_folder / "phantom", run_name, output_nifti
         )
         datastore.stage_compartments(run_name)
 
@@ -136,7 +132,7 @@ class SimulationRunner(AsyncRunner):
 
         base_output_folder = output_folder
         output_folder = self._create_outputs(
-            os.path.join(output_folder, "phantom")
+            output_folder / "phantom"
         )
 
         phantom_def = os.path.join(
@@ -159,7 +155,7 @@ class SimulationRunner(AsyncRunner):
 
         bind_paths = ",".join([str(phantom_infos["file_path"]), str(output_folder)])
         command = self._bind_singularity("phantom", bind_paths, arguments)
-        log_file = os.path.join(base_output_folder, "{}.log".format(run_name))
+        log_file = base_output_folder / "{}.log".format(run_name)
         self._run_command(command, log_file, "[PHANTOM]")
 
         loop_managed or self.stop()
@@ -181,7 +177,7 @@ class SimulationRunner(AsyncRunner):
         bind_paths = [] if bind_paths is None else bind_paths
         base_output_folder = output_folder
         output_folder = self._create_outputs(
-            os.path.join(output_folder, "simulation")
+            output_folder / "simulation"
         )
 
         name = "{}_simulation".format(run_name)
@@ -207,7 +203,7 @@ class SimulationRunner(AsyncRunner):
         arguments = "-p {} -i {} -o {}".format(ffp_file, fibers_file, out_name)
 
         command = self._bind_singularity("diffusion mri", bind_paths, arguments)
-        log_file = os.path.join(base_output_folder, "{}.log".format(run_name))
+        log_file = base_output_folder / "{}.log".format(run_name)
         self._run_command(command, log_file, "[DIFFUSION MRI]")
 
         loop_managed or self.stop()
