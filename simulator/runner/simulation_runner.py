@@ -71,14 +71,14 @@ class SimulationRunner(AsyncRunner):
         return path.resolve(strict=True)
 
     def run(
-            self,
-            run_name: str,
-            phantom_infos: GeometryInfos,
-            simulation_infos: SimulationInfos,
-            output_folder: pathlib.Path,
-            output_nifti=True,
-            relative_fiber_fraction=True,
-            inter_axonal_fraction=None,
+        self,
+        run_name: str,
+        phantom_infos: GeometryInfos,
+        simulation_infos: SimulationInfos,
+        output_folder: pathlib.Path,
+        output_nifti=True,
+        relative_fiber_fraction=True,
+        inter_axonal_fraction=None,
     ):
         self.start()
 
@@ -118,13 +118,13 @@ class SimulationRunner(AsyncRunner):
         self.stop()
 
     def generate_phantom(
-            self,
-            run_name: str,
-            phantom_infos: GeometryInfos,
-            output_folder: pathlib.Path,
-            relative_fiber_fraction=True,
-            output_nifti=True,
-            loop_managed=False,
+        self,
+        run_name: str,
+        phantom_infos: GeometryInfos,
+        output_folder: pathlib.Path,
+        relative_fiber_fraction=True,
+        output_nifti=True,
+        loop_managed=False,
     ):
 
         loop_managed or self.start()
@@ -154,16 +154,16 @@ class SimulationRunner(AsyncRunner):
         loop_managed or self.stop()
 
     def simulate_diffusion_mri(
-            self,
-            run_name: str,
-            simulation_infos: SimulationInfos,
-            output_folder: pathlib.Path,
-            fibers_file: pathlib.Path,
-            compartment_maps=None,
-            bind_paths=None,
-            output_nifti=True,
-            loop_managed=False,
-            compartments_staged=True,
+        self,
+        run_name: str,
+        simulation_infos: SimulationInfos,
+        output_folder: pathlib.Path,
+        fibers_file: pathlib.Path,
+        compartment_maps=None,
+        bind_paths=None,
+        output_nifti=True,
+        loop_managed=False,
+        compartments_staged=True,
     ):
         loop_managed or self.start()
 
