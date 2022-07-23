@@ -47,7 +47,7 @@ class AsyncRunner:
         _logger.start()
         _logger.join()
 
-        return process.returncode, log_file
+        return process.returncode
 
 
 class SimulationRunner(AsyncRunner):
