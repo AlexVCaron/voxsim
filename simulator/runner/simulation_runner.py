@@ -11,8 +11,6 @@ from ..utils.logging import RTLogging
 from ..factory.geometry_factory.handlers import GeometryInfos
 from ..factory.simulation_factory.handlers import SimulationInfos
 
-_logger = logging.getLogger(__name__)
-
 
 class AsyncRunner:
 
@@ -41,7 +39,8 @@ class AsyncRunner:
         if self._event_loop.is_closed():
             self._event_loop = new_event_loop()
 
-    async def _run_async(self, command: str, log_file, log_tag) -> int:
+    @staticmethod
+    async def _run_async(command: str, log_file, log_tag) -> int:
         process = Popen(command.split(" "), stdout=PIPE, stderr=PIPE)
 
         _logger = RTLogging(process, log_file, log_tag)
