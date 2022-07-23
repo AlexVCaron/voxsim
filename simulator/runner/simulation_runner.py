@@ -128,7 +128,7 @@ class SimulationRunner(AsyncRunner):
         relative_fiber_fraction=True,
         output_nifti=True,
         loop_managed=False,
-    ):
+    ) -> int:
 
         loop_managed or self.start()
 
@@ -152,9 +152,10 @@ class SimulationRunner(AsyncRunner):
         bind_paths = ",".join([str(phantom_infos["file_path"]), str(output_folder)])
         command = self._bind_singularity("phantom", bind_paths, arguments)
         log_file: pathlib.Path = base_output_folder / "{}.log".format(run_name)
-        self._run_command(command, log_file, "[PHANTOM]")
+        returncode = self._run_command(command, log_file, "[PHANTOM]")
 
         loop_managed or self.stop()
+        return returncode
 
     def simulate_diffusion_mri(
         self,
@@ -167,7 +168,7 @@ class SimulationRunner(AsyncRunner):
         output_nifti=True,
         loop_managed=False,
         compartments_staged=True,
-    ):
+    ) -> int:
         loop_managed or self.start()
 
         bind_paths = [] if bind_paths is None else bind_paths
@@ -198,6 +199,7 @@ class SimulationRunner(AsyncRunner):
 
         command = self._bind_singularity("diffusion mri", bind_paths, arguments)
         log_file: pathlib.Path = base_output_folder / "{}.log".format(run_name)
-        self._run_command(command, log_file, "[DIFFUSION MRI]")
+        returncode = self._run_command(command, log_file, "[DIFFUSION MRI]")
 
         loop_managed or self.stop()
+        return returncode
