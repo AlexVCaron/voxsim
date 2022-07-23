@@ -1,5 +1,6 @@
 import logging
 import pathlib
+import typing
 
 from asyncio import get_event_loop, new_event_loop, set_event_loop
 from subprocess import PIPE, Popen
@@ -14,9 +15,11 @@ _logger = logging.getLogger(__name__)
 
 
 class AsyncRunner:
+    _custom_log_handlers: typing.Set[logging.Handler]  # TODO : WIP. See ..utils.logging
 
     def __init__(self):
         self._event_loop = new_event_loop()
+        self._custom_log_handlers = set()  # TODO : WIP. See ..utils.logging
 
     def start(self):
         self._start_loop_if_closed()
