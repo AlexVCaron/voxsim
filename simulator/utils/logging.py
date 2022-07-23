@@ -4,6 +4,9 @@ import pathlib
 import time
 
 
+# TODO : Replace with QueueListener and QueueHandler from logging
+#  https://docs.python.org/3.8/library/logging.handlers.html#logging.handlers.QueueHandler
+
 class RTLogging:
     def __init__(self, process, log_file_path: pathlib.Path, log_tag=""):
         self._process = process
