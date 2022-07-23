@@ -28,13 +28,16 @@ class AsyncRunner:
         if not self._event_loop.is_closed():
             self._event_loop.close()
 
-    def _run_command(self, command: str, log_file: pathlib.Path, log_tag: str):
+    def _run_command(self, command: str, log_file: pathlib.Path, log_tag: str) -> int:
         set_event_loop(self._event_loop)
         async_loop = get_event_loop()
-        async_loop.run_until_complete(
+
+        returncode = async_loop.run_until_complete(
             self._run_async(command, log_file, log_tag)
         )
+
         async_loop.close()
+        return returncode
 
     def _start_loop_if_closed(self):
         if self._event_loop.is_closed():
