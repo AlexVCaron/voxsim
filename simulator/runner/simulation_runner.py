@@ -28,7 +28,7 @@ class AsyncRunner:
         if not self._event_loop.is_closed():
             self._event_loop.close()
 
-    def _run_command(self, command, log_file, log_tag):
+    def _run_command(self, command: str, log_file: pathlib.Path, log_tag: str):
         set_event_loop(self._event_loop)
         async_loop = get_event_loop()
         async_loop.run_until_complete(
@@ -40,7 +40,7 @@ class AsyncRunner:
         if self._event_loop.is_closed():
             self._event_loop = new_event_loop()
 
-    async def _run_async(self, command, log_file, log_tag):
+    async def _run_async(self, command: str, log_file, log_tag) -> int:
         process = Popen(command.split(" "), stdout=PIPE, stderr=PIPE)
 
         _logger = RTLogging(process, log_file, log_tag)
@@ -59,7 +59,7 @@ class SimulationRunner(AsyncRunner):
 
         self._singularity_exec = singularity_conf.singularity_exec
 
-    def _bind_singularity(self, step, paths, arguments):
+    def _bind_singularity(self, step, paths, arguments) -> str:
         return "{} run -B {} --app {} {} {}".format(
             self._singularity_exec,
             paths,
