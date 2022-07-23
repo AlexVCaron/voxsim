@@ -1,5 +1,6 @@
 import logging
 import pathlib
+import typing
 
 from asyncio import get_event_loop, new_event_loop, set_event_loop
 from subprocess import PIPE, Popen
@@ -82,12 +83,12 @@ class SimulationRunner(AsyncRunner):
         output_nifti=True,
         relative_fiber_fraction=True,
         inter_axonal_fraction=None,
-    ):
+    ) -> typing.Tuple[int, int]:
         self.start()
 
         output_folder = output_folder.resolve(strict=True)
 
-        self.generate_phantom(
+        phantom_returncode = self.generate_phantom(
             run_name,
             phantom_infos,
             output_folder,
@@ -106,7 +107,7 @@ class SimulationRunner(AsyncRunner):
         datastore.load_compartments(output_folder / "phantom", run_name, output_nifti)
         datastore.stage_compartments(run_name)
 
-        self.simulate_diffusion_mri(
+        mri_returncode = self.simulate_diffusion_mri(
             run_name,
             simulation_infos,
             output_folder,
@@ -119,6 +120,7 @@ class SimulationRunner(AsyncRunner):
         )
 
         self.stop()
+        return phantom_returncode, mri_returncode
 
     def generate_phantom(
         self,
