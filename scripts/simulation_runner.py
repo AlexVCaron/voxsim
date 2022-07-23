@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
-from os import makedirs
-from os.path import join
+import pathlib
 from tempfile import mkdtemp
 
 from scripts.geometry_factory import get_geometry_parameters
@@ -10,7 +9,7 @@ from scripts.simulation_factory import get_simulation_parameters
 from simulator.runner.legacy import SimulationRunner
 
 
-def run_simulation(output_folder):
+def run_simulation(output_folder: pathlib.Path):
     geometry_parameters = get_geometry_parameters(
         output_folder, "runner_test_geometry"
     )
@@ -32,7 +31,7 @@ def run_simulation(output_folder):
         output_folder, "runner_test_simulation_standalone"
     )
 
-    standalone_output = join(output_folder, "standalone_test")
+    standalone_output = output_folder / "standalone_test"
 
     runner.run_simulation_standalone(
         standalone_output, output_folder, simulation_parameters, "standalone"
@@ -42,15 +41,15 @@ def run_simulation(output_folder):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Simulation Runner Example Script")
     parser.add_argument(
-        "--out", type=str, required=False, help="Output directory for the files"
+        "--out", type=pathlib.Path, help="Output directory for the files"
     )
 
     args = parser.parse_args()
-    if "out" in args and args.out:
-        dest = args.out
-        makedirs(args.out, exist_ok=True)
+    if args.out:
+        dest: pathlib.Path = args.out
+        dest.mkdir(parents=True, exist_ok=True)
     else:
-        dest = mkdtemp(prefix="sim_runner")
+        dest = pathlib.Path(mkdtemp(prefix="sim_runner"))
 
     print("Script execution results are in : {}".format(dest))
     run_simulation(dest)

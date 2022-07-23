@@ -1,12 +1,13 @@
-from queue import Queue
+import queue
 from threading import Thread
+import pathlib
 import time
 
 
 class RTLogging:
-    def __init__(self, process, log_file_path, log_tag=""):
+    def __init__(self, process, log_file_path: pathlib.Path, log_tag=""):
         self._process = process
-        self._log = log_file_path
+        self._log: pathlib.Path = log_file_path
         self._tag = log_tag
         self._thread = None
 
@@ -19,8 +20,8 @@ class RTLogging:
         self._thread.join()
 
     def _read_output(self, poll_timer=4, logging_callback=lambda a: None):
-        stdout_queue = Queue()
-        stderr_queue = Queue()
+        stdout_queue = queue.Queue()
+        stderr_queue = queue.Queue()
         t1 = Thread(
             target=self._enqueue_thread_output,
             args=(self._process.stdout, stdout_queue),
@@ -48,15 +49,15 @@ class RTLogging:
             logging_callback(self._log)
             time.sleep(poll_timer)
 
-    def _enqueue_thread_output(self, pipe, queue):
+    def _enqueue_thread_output(self, pipe, output: queue.Queue):
         while self._process.poll() is None:
             ln = pipe.readline()
-            queue.put(ln)
+            output.put(ln)
 
-    def _dequeue_output(self, log_file, queue, tag):
+    def _dequeue_output(self, log_file, output: queue.Queue, tag):
         try:
-            while not queue.empty():
-                ln = queue.get_nowait()
+            while not output.empty():
+                ln = output.get_nowait()
                 if ln:
                     log_file.write(
                         "\n".join(
@@ -68,5 +69,5 @@ class RTLogging:
                         + "\n"
                     )
                     log_file.flush()
-        except:
+        except queue.Empty:
             pass

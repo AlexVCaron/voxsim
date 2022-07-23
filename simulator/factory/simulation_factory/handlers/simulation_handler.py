@@ -1,5 +1,6 @@
+import pathlib
+
 from lxml.etree import Element, SubElement, tostring
-from os import makedirs, path
 
 from simulator.factory.simulation_factory.parameters import (
     AcquisitionProfile,
@@ -70,10 +71,9 @@ class SimulationHandler:
         return self
 
     def generate_xml_configuration_file(
-        self, output_naming, simulation_path=""
+            self, output_naming: str, simulation_path: pathlib.Path = pathlib.Path()
     ):
-        if not path.exists(simulation_path):
-            makedirs(simulation_path, exist_ok=True)
+        simulation_path.mkdir(parents=True, exist_ok=True)
 
         data = Element("fiberfox")
         image_element = SubElement(data, "image")
@@ -87,7 +87,7 @@ class SimulationHandler:
         xml_string = tostring(data, pretty_print=True).decode("utf-8")
 
         with open(
-            path.join(simulation_path, output_naming + ".ffp"), "w+"
+                simulation_path / (output_naming + ".ffp"), "w+"
         ) as f:
             f.write(xml_string)
 
