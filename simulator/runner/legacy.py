@@ -97,7 +97,7 @@ class SimulationRunner:
         log_file: pathlib.Path = output_folder / "{}.log".format(self._base_naming)
 
         _logger.info("Simulating DWI signal")
-        return_code, log = async_loop.run_until_complete(
+        return_code, _ = async_loop.run_until_complete(
             self._launch_command(
                 simulation_command, log_file, "[RUNNING FIBERFOX]"
             )
@@ -107,7 +107,7 @@ class SimulationRunner:
                 "Simulation ended in error",
                 SimulationRunnerException.ExceptionType.Fiberfox,
                 return_code,
-                (log,),
+                (str(log_file),),
             )
 
         _logger.debug(
@@ -172,7 +172,7 @@ class SimulationRunner:
         )
 
         _logger.info("Simulating DWI signal")
-        return_code, log = async_loop.run_until_complete(
+        return_code, _ = async_loop.run_until_complete(
             self._launch_command(
                 simulation_command, log_file, "[RUNNING FIBERFOX]"
             )
@@ -182,7 +182,7 @@ class SimulationRunner:
                 "Simulation ended in error",
                 SimulationRunnerException.ExceptionType.Fiberfox,
                 return_code,
-                (log,),
+                (str(log_file),),
             )
 
         _logger.debug(
@@ -257,7 +257,7 @@ class SimulationRunner:
             )
             _logger.info("Simulating DWI signal")
             if self._run_simulation:
-                return_code, log = async_loop.run_until_complete(
+                return_code, _ = async_loop.run_until_complete(
                     self._launch_command(
                         simulation_command, log_file, "[RUNNING FIBERFOX]"
                     )
@@ -267,7 +267,7 @@ class SimulationRunner:
                         "Simulation ended in error",
                         SimulationRunnerException.ExceptionType.Fiberfox,
                         return_code,
-                        (log,),
+                        (str(log_file),),
                     )
 
             _logger.debug("Simulation ended with code {}".format(return_code))
