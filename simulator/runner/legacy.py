@@ -107,7 +107,7 @@ class SimulationRunner:
                 "Simulation ended in error",
                 SimulationRunnerException.ExceptionType.Fiberfox,
                 return_code,
-                (str(log_file),),
+                str(log_file),
             )
 
         _logger.debug(
@@ -182,7 +182,7 @@ class SimulationRunner:
                 "Simulation ended in error",
                 SimulationRunnerException.ExceptionType.Fiberfox,
                 return_code,
-                (str(log_file),),
+                str(log_file),
             )
 
         _logger.debug(
@@ -267,7 +267,7 @@ class SimulationRunner:
                         "Simulation ended in error",
                         SimulationRunnerException.ExceptionType.Fiberfox,
                         return_code,
-                        (str(log_file),),
+                        str(log_file),
                     )
 
             _logger.debug("Simulation ended with code {}".format(return_code))
