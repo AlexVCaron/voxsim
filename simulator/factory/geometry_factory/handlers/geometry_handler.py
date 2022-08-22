@@ -1,11 +1,16 @@
+import logging
+import pathlib
+
 from copy import deepcopy
-from os import makedirs, path
 
 from ..features.ORM.config_builder import ConfigBuilder
 from .geometry_infos import GeometryInfos
 
+_logger = logging.getLogger(__name__)
+
 
 class GeometryHandler:
+
     def __init__(self, resolution, spacing, clusters=None, spheres=None):
         self._parameters_dict = {
             "resolution": resolution,
@@ -73,15 +78,21 @@ class GeometryHandler:
         return len(self._parameters_dict["clusters"])
 
     def generate_json_configuration_files(
-        self, output_naming, simulation_path=""
-    ):
-        if not path.exists(simulation_path):
-            makedirs(simulation_path, exist_ok=True)
+            self, output_naming: str, simulation_path: pathlib.Path = pathlib.Path()
+    ) -> GeometryInfos:
+        simulation_path.mkdir(parents=True, exist_ok=True)
+
+        try:
+            simulation_path = simulation_path.resolve(strict=True)
+        except FileNotFoundError as exc:
+            _logger.exception(
+                f"simulation_path does not exist, even after the creation of its directories: {simulation_path}",
+                exc_info=exc)
+            raise exc
 
         with open(
-            path.join(simulation_path, output_naming + "_base.json"), "w+"
+                simulation_path / (output_naming + "_base.json"), "w+"
         ) as base_file:
-
             world = ConfigBuilder.create_world(
                 len(self.get_resolution()), self.get_resolution()
             )
@@ -109,11 +120,8 @@ class GeometryHandler:
 
         for cluster_idx in range(len(self._parameters_dict["clusters"])):
             with open(
-                path.join(
-                    simulation_path,
-                    output_naming + "_f_{}.vspl".format(cluster_idx),
-                ),
-                "w+",
+                    simulation_path / (output_naming + "_f_{}.vspl".format(cluster_idx)),
+                    "w+",
             ) as f:
                 f.write(
                     self._parameters_dict["clusters"][cluster_idx].serialize()

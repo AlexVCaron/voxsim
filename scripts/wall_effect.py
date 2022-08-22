@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
 
 import argparse
+import pathlib
 from math import pi, sqrt
-from os import makedirs
-from os.path import join
 from tempfile import mkdtemp
 
 from numpy import mean
 
 from simulator.factory import GeometryFactory, Plane, SimulationFactory
 from simulator.runner.legacy import SimulationRunner
-
 
 resolution = [40, 40, 40]
 spacing = [1, 1, 1]
@@ -26,7 +24,7 @@ cluster_limits = [[0, 1], [0, 1], [0, 1]]
 cluster_center = [0.5, 0.5, 0.5]
 
 
-def create_geometry(output_folder, output_naming, fibers_per_bundle):
+def create_geometry(output_folder: pathlib.Path, output_naming: str, fibers_per_bundle):
     geometry_handler = GeometryFactory.get_geometry_handler(resolution, spacing)
 
     bundle1 = GeometryFactory.create_bundle(
@@ -54,7 +52,7 @@ def create_geometry(output_folder, output_naming, fibers_per_bundle):
 
 
 def create_split_geometry(
-    output_folder, output_naming, fibers_per_bundle, rotation=None
+        output_folder: pathlib.Path, output_naming: str, fibers_per_bundle, rotation=None
 ):
     geometry_handler = GeometryFactory.get_geometry_handler(resolution, spacing)
 
@@ -142,7 +140,7 @@ def create_simulation_b1000(geometry_handler, output_folder, output_naming):
 
 
 def create_simulation_multishell(
-    geometry_handler, output_folder, output_naming
+        geometry_handler, output_folder, output_naming
 ):
     base_multishell_simulation_handler = get_base_simulation_handler(
         geometry_handler
@@ -166,18 +164,18 @@ def create_simulation_multishell(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Wall Effect Example Script")
     parser.add_argument(
-        "--out", type=str, required=False, help="Output directory for the files"
+        "--out", type=pathlib.Path, help="Output directory for the files"
     )
 
     args = parser.parse_args()
     if "out" in args and args.out:
-        dest = args.out
-        makedirs(args.out, exist_ok=True)
+        dest: pathlib.Path = args.out
+        dest.mkdir(parents=True, exist_ok=True)
     else:
-        dest = mkdtemp(prefix="wall_effect")
+        dest = pathlib.Path(mkdtemp(prefix="wall_effect"))
 
     print("Script execution results are in : {}".format(dest))
-    makedirs(join(dest, "runner_outputs"), exist_ok=True)
+    (dest / "runner_outputs").mkdir(parents=True, exist_ok=True)
 
     geometry_infos, geometry_handler = create_geometry(
         dest, "geometry", n_fibers_per_bundle
@@ -189,7 +187,7 @@ if __name__ == "__main__":
 
     SimulationRunner(
         "simulation_b1000", geometry_infos, simulation_b1000_infos
-    ).run(join(dest, "runner_outputs"), relative_fiber_compartment=False)
+    ).run(dest / "runner_outputs", relative_fiber_compartment=False)
 
     geometry_infos, geometry_handler = create_split_geometry(
         dest, "geometry_split_b1", 3000
@@ -201,7 +199,7 @@ if __name__ == "__main__":
 
     SimulationRunner(
         "simulation_split_b1_b1000", geometry_infos, simulation_b1000_infos
-    ).run(join(dest, "runner_outputs"))
+    ).run(dest / "runner_outputs")
 
     geometry_infos, geometry_handler = create_split_geometry(
         dest, "geometry_split_b2", 3000, pi
@@ -213,7 +211,7 @@ if __name__ == "__main__":
 
     SimulationRunner(
         "simulation_split_b2_b1000", geometry_infos, simulation_b1000_infos
-    ).run(join(dest, "runner_outputs"))
+    ).run(dest / "runner_outputs")
 
     simulation_multishell_infos = create_simulation_multishell(
         geometry_handler, dest, "simulation_multishell"
@@ -221,4 +219,4 @@ if __name__ == "__main__":
 
     SimulationRunner(
         "simulation_multishell", geometry_infos, simulation_b1000_infos
-    ).run(join(dest, "runner_outputs"))
+    ).run(dest / "runner_outputs")
