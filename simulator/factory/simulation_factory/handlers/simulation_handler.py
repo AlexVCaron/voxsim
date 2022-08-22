@@ -74,6 +74,7 @@ class SimulationHandler:
             self, output_naming: str, simulation_path: pathlib.Path = pathlib.Path()
     ):
         simulation_path.mkdir(parents=True, exist_ok=True)
+        simulation_path = simulation_path.resolve(strict=True)
 
         data = Element("fiberfox")
         image_element = SubElement(data, "image")
