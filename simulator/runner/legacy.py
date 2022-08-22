@@ -28,7 +28,7 @@ class SimulationRunner:
             singularity_conf=SingularityConfig(),
             output_nifti=False,
     ):
-        self._geometry_path: pathlib.Path = geometry_infos["file_path"]
+        self._geometry_path: pathlib.Path = geometry_infos["file_path"].resolve(strict=True)
         self._geometry_base_file: str = geometry_infos["base_file"]
         self._geometry_resolution = geometry_infos["resolution"]
         self._geometry_spacing = geometry_infos["spacing"]
@@ -36,7 +36,7 @@ class SimulationRunner:
         self._geometry_base_naming: str = base_naming
         if simulation_infos:
             self._number_of_maps = len(simulation_infos["compartment_ids"])
-            self._simulation_path: pathlib.Path = simulation_infos["file_path"]
+            self._simulation_path: pathlib.Path = simulation_infos["file_path"].resolve(strict=True)
             self._simulation_parameters: str = simulation_infos["param_file"]
             self._compartment_ids = simulation_infos["compartment_ids"]
 
@@ -73,6 +73,8 @@ class SimulationRunner:
         simulation_output_folder.mkdir(parents=True, exist_ok=True)
         simulation_output_folder = simulation_output_folder.resolve(strict=True)
 
+        output_folder = output_folder.resolve(strict=True)
+
         simulation_command = (
             "{} run -B {} --app launch_mitk {} -p {} -i {} -o {} {}".format(
                 self._singularity_exec,
@@ -97,7 +99,7 @@ class SimulationRunner:
         log_file: pathlib.Path = output_folder / "{}.log".format(self._base_naming)
 
         _logger.info("Simulating DWI signal")
-        return_code, log = async_loop.run_until_complete(
+        return_code, _ = async_loop.run_until_complete(
             self._launch_command(
                 simulation_command, log_file, "[RUNNING FIBERFOX]"
             )
@@ -107,7 +109,7 @@ class SimulationRunner:
                 "Simulation ended in error",
                 SimulationRunnerException.ExceptionType.Fiberfox,
                 return_code,
-                (log,),
+                str(log_file),
             )
 
         _logger.debug(
@@ -133,6 +135,8 @@ class SimulationRunner:
         simulation_output_folder = output_folder / "simulation_outputs"
         simulation_output_folder.mkdir(parents=True, exist_ok=True)
         simulation_output_folder = simulation_output_folder.resolve(strict=True)
+
+        output_folder = output_folder.resolve(strict=True)
 
         geometry_output_folder = geometry_folder / "geometry_outputs"
         geometry_output_folder = geometry_output_folder.resolve(strict=True)
@@ -172,7 +176,7 @@ class SimulationRunner:
         )
 
         _logger.info("Simulating DWI signal")
-        return_code, log = async_loop.run_until_complete(
+        return_code, _ = async_loop.run_until_complete(
             self._launch_command(
                 simulation_command, log_file, "[RUNNING FIBERFOX]"
             )
@@ -182,7 +186,7 @@ class SimulationRunner:
                 "Simulation ended in error",
                 SimulationRunnerException.ExceptionType.Fiberfox,
                 return_code,
-                (log,),
+                str(log_file),
             )
 
         _logger.debug(
@@ -199,6 +203,8 @@ class SimulationRunner:
         geometry_output_folder: pathlib.Path = output_folder / "geometry_outputs"
         geometry_output_folder.mkdir(parents=True, exist_ok=True)
         geometry_output_folder = geometry_output_folder.resolve(strict=True)
+
+        output_folder = output_folder.resolve(strict=True)
 
         if self._run_simulation:
             simulation_output_folder: pathlib.Path = output_folder / "simulation_outputs"
@@ -257,7 +263,7 @@ class SimulationRunner:
             )
             _logger.info("Simulating DWI signal")
             if self._run_simulation:
-                return_code, log = async_loop.run_until_complete(
+                return_code, _ = async_loop.run_until_complete(
                     self._launch_command(
                         simulation_command, log_file, "[RUNNING FIBERFOX]"
                     )
@@ -267,7 +273,7 @@ class SimulationRunner:
                         "Simulation ended in error",
                         SimulationRunnerException.ExceptionType.Fiberfox,
                         return_code,
-                        (log,),
+                        str(log_file),
                     )
 
             _logger.debug("Simulation ended with code {}".format(return_code))
@@ -285,6 +291,8 @@ class SimulationRunner:
             simulation_output_folder: pathlib.Path,
             base_naming,
     ):
+        geometry_output_folder = geometry_output_folder.resolve(strict=True)
+
         copyfile(
             geometry_output_folder / (self._geometry_base_naming + "_mergedBundlesMaps.{}".format(self._extension)),
             simulation_output_folder /
@@ -360,6 +368,8 @@ class SimulationRunner:
     def _rename_and_copy_compartments(
             self, geometry_output_folder, simulation_output_folder
     ):
+        geometry_output_folder = geometry_output_folder.resolve(strict=True)
+
         copyfile(
             geometry_output_folder / (self._geometry_base_naming + "_mergedBundlesMaps.{}".format(self._extension)),
             simulation_output_folder /
@@ -446,6 +456,9 @@ class SimulationRunner:
             base_map=False,
             base_naming=None,
     ):
+        geometry_output_folder = geometry_output_folder.resolve(strict=True)
+        simulation_output_folder = simulation_output_folder.resolve(strict=True)
+
         if not base_naming:
             base_naming = self._base_naming
 
