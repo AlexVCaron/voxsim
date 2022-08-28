@@ -11,7 +11,7 @@ from simulator.factory import GeometryFactory, Plane, SimulationFactory
 from simulator.runner.legacy import SimulationRunner
 
 resolution = [40, 40, 40]
-spacing = [1, 1, 1]
+spacing = [2, 2, 2]
 point_per_centroid = 30
 
 x_anchors = [0.15, 0.25, 0.5, 0.75, 0.85]
