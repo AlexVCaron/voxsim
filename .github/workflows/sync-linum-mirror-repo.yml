@@ -5,7 +5,7 @@ name: Sync LINUM mirror repository
 on:
   push:
     branches:
-      - prod
+      - master
 
 jobs:
   sync_mirror_repo:
