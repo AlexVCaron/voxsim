@@ -1,1 +1,1 @@
-from .common import AttributeAsDictClass
+from ._common import AttributeAsDictClass

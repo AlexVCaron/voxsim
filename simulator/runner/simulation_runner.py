@@ -1,19 +1,19 @@
 import logging
+import pathlib
+import typing
 
 from asyncio import get_event_loop, new_event_loop, set_event_loop
-from os import makedirs, path
-from os.path import basename
 from subprocess import PIPE, Popen
 
-from config import get_config
+from .config import SingularityConfig
 from .datastore import Datastore
 from ..utils.logging import RTLogging
-
-
-logger = logging.getLogger(basename(__file__).split(".")[0])
+from ..factory.geometry_factory.handlers import GeometryInfos
+from ..factory.simulation_factory.handlers import SimulationInfos
 
 
 class AsyncRunner:
+
     def __init__(self):
         self._event_loop = new_event_loop()
 
@@ -24,43 +24,42 @@ class AsyncRunner:
         if not self._event_loop.is_closed():
             self._event_loop.close()
 
-    def _run_command(self, command, log_file, log_tag):
+    def _run_command(self, command: str, log_file: pathlib.Path, log_tag: str) -> int:
         set_event_loop(self._event_loop)
         async_loop = get_event_loop()
-        async_loop.run_until_complete(
+
+        returncode = async_loop.run_until_complete(
             self._run_async(command, log_file, log_tag)
         )
+
         async_loop.close()
+        return returncode
 
     def _start_loop_if_closed(self):
         if self._event_loop.is_closed():
             self._event_loop = new_event_loop()
 
-    async def _run_async(self, command, log_file, log_tag):
+    @staticmethod
+    async def _run_async(command: str, log_file, log_tag) -> int:
         process = Popen(command.split(" "), stdout=PIPE, stderr=PIPE)
 
-        logger = RTLogging(process, log_file, log_tag)
-        logger.start()
-        logger.join()
+        _logger = RTLogging(process, log_file, log_tag)
+        _logger.start()
+        _logger.join()
 
-        return process.returncode, log_file
+        return process.returncode
 
 
 class SimulationRunner(AsyncRunner):
     _apps = {"phantom": "launch_voxsim", "diffusion mri": "launch_mitk"}
 
-    def __init__(self, singularity_conf=get_config()):
-        self._singularity = path.join(
-            singularity_conf["singularity_path"],
-            singularity_conf["singularity_name"],
-        )
+    def __init__(self, singularity_conf=SingularityConfig()):
+        self._singularity = singularity_conf.singularity.resolve(strict=True)
         super().__init__()
 
-        self._singularity_exec = "singularity"
-        if "singularity_exec" in singularity_conf:
-            self._singularity_exec = singularity_conf["singularity_exec"]
+        self._singularity_exec = singularity_conf.singularity_exec
 
-    def _bind_singularity(self, step, paths, arguments):
+    def _bind_singularity(self, step, paths, arguments) -> str:
         return "{} run -B {} --app {} {} {}".format(
             self._singularity_exec,
             paths,
@@ -69,25 +68,26 @@ class SimulationRunner(AsyncRunner):
             arguments,
         )
 
-    def _create_outputs(self, path):
-        if not path.exists(path):
-            makedirs(path, exist_ok=True)
-
-        return path
+    @staticmethod
+    def _create_outputs(path: pathlib.Path):
+        path.mkdir(parents=True, exist_ok=True)
+        return path.resolve(strict=True)
 
     def run(
         self,
-        run_name,
-        phantom_infos,
-        simulation_infos,
-        output_folder,
+        run_name: str,
+        phantom_infos: GeometryInfos,
+        simulation_infos: SimulationInfos,
+        output_folder: pathlib.Path,
         output_nifti=True,
         relative_fiber_fraction=True,
         inter_axonal_fraction=None,
-    ):
+    ) -> typing.Tuple[int, int]:
         self.start()
 
-        self.generate_phantom(
+        output_folder = output_folder.resolve(strict=True)
+
+        phantom_returncode = self.generate_phantom(
             run_name,
             phantom_infos,
             output_folder,
@@ -97,22 +97,16 @@ class SimulationRunner(AsyncRunner):
         )
 
         datastore = Datastore(
-            path.join(output_folder, "simulation"),
-            path.join(
-                output_folder,
-                "phantom",
-                "{}_phantom_merged_bundles.fib".format(run_name),
-            ),
+            output_folder / "simulation",
+            output_folder / "phantom" / "{}_phantom_merged_bundles.fib".format(run_name),
             simulation_infos["compartment_ids"],
             inter_axonal_fraction,
         )
 
-        datastore.load_compartments(
-            path.join(output_folder, "phantom"), run_name, output_nifti
-        )
+        datastore.load_compartments(output_folder / "phantom", run_name, output_nifti)
         datastore.stage_compartments(run_name)
 
-        self.simulate_diffusion_mri(
+        mri_returncode = self.simulate_diffusion_mri(
             run_name,
             simulation_infos,
             output_folder,
@@ -125,34 +119,29 @@ class SimulationRunner(AsyncRunner):
         )
 
         self.stop()
+        return phantom_returncode, mri_returncode
 
     def generate_phantom(
         self,
-        run_name,
-        phantom_infos,
-        output_folder,
+        run_name: str,
+        phantom_infos: GeometryInfos,
+        output_folder: pathlib.Path,
         relative_fiber_fraction=True,
         output_nifti=True,
         loop_managed=False,
-    ):
+    ) -> int:
 
         loop_managed or self.start()
 
-        base_output_folder = output_folder
-        output_folder = self._create_outputs(
-            path.join(output_folder, "phantom")
-        )
+        base_output_folder: pathlib.Path = self._create_outputs(output_folder)
+        output_folder: pathlib.Path = self._create_outputs(output_folder / "phantom")
 
-        phantom_def = path.join(
-            phantom_infos["file_path"], phantom_infos["base_file"]
-        )
+        phantom_def: pathlib.Path = phantom_infos["file_path"] / phantom_infos["base_file"]
 
         resolution = ",".join([str(r) for r in phantom_infos["resolution"]])
         spacing = ",".join([str(s) for s in phantom_infos["spacing"]])
         fiber_fraction = "rel" if relative_fiber_fraction else "abs"
-        out_name = path.join(
-            output_folder, "phantom, " "{}_phantom".format(run_name)
-        )
+        out_name: pathlib.Path = output_folder / "{}_phantom".format(run_name)
 
         arguments = "-f {} -r {} -s {} -o {} --comp-map {} --quiet".format(
             phantom_def, resolution, spacing, out_name, fiber_fraction
@@ -161,42 +150,41 @@ class SimulationRunner(AsyncRunner):
         if output_nifti:
             arguments += " --nii"
 
-        bind_paths = ",".join([phantom_infos["file_path"], output_folder])
+        bind_paths = ",".join([str(phantom_infos["file_path"]), str(output_folder)])
         command = self._bind_singularity("phantom", bind_paths, arguments)
-        log_file = path.join(base_output_folder, "{}.log".format(run_name))
-        self._run_command(command, log_file, "[PHANTOM]")
+        log_file: pathlib.Path = base_output_folder / "{}.log".format(run_name)
+        returncode = self._run_command(command, log_file, "[PHANTOM]")
 
         loop_managed or self.stop()
+        return returncode
 
     def simulate_diffusion_mri(
         self,
-        run_name,
-        simulation_infos,
-        output_folder,
-        fibers_file,
+        run_name: str,
+        simulation_infos: SimulationInfos,
+        output_folder: pathlib.Path,
+        fibers_file: pathlib.Path,
         compartment_maps=None,
         bind_paths=None,
         output_nifti=True,
         loop_managed=False,
         compartments_staged=True,
-    ):
+    ) -> int:
         loop_managed or self.start()
 
         bind_paths = [] if bind_paths is None else bind_paths
-        base_output_folder = output_folder
-        output_folder = self._create_outputs(
-            path.join(output_folder, "simulation")
-        )
+        fibers_file = fibers_file.resolve(strict=True)
+        base_output_folder: pathlib.Path = self._create_outputs(output_folder)
+        output_folder: pathlib.Path = self._create_outputs(output_folder / "simulation")
 
         name = "{}_simulation".format(run_name)
 
-        bind_paths += [simulation_infos["file_path"], output_folder]
+        bind_paths += [str(simulation_infos["file_path"]), str(output_folder)]
         bind_paths = ",".join(bind_paths)
-        ffp_file = path.join(
-            simulation_infos["file_path"], simulation_infos["param_file"]
-        )
+        ffp_file = simulation_infos["file_path"] / simulation_infos["param_file"]
+
         extension = "nii.gz" if output_nifti else "nrrd"
-        out_name = path.join(output_folder, "{}.{}".format(name, extension))
+        out_name = output_folder / "{}.{}".format(name, extension)
 
         if not compartments_staged and compartment_maps is not None:
             datastore = Datastore(
@@ -211,7 +199,8 @@ class SimulationRunner(AsyncRunner):
         arguments = "-p {} -i {} -o {}".format(ffp_file, fibers_file, out_name)
 
         command = self._bind_singularity("diffusion mri", bind_paths, arguments)
-        log_file = path.join(base_output_folder, "{}.log".format(run_name))
-        self._run_command(command, log_file, "[DIFFUSION MRI]")
+        log_file: pathlib.Path = base_output_folder / "{}.log".format(run_name)
+        returncode = self._run_command(command, log_file, "[DIFFUSION MRI]")
 
         loop_managed or self.stop()
+        return returncode

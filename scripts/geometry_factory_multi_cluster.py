@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 
 import argparse
+import pathlib
 from math import pi
-from os import makedirs
 from tempfile import mkdtemp
 
 from simulator.factory import GeometryFactory, Plane
-
 
 resolution = [10, 10, 10]
 spacing = [2, 2, 2]
@@ -43,7 +42,7 @@ base_anchors = [
 ]
 
 
-def run_multi_clusters(output_folder, output_naming):
+def run_multi_clusters(output_folder: pathlib.Path, output_naming: str):
     geometry_handler = GeometryFactory.get_geometry_handler(resolution, spacing)
 
     bundle1 = GeometryFactory.create_bundle(
@@ -87,15 +86,15 @@ def run_multi_clusters(output_folder, output_naming):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Geometry Multi Clusters Example Script")
     parser.add_argument(
-        "--out", type=str, required=False, help="Output directory for the files"
+        "--out", type=pathlib.Path, help="Output directory for the files"
     )
 
     args = parser.parse_args()
-    if "out" in args and args.out:
-        dest = args.out
-        makedirs(args.out, exist_ok=True)
+    if args.out:
+        dest: pathlib.Path = args.out
+        dest.mkdir(parents=True, exist_ok=True)
     else:
-        dest = mkdtemp(prefix="geo_factory_mc")
+        dest = pathlib.Path(mkdtemp(prefix="geo_factory_mc"))
 
     print("Script execution results are in : {}".format(dest))
     run_multi_clusters(dest, "multi_clusters")

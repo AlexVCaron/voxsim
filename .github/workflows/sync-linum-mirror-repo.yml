@@ -1,0 +1,28 @@
+name: Sync LINUM mirror repository
+
+# GitHub App/Action mirror-repository: https://github.com/yesolutions/mirror-action
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  sync_mirror_repo:
+    runs-on: ubuntu-22.04
+
+    environment:
+      name: production
+      url: https://github.com/linum-uqam/inm5803-ete2022-benoit-dubreuil
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: 'master'
+          fetch-depth: 0
+
+      - uses: yesolutions/mirror-action@master
+        with:
+          REMOTE: 'git@github.com:linum-uqam/voxsim.git'
+          GIT_SSH_PRIVATE_KEY: ${{ secrets.LINUM_DEPLOY_GIT_SSH_PRIVATE_KEY }}  # The public key is a deploy key on the remote repository
+          GIT_SSH_NO_VERIFY_HOST: 'true'  # We're pushing from a public repo to a public repo, nothing can really be stolen.

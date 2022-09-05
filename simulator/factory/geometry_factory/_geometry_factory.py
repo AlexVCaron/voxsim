@@ -107,7 +107,7 @@ class GeometryFactory:
         n_point_per_centroid : int
             Number of points sampling points along the
             spline representing the centroid
-        anchors : list(list(int)) or list, optional
+        anchors : list(list(float)) or list, optional
             List of anchor points defining the centroid
             of the bundle, default : []
 
